@@ -1,0 +1,12 @@
+{
+  "name": "@quarry/jev",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The single entry point for TypeSafe Jev calls: pinned model, validated answers, cost accounting.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
