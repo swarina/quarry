@@ -1,0 +1,12 @@
+{
+  "name": "@quarry/domain",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pure domain logic shared by every Quarry runtime.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
