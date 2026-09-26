@@ -6,6 +6,7 @@ import {
   AuthenticationError,
   BadRequestError,
   InternalServerError,
+  NotFoundError,
   PermissionDeniedError,
   RateLimitError,
   UnprocessableEntityError,
@@ -15,6 +16,7 @@ export const JEV_ERROR_CODES = [
   "ABORTED",
   "AUTHENTICATION",
   "BUDGET_EXCEEDED",
+  "CASSETTE_MISS",
   "CONNECTION",
   "INVALID_QUESTIONS",
   "INVALID_REQUEST",
@@ -37,6 +39,9 @@ const RETRYABLE_CODES: ReadonlySet<JevErrorCode> = new Set([
   "SERVER",
   "TIMEOUT",
 ]);
+
+/** Response header the cassette transport sets when replay finds no recorded exchange. */
+export const CASSETTE_MISS_HEADER = "x-quarry-cassette";
 
 export interface JevErrorDetails {
   readonly cause?: unknown;
@@ -84,6 +89,9 @@ export function toJevError(error: unknown): JevError {
 
 function fromApiError(error: APIError): JevError {
   const details = { cause: error, status: error.status, requestId: error.requestId };
+  if (error instanceof NotFoundError && error.headers.get(CASSETTE_MISS_HEADER) === "miss") {
+    return new JevError("CASSETTE_MISS", "No recorded response matches this request", details);
+  }
   if (error instanceof RateLimitError) return new JevError("RATE_LIMITED", error.message, details);
   if (error instanceof AuthenticationError) {
     return new JevError("AUTHENTICATION", error.message, details);

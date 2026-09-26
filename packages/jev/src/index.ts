@@ -1,3 +1,10 @@
+export type {
+  CassetteFetchOptions,
+  CassetteMode,
+  CassetteStore,
+  RecordedExchange,
+} from "./cassette.ts";
+export { createCassetteFetch, recordedExchangeSchema } from "./cassette.ts";
 export type { AskRequest, AskResult, AskUsage, JevClient, JevClientOptions } from "./client.ts";
 export { createJevClient } from "./client.ts";
 export type { JevErrorCode, JevErrorDetails } from "./errors.ts";
