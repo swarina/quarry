@@ -30,7 +30,11 @@ importers:
         specifier: 5.0.1
         version: 5.0.1(@types/node@24.13.6)(@vitest/coverage-v8@5.0.1)(vite@8.3.0(@types/node@24.13.6))
 
-  packages/domain: {}
+  packages/domain:
+    dependencies:
+      entities:
+        specifier: 8.1.0
+        version: 8.1.0
 
   packages/jev:
     dependencies:
@@ -422,6 +426,10 @@ packages:
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
+
+  entities@8.1.0:
+    resolution: {integrity: sha512-kxL7msIffSuh9aaFAMD7rxAIuTRMAHMeBtgHW2yUdWw732ZNh4MehkF2gdjvtdmikkaIP9bFDDJOPlsvm7avrA==}
+    engines: {node: '>=20.19.0'}
 
   es-module-lexer@2.3.2:
     resolution: {integrity: sha512-poHGpORABojJJucnV9KbOavETW8lBVnphkW77ER5/BQ5Fz7oXSoCNek7IH3vR5nRjdsEz926ibFYX8KtLQmdyw==}
@@ -921,6 +929,8 @@ snapshots:
   chai@6.2.2: {}
 
   detect-libc@2.1.2: {}
+
+  entities@8.1.0: {}
 
   es-module-lexer@2.3.2: {}
 
