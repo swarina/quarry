@@ -1,0 +1,31 @@
+{
+  "name": "quarry",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Ask your own questions of every job posting.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": "^24.12.0"
+  },
+  "scripts": {
+    "check": "node scripts/check-text.ts && biome check && tsc -p tsconfig.json && vitest run",
+    "check:text": "node scripts/check-text.ts",
+    "lint": "biome check",
+    "format": "biome check --write",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@fast-check/vitest": "0.5.0",
+    "@types/node": "24.13.6",
+    "@vitest/coverage-v8": "5.0.1",
+    "fast-check": "4.10.2",
+    "typescript": "7.0.2",
+    "vitest": "5.0.1"
+  }
+}
