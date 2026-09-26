@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["packages/**", "scripts/**", "*.ts", "*.json"]
+    "includes": ["packages/**", "scripts/**", "*.ts", "*.json", "!**/fixtures"]
   },
   "formatter": {
     "enabled": true,
@@ -171,7 +171,7 @@
       }
     },
     {
-      "includes": ["scripts/**"],
+      "includes": ["scripts/**", "packages/*/scripts/**"],
       "linter": {
         "rules": {
           "style": {

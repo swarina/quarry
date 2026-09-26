@@ -4,5 +4,10 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["packages/*/src/**/*.ts", "scripts/**/*.ts", "*.config.ts"]
+  "include": [
+    "packages/*/src/**/*.ts",
+    "packages/*/scripts/**/*.ts",
+    "scripts/**/*.ts",
+    "*.config.ts"
+  ]
 }
