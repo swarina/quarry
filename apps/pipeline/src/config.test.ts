@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { PRODUCT_TOKEN, runIdentity, userAgent } from "./config.ts";
+import {
+  ConfigError,
+  PRODUCT_TOKEN,
+  runIdentity,
+  storeKey,
+  storeSettings,
+  userAgent,
+} from "./config.ts";
 import { createLogger } from "./log.ts";
 
 afterEach(() => {
@@ -53,5 +60,34 @@ describe("createLogger", () => {
     expect(lines).toEqual([
       '{"ts":"1970-01-01T00:00:00.000Z","level":"warn","component":"pipeline","msg":"slow host","host":"api.lever.co","duration_ms":12}\n',
     ]);
+  });
+});
+
+describe("storeSettings", () => {
+  it("reads the repository, a token, and the store key", () => {
+    vi.stubEnv("GITHUB_REPOSITORY", "swarina/quarry");
+    vi.stubEnv("GITHUB_TOKEN", "");
+    vi.stubEnv("GH_TOKEN", "token");
+    vi.stubEnv("QUARRY_STORE_KEY", "key");
+    expect(storeSettings()).toEqual({ repository: "swarina/quarry", token: "token", key: "key" });
+  });
+
+  it("lists what is missing", () => {
+    vi.stubEnv("GITHUB_REPOSITORY", "not a repository");
+    vi.stubEnv("QUARRY_STORE_KEY", "");
+    expect(() => storeSettings()).toThrow(ConfigError);
+    expect(() => storeSettings()).toThrow(/GITHUB_REPOSITORY[\s\S]*QUARRY_STORE_KEY/);
+    vi.stubEnv("GITHUB_REPOSITORY", "swarina/quarry");
+    vi.stubEnv("QUARRY_STORE_KEY", "key");
+    vi.stubEnv("GITHUB_TOKEN", "");
+    vi.stubEnv("GH_TOKEN", "");
+    expect(() => storeSettings()).toThrow(/GITHUB_TOKEN or GH_TOKEN/);
+  });
+
+  it("requires the key for packing", () => {
+    vi.stubEnv("QUARRY_STORE_KEY", "");
+    expect(() => storeKey()).toThrow(/QUARRY_STORE_KEY must be set/);
+    vi.stubEnv("QUARRY_STORE_KEY", "abc");
+    expect(storeKey()).toBe("abc");
   });
 });
