@@ -226,7 +226,12 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
          new_count = $newPostings, changed_count = $changedPostings
        WHERE id = $crawlId`,
     ),
-    postingHash: db.prepare("SELECT content_hash FROM postings WHERE id = ?"),
+    postingState: db.prepare(
+      `SELECT p.content_hash, c.normalizer_version
+       FROM postings p
+       LEFT JOIN posting_contents c ON c.posting_id = p.id AND c.content_hash = p.content_hash
+       WHERE p.id = ?`,
+    ),
     insertPosting: db.prepare(
       `INSERT INTO postings
          (id, board_id, external_id, content_hash, title, url, locations_json, published_at,
@@ -247,10 +252,17 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
       `UPDATE postings SET last_seen_crawl_id = $crawlId, last_seen_at = $at
        WHERE id IN (SELECT posting_id FROM posting_presence WHERE last_crawl_id = $crawlId)`,
     ),
-    insertContent: db.prepare(
-      `INSERT OR IGNORE INTO posting_contents
+    // A content seen before (A to B and back to A) keeps its row, unless a newer normalizer
+    // read it this time; then the row takes the newer reading.
+    upsertContent: db.prepare(
+      `INSERT INTO posting_contents
          (posting_id, content_hash, normalizer_version, normalized_json, raw_json)
-       VALUES ($postingId, $contentHash, $normalizerVersion, $normalizedJson, $rawJson)`,
+       VALUES ($postingId, $contentHash, $normalizerVersion, $normalizedJson, $rawJson)
+       ON CONFLICT (posting_id, content_hash) DO UPDATE SET
+         normalizer_version = excluded.normalizer_version,
+         normalized_json = excluded.normalized_json,
+         raw_json = excluded.raw_json
+       WHERE excluded.normalizer_version > posting_contents.normalizer_version`,
     ),
     insertChange: db.prepare(
       `INSERT INTO posting_changes (posting_id, crawl_id, content_hash)
@@ -480,8 +492,8 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
         let invalid = 0;
 
         for (const item of listing.items) {
-          const existing = statements.postingHash.get(item.postingId) as
-            | { content_hash: string }
+          const existing = statements.postingState.get(item.postingId) as
+            | { content_hash: string; normalizer_version: number | null }
             | undefined;
           if (item.kind === "invalid") {
             invalid += 1;
@@ -512,14 +524,23 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
               statements.updatePosting.run(fields);
               if (existing.content_hash !== item.contentHash) changedPostings += 1;
             }
-            if (existing === undefined || existing.content_hash !== item.contentHash) {
-              statements.insertContent.run({
+            const changed = existing === undefined || existing.content_hash !== item.contentHash;
+            // Unchanged content read by a newer normalizer (which may fill fields outside the
+            // content, such as places) is stored again, without counting as an edit.
+            const reread =
+              existing !== undefined &&
+              !changed &&
+              (existing.normalizer_version ?? 0) < listing.normalizerVersion;
+            if (changed || reread) {
+              statements.upsertContent.run({
                 postingId: item.postingId,
                 contentHash: item.contentHash,
                 normalizerVersion: listing.normalizerVersion,
                 normalizedJson: JSON.stringify(posting),
                 rawJson: item.rawJson,
               });
+            }
+            if (changed) {
               statements.insertChange.run({
                 postingId: item.postingId,
                 crawlId,

@@ -6,6 +6,7 @@ import {
   escapeHtml,
   httpUrl,
   parseTimestamp,
+  placeText,
   salaryRange,
 } from "./fields.ts";
 
@@ -91,5 +92,18 @@ describe("httpUrl", () => {
     expect(httpUrl.safeParse("https://jobs.lever.co/acme/1").success).toBe(true);
     expect(httpUrl.safeParse("javascript:alert(1)").success).toBe(false);
     expect(httpUrl.safeParse("ftp://example.com").success).toBe(false);
+  });
+});
+
+describe("placeText", () => {
+  it("joins address parts most specific first, skipping empty and repeated ones", () => {
+    expect(placeText(["San Francisco", "California", "United States"])).toBe(
+      "San Francisco, California, United States",
+    );
+    expect(placeText(["Washington, DC", "washington, dc", "United States"])).toBe(
+      "Washington, DC, United States",
+    );
+    expect(placeText([null, " ", undefined, "Norway"])).toBe("Norway");
+    expect(placeText([null, "", undefined])).toBeNull();
   });
 });

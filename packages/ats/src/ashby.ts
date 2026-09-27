@@ -1,6 +1,6 @@
-import type { PayInterval, Workplace } from "@quarry/domain";
+import type { PayInterval, StatedPlace, Workplace } from "@quarry/domain";
 import { z } from "zod";
-import { cleanList, cleanText, httpUrl, parseTimestamp, salaryRange } from "./fields.ts";
+import { cleanList, cleanText, httpUrl, parseTimestamp, placeText, salaryRange } from "./fields.ts";
 import { type AtsAdapter, AtsSchemaError, describeIssues } from "./listing.ts";
 
 const listing = z.looseObject({ jobs: z.array(z.unknown()) });
@@ -14,13 +14,30 @@ const compensationComponent = z.looseObject({
   maxValue: z.number().nullish(),
 });
 
+// Hints only: a change in their shape must never make the posting unreadable.
+const address = z
+  .looseObject({
+    postalAddress: z
+      .looseObject({
+        addressLocality: z.string().nullish(),
+        addressRegion: z.string().nullish(),
+        addressCountry: z.string().nullish(),
+      })
+      .nullish(),
+  })
+  .nullish()
+  .catch(null);
+
+const locationEntry = z.looseObject({ location: z.string().nullish(), address });
+
 const job = z.looseObject({
   title: z.string(),
   jobUrl: httpUrl,
   applyUrl: httpUrl.nullish(),
   isListed: z.boolean().nullish(),
   location: z.string().nullish(),
-  secondaryLocations: z.array(z.looseObject({ location: z.string().nullish() })).nullish(),
+  address,
+  secondaryLocations: z.array(locationEntry).nullish(),
   workplaceType: z.string().nullish(),
   isRemote: z.boolean().nullish(),
   employmentType: z.string().nullish(),
@@ -94,6 +111,10 @@ export const ashby: AtsAdapter = {
           data.location,
           ...(data.secondaryLocations ?? []).map((entry) => entry.location),
         ]),
+        places: addressPlaces([
+          { location: data.location, address: data.address },
+          ...(data.secondaryLocations ?? []),
+        ]),
         country: null,
         workplace: WORKPLACES.get(declared) ?? (data.isRemote === true ? "remote" : null),
         employmentType: cleanText(data.employmentType),
@@ -112,3 +133,25 @@ export const ashby: AtsAdapter = {
     };
   },
 };
+
+/**
+ * Each location's postal address (locality, region, country), paired with its label. Ashby
+ * fills the address from a place picker, so it names the country even when the label is
+ * "NAMER" or "Remote".
+ */
+function addressPlaces(locations: readonly z.infer<typeof locationEntry>[]): StatedPlace[] {
+  const places: StatedPlace[] = [];
+  for (const { location, address: stated } of locations) {
+    const postal = stated?.postalAddress;
+    const text = placeText([
+      postal?.addressLocality,
+      postal?.addressRegion,
+      postal?.addressCountry,
+    ]);
+    const label = cleanText(location);
+    if (text !== null && !places.some((place) => place.label === label && place.text === text)) {
+      places.push({ label, text });
+    }
+  }
+  return places;
+}

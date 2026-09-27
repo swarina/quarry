@@ -8,7 +8,20 @@ const job = {
   team: "Sales",
   employmentType: "FullTime",
   location: "Singapore",
-  secondaryLocations: [{ location: "US - New York" }, { location: "Singapore" }],
+  address: { postalAddress: { addressCountry: "Singapore", addressLocality: "Singapore" } },
+  secondaryLocations: [
+    {
+      location: "US - New York",
+      address: {
+        postalAddress: {
+          addressLocality: "New York",
+          addressRegion: "New York",
+          addressCountry: "United States",
+        },
+      },
+    },
+    { location: "Singapore" },
+  ],
   publishedAt: "2026-08-17T03:58:42.064+00:00",
   isListed: true,
   isRemote: false,
@@ -41,6 +54,10 @@ describe("ashby", () => {
         url: job.jobUrl,
         applyUrl: job.applyUrl,
         locations: ["Singapore", "US - New York"],
+        places: [
+          { label: "Singapore", text: "Singapore" },
+          { label: "US - New York", text: "New York, United States" },
+        ],
         country: null,
         workplace: "onsite",
         employmentType: "FullTime",
@@ -52,6 +69,25 @@ describe("ashby", () => {
         descriptionHtml: "<h1>Role</h1>",
       },
     });
+  });
+
+  it("pairs each label with its address, and never lets a malformed one invalidate the job", () => {
+    const places = (overrides: Record<string, unknown>) => {
+      const result = ashby.mapJob({ ...job, secondaryLocations: [], ...overrides }, job.id);
+      return result.kind === "posting" ? result.posting.places : "invalid";
+    };
+    expect(
+      places({
+        location: "NAMER",
+        address: {
+          postalAddress: { addressRegion: "California", addressCountry: "United States" },
+        },
+      }),
+    ).toEqual([{ label: "NAMER", text: "California, United States" }]);
+    expect(places({ address: null })).toEqual([]);
+    expect(places({ address: { postalAddress: {} } })).toEqual([]);
+    expect(places({ address: "Singapore" })).toEqual([]);
+    expect(places({ location: null })).toEqual([{ label: null, text: "Singapore" }]);
   });
 
   it("reads the declared workplace, falling back to isRemote", () => {
