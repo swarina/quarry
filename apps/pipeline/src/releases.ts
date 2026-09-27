@@ -27,6 +27,8 @@ const asset = z.looseObject({
   name: z.string(),
   size: z.int().nonnegative(),
   created_at: z.iso.datetime(),
+  // "uploaded", or "open" while (or after an interrupted) upload.
+  state: z.string(),
 });
 
 const PAGE_SIZE = 100;
@@ -73,12 +75,16 @@ export function createReleaseAssets(options: {
         const body = await json(`${base}/releases/${id}/assets?per_page=${PAGE_SIZE}&page=${page}`);
         const batch = z.array(asset).parse(body ?? []);
         assets.push(
-          ...batch.map((entry) => ({
-            id: entry.id,
-            name: entry.name,
-            size: entry.size,
-            createdAt: Date.parse(entry.created_at),
-          })),
+          // An interrupted upload leaves an unusable asset behind; it is neither restored nor
+          // pruned, and needs a person to delete it (see the runbook).
+          ...batch
+            .filter((entry) => entry.state === "uploaded")
+            .map((entry) => ({
+              id: entry.id,
+              name: entry.name,
+              size: entry.size,
+              createdAt: Date.parse(entry.created_at),
+            })),
         );
         if (batch.length < PAGE_SIZE) return assets;
       }

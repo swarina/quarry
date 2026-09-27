@@ -1,6 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
-import { open, rename, rm, stat } from "node:fs/promises";
+import { mkdtemp, open, rename, rm, stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { pipeline } from "node:stream/promises";
@@ -103,10 +104,11 @@ export async function packSnapshot(
   store.setMeta(SNAPSHOT_SEQ_KEY, String(seq));
   store.setMeta(SNAPSHOT_RUN_KEY, options.runId);
 
-  const plainPath = join(options.dir, `store-${pad(seq)}.sqlite`);
+  // The unencrypted copy never goes near `dir`, which CI uploads as an artifact.
+  const work = await mkdtemp(join(tmpdir(), "quarry-pack-"));
+  const plainPath = join(work, "store.sqlite");
   const name = snapshotName(seq, options.runId);
   const snapshotPath = join(options.dir, name);
-  await rm(plainPath, { force: true });
   try {
     store.db.prepare("VACUUM INTO ?").run(plainPath);
     const version = verifyDatabase(plainPath, seq);
@@ -162,7 +164,7 @@ export async function packSnapshot(
     }
     return { manifest, manifestPath, snapshotPath };
   } finally {
-    await rm(plainPath, { force: true });
+    await rm(work, { recursive: true, force: true });
   }
 }
 

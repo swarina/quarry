@@ -24,11 +24,12 @@ function server(routes: Record<string, () => Response>) {
   return { releases, requests };
 }
 
-const asset = (id: number, name: string) => ({
+const asset = (id: number, name: string, state = "uploaded") => ({
   id,
   name,
   size: 10,
   created_at: "2026-09-27T03:40:00Z",
+  state,
   uploader: { login: "github-actions[bot]" },
 });
 
@@ -66,6 +67,20 @@ describe("createReleaseAssets", () => {
       expect(request.headers.get("authorization")).toBe("Bearer test-token");
       expect(request.headers.get("user-agent")).toBe("QuarryBot/test");
     }
+  });
+
+  it("leaves out assets whose upload never finished", async () => {
+    const { releases } = server({
+      [`${API}/releases/tags/pipeline-store`]: () => Response.json({ id: 7 }),
+      [`${API}/releases/7/assets?per_page=100&page=1`]: () =>
+        Response.json([
+          asset(1, "manifest-00000001.json"),
+          asset(2, "manifest-00000002.json", "open"),
+        ]),
+    });
+    expect((await releases.list("pipeline-store"))?.map((entry) => entry.name)).toEqual([
+      "manifest-00000001.json",
+    ]);
   });
 
   it("fails loudly on API errors and malformed responses", async () => {

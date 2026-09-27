@@ -65,6 +65,17 @@ describe("packSnapshot and unpackSnapshot", () => {
     expect((await pack("gh-2-1")).manifest.seq).toBe(2);
   });
 
+  it("writes only the encrypted snapshot and its manifest to the output directory", async () => {
+    const out = join(dir, "out");
+    const { mkdir, readdir } = await import("node:fs/promises");
+    await mkdir(out);
+    const { manifest } = await packSnapshot(store, { dir: out, runId: "gh-1-1", key: KEY });
+    expect((await readdir(out)).sort()).toEqual([
+      manifestName(manifest.seq),
+      manifest.snapshot.name,
+    ]);
+  });
+
   it("detects any change to the file before decrypting", async () => {
     const { manifest, snapshotPath } = await pack();
     const bytes = await readFile(snapshotPath);
