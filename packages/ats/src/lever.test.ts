@@ -37,6 +37,7 @@ describe("lever", () => {
         url: job.hostedUrl,
         applyUrl: job.applyUrl,
         locations: ["Aubervilliers", "Paris"],
+        places: [],
         country: "FR",
         workplace: "hybrid",
         employmentType: "CDI",

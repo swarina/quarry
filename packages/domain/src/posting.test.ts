@@ -7,6 +7,7 @@ const posting: NormalizedPosting = {
   url: "https://example.com/jobs/123",
   applyUrl: "https://example.com/jobs/123/apply",
   locations: ["Berlin", "Remote, Germany"],
+  places: [{ label: "Berlin", text: "Berlin, Berlin, Germany" }],
   country: "DE",
   workplace: "hybrid",
   employmentType: "Full-time",
@@ -35,7 +36,7 @@ describe("postingContent", () => {
 });
 
 describe("postingContentHash", () => {
-  it("ignores links, dates, language, and markup that does not change the text", async () => {
+  it("ignores links, dates, language, places, and markup that does not change the text", async () => {
     const hash = await postingContentHash(posting);
     expect(
       await postingContentHash({
@@ -44,6 +45,7 @@ describe("postingContentHash", () => {
         applyUrl: null,
         publishedAt: null,
         language: null,
+        places: [],
         descriptionHtml: '<h2 class="x">Role</h2>\n<p>Build <strong>APIs</strong>.</p>',
       }),
     ).toBe(hash);

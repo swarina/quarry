@@ -16,6 +16,18 @@ export interface SalaryRange {
 }
 
 /**
+ * A place an ATS states in a structured field, such as an office or a postal address. It is a
+ * hint for reading location labels, which are often shorter ("London") or not places at all
+ * ("Hybrid").
+ */
+export interface StatedPlace {
+  /** The location label this place belongs to, when the ATS pairs them. */
+  readonly label: string | null;
+  /** The place as text, most specific part first: "San Francisco, California, United States". */
+  readonly text: string;
+}
+
+/**
  * One job posting as an ATS lists it, mapped to a shape shared by every source. It holds only
  * what the ATS states in structured fields; nothing is inferred.
  */
@@ -28,6 +40,11 @@ export interface NormalizedPosting {
   readonly applyUrl: string | null;
   /** Location labels exactly as the ATS lists them, primary first. */
   readonly locations: readonly string[];
+  /**
+   * Offices and addresses the ATS states alongside the labels. Not part of the content: a
+   * posting's places can be refined without it counting as an edit.
+   */
+  readonly places: readonly StatedPlace[];
   /** ISO 3166-1 alpha-2 country, when the ATS states one. */
   readonly country: string | null;
   readonly workplace: Workplace | null;

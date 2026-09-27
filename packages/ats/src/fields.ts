@@ -20,6 +20,21 @@ export function cleanList(values: readonly (string | null | undefined)[]): strin
   return [...seen];
 }
 
+/**
+ * Address parts joined most specific first, skipping empty and repeated parts: Ashby often
+ * repeats the city as the region ("Washington, DC" twice). Null when no part has content.
+ */
+export function placeText(parts: readonly (string | null | undefined)[]): string | null {
+  const kept: string[] = [];
+  for (const part of parts) {
+    const cleaned = cleanText(part);
+    if (cleaned !== null && !kept.some((seen) => seen.toLowerCase() === cleaned.toLowerCase())) {
+      kept.push(cleaned);
+    }
+  }
+  return kept.length > 0 ? kept.join(", ") : null;
+}
+
 /** Epoch milliseconds for an ISO 8601 timestamp, or null when it doesn't parse. */
 export function parseTimestamp(value: string | null | undefined): number | null {
   if (value === null || value === undefined) return null;

@@ -19,6 +19,7 @@ export type {
   PayInterval,
   PostingContent,
   SalaryRange,
+  StatedPlace,
   Workplace,
 } from "./posting.ts";
 export { postingContent, postingContentHash } from "./posting.ts";

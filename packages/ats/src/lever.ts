@@ -93,6 +93,8 @@ export function createLeverAdapter(host: "api.lever.co" | "api.eu.lever.co"): At
           locations: cleanList(
             categories?.allLocations?.length ? categories.allLocations : [categories?.location],
           ),
+          // Lever states only a country code, which is `country`.
+          places: [],
           country: countryCode(data.country),
           workplace: WORKPLACES.get(data.workplaceType?.trim().toLowerCase() ?? "") ?? null,
           employmentType: cleanText(categories?.commitment),

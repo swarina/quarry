@@ -14,7 +14,11 @@ const job = {
     { id: 1, name: "Architecture" },
     { id: 2, name: "Other" },
   ],
-  offices: [{ id: 3, name: "Remote US" }],
+  offices: [
+    { id: 3, name: "Remote US" },
+    { id: 4, name: "SF", location: "San Francisco, California, United States" },
+    { id: 5, name: "SF again", location: " San Francisco,  California, United States" },
+  ],
   metadata: null,
 };
 
@@ -35,6 +39,10 @@ describe("greenhouse", () => {
         url: "https://job-boards.greenhouse.io/affirm/jobs/7850544003",
         applyUrl: null,
         locations: ["Remote US"],
+        places: [
+          { label: null, text: "Remote US" },
+          { label: null, text: "San Francisco, California, United States" },
+        ],
         country: null,
         workplace: null,
         employmentType: null,
@@ -60,9 +68,20 @@ describe("greenhouse", () => {
     expect(result.kind).toBe("posting");
     if (result.kind !== "posting") return;
     expect(result.posting.locations).toEqual([]);
+    expect(result.posting.places).toEqual([]);
     expect(result.posting.department).toBeNull();
     expect(result.posting.language).toBeNull();
     expect(result.posting.publishedAt).toBeNull();
+  });
+
+  it("reads offices as hints, and never lets a malformed one invalidate the job", () => {
+    const places = (offices: unknown) => {
+      const result = greenhouse.mapJob({ ...job, offices }, "1");
+      return result.kind === "posting" ? result.posting.places : "invalid";
+    };
+    expect(places([{ id: 1, name: "  ", location: null }])).toEqual([]);
+    expect(places("not a list")).toEqual([]);
+    expect(places([{ id: 1, name: 7 }])).toEqual([]);
   });
 
   it("reports schema problems and empty titles as invalid", () => {

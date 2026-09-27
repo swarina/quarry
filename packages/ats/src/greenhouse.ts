@@ -1,3 +1,4 @@
+import type { StatedPlace } from "@quarry/domain";
 import { decodeHTML } from "entities/decode";
 import { z } from "zod";
 import { cleanList, cleanText, httpUrl, parseTimestamp } from "./fields.ts";
@@ -8,6 +9,8 @@ const jobId = z.looseObject({
   id: z.union([z.number().int().nonnegative(), z.string().regex(/^\d+$/)]),
 });
 
+const office = z.looseObject({ name: z.string().nullish(), location: z.string().nullish() });
+
 const job = z.looseObject({
   title: z.string(),
   absolute_url: httpUrl,
@@ -16,6 +19,8 @@ const job = z.looseObject({
   language: z.string().nullish(),
   first_published: z.string().nullish(),
   departments: z.array(z.looseObject({ name: z.string() })).nullish(),
+  // Hints only: a change in their shape must never make the posting unreadable.
+  offices: z.array(office).nullish().catch(null),
 });
 
 /**
@@ -63,6 +68,7 @@ export const greenhouse: AtsAdapter = {
         url: data.absolute_url,
         applyUrl: null,
         locations: cleanList([data.location?.name]),
+        places: officePlaces(data.offices),
         country: null,
         workplace: null,
         employmentType: null,
@@ -76,3 +82,17 @@ export const greenhouse: AtsAdapter = {
     };
   },
 };
+
+/**
+ * A job's offices, by their location ("San Francisco, California, United States") or, when
+ * that is empty, their name. Offices aren't tied to a label, and can differ from where the job
+ * is, so they are hints.
+ */
+function officePlaces(
+  offices: readonly z.infer<typeof office>[] | null | undefined,
+): StatedPlace[] {
+  const texts = cleanList(
+    (offices ?? []).map((office) => cleanText(office.location) ?? cleanText(office.name)),
+  );
+  return texts.map((text) => ({ label: null, text }));
+}
