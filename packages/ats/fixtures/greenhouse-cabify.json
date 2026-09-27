@@ -1,0 +1,193 @@
+{
+  "source": "greenhouse",
+  "slug": "cabify",
+  "url": "https://boards-api.greenhouse.io/v1/boards/cabify/jobs?content=true",
+  "recordedAt": "2026-09-26",
+  "body": {
+    "jobs": [
+      {
+        "absolute_url": "https://job-boards.greenhouse.io/cabify/jobs/8658794002",
+        "data_compliance": [
+          {
+            "type": "gdpr",
+            "requires_consent": false,
+            "requires_processing_consent": false,
+            "requires_retention_consent": false,
+            "retention_period": null,
+            "demographic_data_consent_applies": false
+          }
+        ],
+        "internal_job_id": 6457532002,
+        "location": {
+          "name": "Bogot\u00e1"
+        },
+        "metadata": [
+          {
+            "id": 31954602002,
+            "name": "Equipo",
+            "value": "Customer Operations",
+            "value_type": "single_select"
+          },
+          {
+            "id": 4389999002,
+            "name": "Level",
+            "value": "L1",
+            "value_type": "single_select"
+          }
+        ],
+        "id": 8658794002,
+        "updated_at": "2026-08-20T06:41:09-04:00",
+        "requisition_id": "3288",
+        "title": "Agente de Contact Center en condici\u00f3n de discapacidad",
+        "company_name": "Cabify",
+        "first_published": "2026-07-30T12:38:12-04:00",
+        "language": "es",
+        "application_deadline": null,
+        "content": "&lt;h1&gt;&lt;strong&gt;&lt;/strong&gt;&lt;/h1&gt;\n&lt;p style=&quot;text-align: justify;&quot;&gt;&lt;strong&gt;\u00bfQuieres cambiar el mundo? &lt;/strong&gt;&lt;/p&gt;\n&lt;p&gt;Eso es lo que hacemos en Cabify. Nuestro objetivo es hacer de las ciudades mejores lugares para vivir, mejorando la movilidad de las personas que viven en ellas, conectando a pasajeros y conductores con tan s\u00f3lo pulsar un bot\u00f3n. Es posible que alg\u00fan d\u00eda las ciudades sean lugares donde nadie necesite un coche privado, pero a\u00fan nos queda un largo camino por recorrer\u2026 \u00bfnos acompa\u00f1as?&lt;/p&gt;\n&lt;p&gt;Fundada en 2011, nos hemos convertido en el primer \u2018unicornio\u2019 espa\u00f1ol. Nuestra sede central est\u00e1 en Madrid pero actualmente nos encontramos en 38 ciudades de Espa\u00f1a y Latinoam\u00e9rica. Y cada mes que pasa m\u00e1s gente se une a nuestro equipo internacional lleno de personas apasionadas, brillantes y con talento con ganas de desafiar el \u201cstatus quo\u201d.&lt;/p&gt;\n&lt;p&gt;Pero no importa lo r\u00e1pido que crezcamos o lo grande que nos volvamos, queremos mantener nuestro esp\u00edritu \u2018start-up\u2019. Somos un equipo seguro de s\u00ed mismo, energ\u00e9tico, profesional y carism\u00e1tico, y estamos orgullosos de hacer las cosas bien. Nos gusta pensar en nosotros mismos como una empresa de tecnolog\u00eda \u00e9tica e innovadora que ha creado un negocio donde todos son tratados de manera justa y respetuosa, desde nuestros ingenieros hasta los conductores que utilizan nuestra plataforma. Adem\u00e1s, siempre cumplimos plenamente con las regulaciones gubernamentales y respetamos las leyes locales.&amp;nbsp;&lt;/p&gt;\n&lt;p&gt;Hemos recorrido un largo camino hasta ahora, pero en realidad nuestro viaje no ha hecho m\u00e1s que comenzar. Si vamos a convertir nuestra misi\u00f3n en una realidad, \u00a1necesitamos que personas con talento y ambici\u00f3n como t\u00fa se unan a nuestro equipo!!&lt;br&gt;&amp;nbsp;&lt;br&gt;&lt;strong&gt;Sobre el puesto&amp;nbsp;&lt;/strong&gt;&lt;/p&gt;\n&lt;p&gt;Como&lt;strong data-stringify-type=&quot;bold&quot;&gt; &lt;/strong&gt;agente de contac center te encargaras de brindar una atenci\u00f3n integral y oportuna a los usuarios a trav\u00e9s de los diferentes canales de servicio (chat, correo, tickets y voz), garantizando una experiencia positiva, el cumplimiento de los SLA establecidos y la gesti\u00f3n eficaz de las solicitudes internas y externas.&lt;/p&gt;\n&lt;p style=&quot;text-align: justify;&quot;&gt;&lt;strong&gt;Lo que estamos buscando:&lt;/strong&gt;&lt;/p&gt;\n&lt;ul&gt;\n&lt;li&gt;Formaci\u00f3n acad\u00e9mica: Bachiller, t\u00e9cnico, tecn\u00f3logo o estudiante en modalidad virtual.&lt;/li&gt;\n&lt;li&gt;Experiencia: M\u00ednimo 8 meses en servicio al cliente en contact center, con manejo de diferentes skills (llamadas, chat, correo y tickets).&lt;/li&gt;\n&lt;/ul&gt;\n&lt;p&gt;&lt;strong&gt;\u00bfQu\u00e9 ofrecemos?&lt;/strong&gt;&lt;/p&gt;\n&lt;ul&gt;\n&lt;li&gt;Salario: SMLV + prestaciones de ley, variable y beneficios adicionales.&lt;/li&gt;\n&lt;li&gt;Jornada laboral: Turnos rotativos de domingo a domingo, con un d\u00eda compensatorio entre semana o fin de semana seg\u00fan la programaci\u00f3n operativa.&lt;/li&gt;\n&lt;li&gt;Modalidad: Presencial.&lt;/li&gt;\n&lt;/ul&gt;\n&lt;p style=&quot;text-align: justify;&quot;&gt;Somos una empresa llena de gente feliz y motivada\u2026 \u00a1y no queremos que eso cambie! Aqu\u00ed te mostramos algunas razones por las que te encantar\u00e1 formar parte de la familia Cabify.&lt;/p&gt;\n&lt;ul&gt;\n&lt;li&gt;Eventos divertidos con todo el equipo.&lt;/li&gt;\n&lt;li&gt;Descuentos para empleados.&lt;/li&gt;\n&lt;li&gt;Programas de desarrollo personal.&lt;/li&gt;\n&lt;li&gt;Todo el equipamiento que necesites (t\u00fa solo tienes que poner tu talento).&lt;/li&gt;\n&lt;li&gt;Y lo \u00faltimo, pero no menos importante... \u00a1caf\u00e9 gratis!&amp;nbsp;&lt;/li&gt;\n&lt;/ul&gt;\n&lt;p&gt;Cabify se enorgullece de ser un lugar de trabajo con igualdad de oportunidades. Celebramos la diversidad y estamos comprometidos con crear un entorno inclusivo para todas las personas, independientemente de su origen, g\u00e9nero, religi\u00f3n, orientaci\u00f3n, edad o capacidad. \u00a1\u00danete a nosotros!&lt;/p&gt;",
+        "departments": [
+          {
+            "id": 4006972002,
+            "name": "Customer Experience & Operations",
+            "child_ids": [],
+            "parent_id": null
+          }
+        ],
+        "offices": [
+          {
+            "id": 4002521002,
+            "name": "Bogot\u00e1",
+            "location": "Bogota, Colombia",
+            "child_ids": [],
+            "parent_id": null
+          }
+        ],
+        "ai_disclaimer": null,
+        "include_ai_disclaimer": null,
+        "ai_opt_out_request_url": null
+      },
+      {
+        "absolute_url": "https://job-boards.greenhouse.io/cabify/jobs/8581941002",
+        "data_compliance": [
+          {
+            "type": "gdpr",
+            "requires_consent": false,
+            "requires_processing_consent": false,
+            "requires_retention_consent": false,
+            "retention_period": null,
+            "demographic_data_consent_applies": false
+          }
+        ],
+        "internal_job_id": 6420744002,
+        "location": {
+          "name": "Lima"
+        },
+        "metadata": [
+          {
+            "id": 31954602002,
+            "name": "Equipo",
+            "value": "Logistics - Express",
+            "value_type": "single_select"
+          },
+          {
+            "id": 4389999002,
+            "name": "Level",
+            "value": "L1",
+            "value_type": "single_select"
+          }
+        ],
+        "id": 8581941002,
+        "updated_at": "2026-08-20T06:41:09-04:00",
+        "requisition_id": "3205",
+        "title": "Agente de soporte operacional",
+        "company_name": "Cabify",
+        "first_published": "2026-06-08T10:28:37-04:00",
+        "language": "es",
+        "application_deadline": null,
+        "content": "&lt;h3 data-path-to-node=&quot;7&quot;&gt;&lt;strong data-path-to-node=&quot;7&quot; data-index-in-node=&quot;0&quot;&gt;Sobre Nosotros&lt;/strong&gt;&lt;/h3&gt;\n&lt;p data-path-to-node=&quot;8&quot;&gt;\u00bfQuieres cambiar el mundo? Eso es exactamente lo que hacemos en Cabify. Trabajamos para que las ciudades sean mejores lugares para vivir, impulsando una movilidad m\u00e1s sostenible y eficiente que conecte a pasajeras/os y conductoras/es con solo pulsar un bot\u00f3n. Puede que alg\u00fan d\u00eda las ciudades no necesiten coches privados, pero hasta entonces\u2026 queda mucho por hacer. \u00bfTe sumas al viaje?&lt;/p&gt;\n&lt;h3 data-path-to-node=&quot;9&quot;&gt;&lt;strong data-path-to-node=&quot;9&quot; data-index-in-node=&quot;0&quot;&gt;Sobre tu equipo&lt;/strong&gt;&lt;/h3&gt;\n&lt;p data-path-to-node=&quot;10&quot;&gt;Formar\u00e1s parte de &lt;strong data-path-to-node=&quot;10&quot; data-index-in-node=&quot;18&quot;&gt;Cabify Logistics&lt;/strong&gt;, el \u00e1rea encargada de administrar nuestro servicio de env\u00edo de paqueter\u00eda y mercanc\u00edas, con un fuerte enfoque en dar soluciones de \u00faltima milla a empresas l\u00edderes del mercado. Somos un equipo experimentado, profesional y repleto de energ\u00eda que trabaja de manera glocal para planificar, supervisar y optimizar las operaciones tanto planificadas como en tiempo real. Tu rol tendr\u00e1 un impacto directo en la eficiencia operativa de Per\u00fa y en el cumplimiento de las promesas de entrega que hacemos a cada cliente, equilibrando la tecnolog\u00eda con la empat\u00eda humana.&lt;/p&gt;\n&lt;h3 data-path-to-node=&quot;11&quot;&gt;&lt;strong data-path-to-node=&quot;11&quot; data-index-in-node=&quot;0&quot;&gt;\ud83c\udfaf Misi\u00f3n del Rol&lt;/strong&gt;&lt;/h3&gt;\n&lt;p data-path-to-node=&quot;12&quot;&gt;Quien ocupe la posici\u00f3n tendr\u00e1 como prop\u00f3sito dar soporte y asegurar la excelencia del servicio en tiempo real, gestionando de forma eficiente la flota de conductores, mitigando incidencias operativas del d\u00eda a d\u00eda y garantizando el cumplimiento de los acuerdos de nivel de servicio (SLAs) de cada cuenta comercial en el mercado peruano.&lt;/p&gt;\n&lt;h3 data-path-to-node=&quot;13&quot;&gt;&lt;strong data-path-to-node=&quot;13&quot; data-index-in-node=&quot;0&quot;&gt;\ud83d\udee0\ufe0f \u00bfC\u00f3mo nos ayudar\u00e1s a cumplir nuestra misi\u00f3n?&lt;/strong&gt;&lt;/h3&gt;\n&lt;ul data-path-to-node=&quot;14&quot;&gt;\n&lt;li&gt;\n&lt;p data-path-to-node=&quot;14,0,0&quot;&gt;Mantener el nivel de servicio dentro de SLA con cada cliente corporativo.&lt;/p&gt;\n&lt;/li&gt;\n&lt;li&gt;\n&lt;p data-path-to-node=&quot;14,1,0&quot;&gt;Gestionar eficientemente la flota de conductores por operaciones y atender las incidencias que se presenten durante la jornada de manera oportuna.&lt;/p&gt;\n&lt;/li&gt;\n&lt;li&gt;\n&lt;p data-path-to-node=&quot;14,2,0&quot;&gt;Identificar desv\u00edos en los procesos de entrega para poder tomar acciones de forma proactiva.&lt;/p&gt;\n&lt;/li&gt;\n&lt;li&gt;\n&lt;p data-path-to-node=&quot;14,3,0&quot;&gt;Coordinar la comunicaci\u00f3n fluida entre el despacho, la flota y el destinatario final del delivery.&lt;/p&gt;\n&lt;/li&gt;\n&lt;li&gt;\n&lt;p data-path-to-node=&quot;14,4,0&quot;&gt;Realizar el seguimiento del nivel de cumplimiento de protocolos dentro de la flota asignada.&lt;/p&gt;\n&lt;/li&gt;\n&lt;li&gt;\n&lt;p data-path-to-node=&quot;14,5,0&quot;&gt;Hacer un monitoreo exhaustivo de las demoras generadas para lograr cumplir con los tiempos de entrega.&lt;/p&gt;\n&lt;/li&gt;\n&lt;li&gt;\n&lt;p data-path-to-node=&quot;14,6,0&quot;&gt;Detectar oportunidades de mejora que generen un impacto positivo y medible en la calidad del servicio.&lt;/p&gt;\n&lt;/li&gt;\n&lt;li&gt;\n&lt;p data-path-to-node=&quot;14,7,0&quot;&gt;Registrar correctamente todas las interacciones y gestiones realizadas durante la jornada laboral seg\u00fan los procesos establecidos.&lt;/p&gt;\n&lt;/li&gt;\n&lt;/ul&gt;\n&lt;h3 data-path-to-node=&quot;15&quot;&gt;&lt;strong data-path-to-node=&quot;15&quot; data-index-in-node=&quot;0&quot;&gt;\ud83d\udd0d Lo que estamos buscando&lt;/strong&gt;&lt;/h3&gt;\n&lt;ul data-path-to-node=&quot;16&quot;&gt;\n&lt;li&gt;\n&lt;p data-path-to-node=&quot;16,0,0&quot;&gt;Afinidad e identificaci\u00f3n con nuestros principios y cultura corporativa.&lt;/p&gt;\n&lt;/li&gt;\n&lt;li&gt;\n&lt;p data-path-to-node=&quot;16,1,0&quot;&gt;Experiencia m\u00ednima de 6 meses en \u00e1reas de operaciones, idealmente en empresas de tecnolog\u00eda, aplicaciones de food delivery o log\u00edstica de \u00faltima milla.&lt;/p&gt;\n&lt;/li&gt;\n&lt;li&gt;\n&lt;p data-path-to-node=&quot;16,2,0&quot;&gt;Experiencia m\u00ednima de 1 a\u00f1o en entornos de atenci\u00f3n al cliente, call center o back office, gestionando reclamos y fidelizaci\u00f3n.&lt;/p&gt;\n&lt;/li&gt;\n&lt;li&gt;\n&lt;p data-path-to-node=&quot;16,3,0&quot;&gt;Perfil proactivo, resolutivo, aut\u00f3nomo y con una alta orientaci\u00f3n a resultados bajo entornos din\u00e1micos.&lt;/p&gt;\n&lt;/li&gt;\n&lt;li&gt;\n&lt;p data-path-to-node=&quot;16,4,0&quot;&gt;Manejo de herramientas anal\u00edticas como Microsoft Excel y Tableau (altamente deseable).&lt;/p&gt;\n&lt;/li&gt;\n&lt;/ul&gt;\n&lt;h3 data-path-to-node=&quot;17&quot;&gt;&lt;strong data-path-to-node=&quot;17&quot; data-index-in-node=&quot;0&quot;&gt;\ud83d\udc40 Por qu\u00e9 Cabify es tu mejor opci\u00f3n&lt;/strong&gt;&lt;/h3&gt;\n&lt;p data-path-to-node=&quot;17&quot;&gt;Somos un equipo repleto de gente feliz y motivada. Flexibilidad, buen ambiente, crecimiento e impacto \u00a1asegurados! Cabify viene cargado de beneficios para que los disfrutes en tu viaje junto a nosotros:&lt;/p&gt;\n&lt;p&gt;\ud83c\udf89Eventos divertidos para disfrutar junto a tu equipo.&lt;/p&gt;\n&lt;p&gt;\ud83c\udfe5Seguro de salud privado y oncol\u00f3gico cubierto al 100%.&lt;/p&gt;\n&lt;p&gt;\ud83d\udcb8Cr\u00e9dito mensual para testear nuestra App de Cabify.&lt;/p&gt;\n&lt;p&gt;\ud83d\udc69\ud83c\udffd\u200d\ud83c\udf93Programas de desarrollo personal y profesional.&amp;nbsp;&lt;/p&gt;\n&lt;p&gt;&lt;a href=&quot;https://emojipedia.org/es/ordenador-de-sobremesa/&quot;&gt;\ud83d\udda5\ufe0f&lt;/a&gt;Equipo de trabajo para que desarrolles todo tu talento.&lt;/p&gt;\n&lt;p&gt;Cabify se enorgullece de ser un lugar de trabajo con igualdad de oportunidades. Celebramos la diversidad y estamos comprometidos con crear un entorno inclusivo para todas las personas, independientemente de su origen, g\u00e9nero, religi\u00f3n, orientaci\u00f3n, edad o capacidad. \u00a1\u00danete a nosotros!&lt;/p&gt;\n&lt;h1&gt;&lt;strong&gt;&amp;nbsp;&lt;/strong&gt;&lt;/h1&gt;",
+        "departments": [
+          {
+            "id": 4076557002,
+            "name": "Cabify Logistics",
+            "child_ids": [],
+            "parent_id": null
+          }
+        ],
+        "offices": [
+          {
+            "id": 4002413002,
+            "name": "Lima",
+            "location": "Lima, Lima Province, Peru",
+            "child_ids": [],
+            "parent_id": null
+          }
+        ],
+        "ai_disclaimer": null,
+        "include_ai_disclaimer": null,
+        "ai_opt_out_request_url": null
+      },
+      {
+        "absolute_url": "https://job-boards.greenhouse.io/cabify/jobs/8549431002",
+        "data_compliance": [
+          {
+            "type": "gdpr",
+            "requires_consent": false,
+            "requires_processing_consent": false,
+            "requires_retention_consent": false,
+            "retention_period": null,
+            "demographic_data_consent_applies": false
+          }
+        ],
+        "internal_job_id": 6341881002,
+        "location": {
+          "name": "Madrid"
+        },
+        "metadata": [
+          {
+            "id": 31954602002,
+            "name": "Equipo",
+            "value": "Data",
+            "value_type": "single_select"
+          },
+          {
+            "id": 4389999002,
+            "name": "Level",
+            "value": "L3",
+            "value_type": "single_select"
+          }
+        ],
+        "id": 8549431002,
+        "updated_at": "2026-09-24T05:54:45-04:00",
+        "requisition_id": "2999",
+        "title": "Data Scientist, Applied Science",
+        "company_name": "Cabify",
+        "first_published": "2026-05-14T06:10:31-04:00",
+        "language": "en",
+        "application_deadline": null,
+        "content": "&lt;p&gt;Do you want to drive the next urban revolution? At Cabify, that\u2019s what we\u2019re doing. We aim to make cities better places to live by improving mobility for the people living in them, connecting&amp;nbsp; riders to drivers at the touch of a button. Maybe one day cities will be places where nobody needs a private car. But we\u2019ve still got a long way to go\u2026 want to be part of this journey?&lt;/p&gt;\n&lt;h2&gt;About the position&lt;/h2&gt;\n&lt;p&gt;You will join Cabify\u2019s Applied Science team, a group of highly motivated data scientists with access to all data within the organization. The team is involved in all main areas of the company, including vehicle and route management, understanding user experience, pricing, fraud detection, and marketing optimization (see for yourself:&lt;a href=&quot;https://www.youtube.com/watch?v=pPdRNOTV_QA&quot;&gt; exhibit A&lt;/a&gt;,&lt;a href=&quot;https://www.youtube.com/watch?v=VYubMmJImZ8&quot;&gt; exhibit B&lt;/a&gt;,&lt;a href=&quot;https://www.youtube.com/watch?v=Tc6ZS3NfnW0&quot;&gt; exhibit C&lt;/a&gt;). You will work with state-of-the-art tools and infrastructure to help improve everyday operations in more than 40 cities worldwide. Cabify&#39;s Applied Science team provides a unique opportunity to research, test and implement great ideas that will shape the future of our cities.&lt;/p&gt;\n&lt;p&gt;As a Data Scientist in our team, you will:&lt;/p&gt;\n&lt;ul&gt;\n&lt;li&gt;Develop high-impact data science projects, working closely with other data, engineering, product and business teams.&lt;/li&gt;\n&lt;li&gt;Design, train, and validate statistical and machine learning models and help deploying them into production.&lt;/li&gt;\n&lt;li&gt;Participate in the results analysis of real-life experiments, following academy-standard scientific methods and procedures, to demonstrate the impact of the new product features we develop.&lt;/li&gt;\n&lt;li&gt;Help to convert the team\u2019s technical knowledge into real and tangible business insights that bring value to the company.&lt;/li&gt;\n&lt;li&gt;Join product development conversations, discussing new features and bringing the data science perspective to everything we build.&lt;/li&gt;\n&lt;/ul&gt;\n&lt;h2&gt;What we\u2019re looking for&lt;/h2&gt;\n&lt;ul&gt;\n&lt;li&gt;At least 3 years of professional experience working as a data scientist or equivalent research role.&lt;/li&gt;\n&lt;li&gt;Strong educational background, e.g Masters in Computer Science, Physics, Engineering, Mathematics, Economics, etc.&lt;/li&gt;\n&lt;li&gt;Solid foundations in Probability &amp;amp; Statistics.&lt;/li&gt;\n&lt;li&gt;Experience designing, training and validating statistical and machine learning models.&lt;/li&gt;\n&lt;li&gt;Experience working with Python for data analysis and data visualization libraries.&lt;/li&gt;\n&lt;li&gt;Experience with data extraction and processing. Capable of writing complex SQL code.&lt;/li&gt;\n&lt;li&gt;Ability to work autonomously in an unstructured environment.&lt;/li&gt;\n&lt;/ul&gt;\n&lt;h3&gt;Bonus Points&lt;/h3&gt;\n&lt;ul&gt;\n&lt;li&gt;Experience bringing machine learning to production, with all its subtleties: deploying, training, testing, model degradation, model serving, etc.&lt;/li&gt;\n&lt;li&gt;Experience with state-of-the-art methods in topics like deep learning models, time series analysis, bayesian statistics, causal inference, etc.&lt;/li&gt;\n&lt;li&gt;Experience with geo data modeling, analysis and visualization.&lt;/li&gt;\n&lt;/ul&gt;\n&lt;h2&gt;What\u2019s it like to work at Cabify?&lt;/h2&gt;\n&lt;p&gt;We\u2019re a company full of happy, motivated people and we never want that to change. Here are some more reasons why it rocks to be part of our high-performance team:&lt;/p&gt;\n&lt;p&gt;\ud83d\udcb6 Excellent Salary conditions: 38K - 50K\u20ac&lt;/p&gt;\n&lt;p&gt;\ud83c\udf0d Our office is located in Madrid.&amp;nbsp;&lt;/p&gt;\n&lt;p&gt;\u231a Flexible work environment &amp;amp; hours.&lt;/p&gt;\n&lt;p&gt;\ud83d\ude4c Regular team events.&lt;/p&gt;\n&lt;p&gt;\ud83d\ude97 Cabify staff free rides.&lt;/p&gt;\n&lt;p&gt;\ud83d\ude80 Personal development programs based on our career paths.&lt;/p&gt;\n&lt;p&gt;\ud83d\udcd0 Coursera: your own license in Coursera to take as many courses as you wish and continue developing your skills.&lt;/p&gt;\n&lt;p&gt;\ud83e\uddd8\u200d\u2640\ufe0f iFeel: Free access to the iFeel platform, so you can take care of your emotional well-being through therapy sessions.&lt;/p&gt;\n&lt;p&gt;\ud83d\udcb3 Flexible compensation plan: Restaurant tickets, transport tickets, healthcare and childcare&lt;/p&gt;\n&lt;p&gt;\ud83d\udc31 A pet room ,so you don\u2019t have to leave your furry friend at home&lt;/p&gt;\n&lt;p&gt;\u2615\ufe0f And last but not least...free coffee and fruit!&lt;/p&gt;\n&lt;p&gt;&amp;nbsp;&lt;/p&gt;\n&lt;p&gt;Cabify is proud of being an equal opportunity workplace. We celebrate diversity and we are committed to creating an inclusive environment for all employees regardless of background, gender, religion, orientation, age or ability.&lt;/p&gt;\n&lt;p&gt;Join us!&lt;/p&gt;\n&lt;p&gt;&amp;nbsp;&lt;/p&gt;",
+        "departments": [
+          {
+            "id": 4081475002,
+            "name": "Technology",
+            "child_ids": [],
+            "parent_id": null
+          }
+        ],
+        "offices": [
+          {
+            "id": 4002329002,
+            "name": "Madrid",
+            "location": "Madrid, Madrid, Spain",
+            "child_ids": [],
+            "parent_id": null
+          }
+        ],
+        "ai_disclaimer": null,
+        "include_ai_disclaimer": null,
+        "ai_opt_out_request_url": null
+      }
+    ],
+    "meta": {
+      "total": 68
+    }
+  }
+}

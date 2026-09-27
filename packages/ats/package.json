@@ -1,0 +1,20 @@
+{
+  "name": "@quarry/ats",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Adapters for the public job board APIs of Greenhouse, Lever, and Ashby.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "record-fixtures": "node scripts/record-fixtures.ts"
+  },
+  "dependencies": {
+    "@quarry/domain": "workspace:*",
+    "entities": "8.1.0",
+    "zod": "4.6.5"
+  }
+}
