@@ -38,7 +38,6 @@ const BLOCK = new Set([
 ]);
 const LIST = new Set(["ol", "ul"]);
 const CELL = new Set(["td", "th"]);
-const WRAPPER = new Set(["div", "p"]);
 
 /** Elements whose content is never posting text. */
 const SKIPPED = new Map(
@@ -104,8 +103,8 @@ export function htmlToText(html: string): string {
     } else if (name === "br") {
       pendingBreak = pendingBreak === 0 ? 1 : 2;
     } else if (BLOCK.has(name)) {
-      // A paragraph that wraps a list item's text is part of the item, not a new block.
-      if (bulletPending && kind === "open" && WRAPPER.has(name)) continue;
+      // Inside a list item every block boundary is a line break, so a paragraph wrapping the
+      // item's text stays on the item's line.
       requestBreak(inListItem() ? 1 : 2);
     } else if (CELL.has(name) && kind === "open") {
       output += " ";
