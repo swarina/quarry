@@ -121,6 +121,18 @@ export interface RunSummary {
   readonly knownPostings: number;
 }
 
+/** A posting first seen on a board we had listed before, for measuring freshness. */
+export interface FreshnessSample {
+  /** The run whose crawl first saw the posting. */
+  readonly runId: string;
+  readonly source: AtsSource;
+  /**
+   * First sighting minus the publish time the ATS states, in milliseconds; null when it states
+   * none. Negative when the ATS clock runs ahead of ours.
+   */
+  readonly latencyMs: number | null;
+}
+
 export interface PipelineStore {
   readonly db: DatabaseSync;
   close(): void;
@@ -149,6 +161,11 @@ export interface PipelineStore {
   recordNotModified(board: BoardRecord, attempt: CrawlAttempt): RecordedCrawl;
   recordFailure(board: BoardRecord, attempt: CrawlAttempt, failure: CrawlFailure): RecordedCrawl;
   runSummary(runId: string): RunSummary;
+  /**
+   * Postings first seen at or after `since`, leaving out those on a board's first listing:
+   * everything there is new to us however long it has been published.
+   */
+  freshnessSamples(since: number): FreshnessSample[];
 }
 
 type Row = Record<string, SQLInputValue>;
@@ -282,6 +299,19 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
        FROM boards WHERE status = 'active'`,
     ),
     postingCount: db.prepare("SELECT count(*) AS count FROM postings"),
+    freshnessSamples: db.prepare(
+      `SELECT first_crawl.run_id, b.source, p.first_seen_at - p.published_at AS latency_ms
+       FROM postings p
+       JOIN boards b ON b.id = p.board_id
+       JOIN board_crawls first_crawl ON first_crawl.id = p.first_seen_crawl_id
+       WHERE p.first_seen_at >= ?
+         AND EXISTS (
+           SELECT 1 FROM board_crawls earlier
+           WHERE earlier.board_id = p.board_id AND earlier.outcome = 'listed'
+             AND earlier.id < p.first_seen_crawl_id
+         )
+       ORDER BY p.first_seen_at, p.id`,
+    ),
   };
 
   function insertCrawl(
@@ -609,6 +639,14 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
         listedPostings: totals.listed,
         knownPostings: known.count,
       };
+    },
+
+    freshnessSamples(since) {
+      return (statements.freshnessSamples.all(since) as Row[]).map((row) => ({
+        runId: row["run_id"] as string,
+        source: row["source"] as AtsSource,
+        latencyMs: (row["latency_ms"] as number | null) ?? null,
+      }));
     },
   };
 }

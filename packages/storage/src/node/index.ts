@@ -10,6 +10,7 @@ export type {
   CrawlAttempt,
   CrawlFailure,
   CrawlOutcome,
+  FreshnessSample,
   ListingRecord,
   PipelineStore,
   PreparedItem,

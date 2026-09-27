@@ -377,6 +377,62 @@ describe("runSummary", () => {
   });
 });
 
+describe("freshnessSamples", () => {
+  it("times new postings from their publish time, skipping a board's first listing", async () => {
+    /** Lists `jobs`, each an external id with the publish time its ATS states. */
+    const listing = async (
+      at: number,
+      runId: string,
+      board: BoardRecord,
+      jobs: [string, number | null][],
+    ) => {
+      const items = await Promise.all(
+        jobs.map(async ([externalId, publishedAt]) => {
+          const value = posting(externalId, { publishedAt });
+          return {
+            kind: "posting" as const,
+            postingId: await postingId(board.id, externalId),
+            externalId,
+            posting: value,
+            contentHash: await postingContentHash(value),
+            rawJson: "{}",
+          };
+        }),
+      );
+      store.recordListing(board, attempt(at, runId), { items, etag: null, normalizerVersion: 1 });
+    };
+    store.syncBoards(
+      [ACME, { source: "ashby", slug: "beta", company: "Beta", country: null }],
+      [],
+      T0,
+    );
+    const beta = store.board(boardId("ashby", "beta"));
+    if (beta === undefined) throw new Error("beta missing");
+    const old = T0 - 100 * HOUR;
+    const later = T0 + 24 * HOUR;
+
+    await listing(T0, "first", acme(), [["old", old]]);
+    await listing(later, "second", acme(), [
+      ["old", old],
+      ["new", later - 4 * HOUR],
+      ["undated", null],
+    ]);
+    // Beta's first listing: everything on it is new to us, so none of it is timed.
+    await listing(later, "second-beta", beta, [["new", later - 4 * HOUR]]);
+
+    const samples = store.freshnessSamples(T0);
+    expect(samples).toHaveLength(2);
+    // A crawl's postings are first seen when it finishes, a second after it starts here.
+    expect(samples).toContainEqual({
+      runId: "second",
+      source: "lever",
+      latencyMs: 4 * HOUR + 1_000,
+    });
+    expect(samples).toContainEqual({ runId: "second", source: "lever", latencyMs: null });
+    expect(store.freshnessSamples(later + 2_000)).toEqual([]);
+  });
+});
+
 describe("meta and runs", () => {
   it("stores metadata and run status", () => {
     expect(store.getMeta("snapshot_seq")).toBeUndefined();
