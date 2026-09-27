@@ -37,7 +37,7 @@ const job = z.looseObject({
   isListed: z.boolean().nullish(),
   location: z.string().nullish(),
   address,
-  secondaryLocations: z.array(z.looseObject({ location: z.string().nullish(), address })).nullish(),
+  secondaryLocations: z.array(locationEntry).nullish(),
   workplaceType: z.string().nullish(),
   isRemote: z.boolean().nullish(),
   employmentType: z.string().nullish(),
