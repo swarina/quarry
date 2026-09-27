@@ -57,7 +57,9 @@ export async function crawlBoards(
   const queues = new Map<string, BoardRecord[]>();
   for (const board of boards) {
     const host = atsHost(board.source);
-    queues.set(host, [...(queues.get(host) ?? []), board]);
+    const queue = queues.get(host);
+    if (queue === undefined) queues.set(host, [board]);
+    else queue.push(board);
   }
 
   const outcomes: Record<CrawlOutcome, number> = {
