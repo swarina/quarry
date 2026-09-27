@@ -88,6 +88,10 @@ Setup, once:
 2. Run the Pipeline workflow manually with **bootstrap** checked. Scheduled runs take over
    from there.
 
+A manual run with **dry-run** checked crawls into a throwaway store and saves nothing, so it
+needs no key. It is the way to check the crawl from GitHub's runners, for example after changing
+seeds or adapters; the job summary and a `crawl-stats` artifact show the results.
+
 To inspect production data locally, restore the newest snapshot (needs the key and a token
 that can read the repository):
 
