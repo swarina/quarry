@@ -131,6 +131,15 @@ describe("createPoliteFetcher", () => {
     expect(firstJobs).toBe(firstOther);
   });
 
+  it("skips a host whose robots.txt asks for an unworkable crawl delay", async () => {
+    const { fetcher, log } = harness(
+      { [ROBOTS]: text("User-agent: *\nCrawl-delay: 3600\n"), [JOBS]: json([]) },
+      { maxCrawlDelayMs: 60_000 },
+    );
+    expect(await fetcher.get(JOBS)).toEqual({ kind: "skipped", reason: "crawl-delay" });
+    expect(log.map((entry) => entry.url)).toEqual([ROBOTS]);
+  });
+
   it("sends If-None-Match and reports 304 as not modified", async () => {
     const { fetcher, log } = harness({ [ROBOTS]: text(""), [JOBS]: status(304) });
     expect(await fetcher.get(JOBS, { etag: 'W/"abc"' })).toEqual({

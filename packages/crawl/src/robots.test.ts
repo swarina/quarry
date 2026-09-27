@@ -1,6 +1,6 @@
 import { fc, test } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
-import { ALLOW_ALL, DISALLOW_ALL, parseRobots, ROBOTS_MAX_BYTES } from "./robots.ts";
+import { ALLOW_ALL, parseRobots, ROBOTS_MAX_BYTES } from "./robots.ts";
 
 const allowed = (robots: string, path: string, token = "QuarryBot") =>
   parseRobots(robots, token).isAllowed(path);
@@ -86,10 +86,17 @@ describe("parseRobots", () => {
     expect(allowed(robots, "/late")).toBe(true);
   });
 
-  it("provides allow-all and disallow-all policies", () => {
+  it("provides an allow-all policy", () => {
     expect(ALLOW_ALL.isAllowed("/x")).toBe(true);
-    expect(DISALLOW_ALL.isAllowed("/x")).toBe(false);
-    expect(DISALLOW_ALL.isAllowed("/robots.txt")).toBe(true);
+    expect(ALLOW_ALL.crawlDelaySeconds).toBeUndefined();
+  });
+
+  it("decodes escaped unreserved characters and encodes unsafe ones before comparing", () => {
+    expect(allowed("User-agent: *\nDisallow: /%7Euser\n", "/~user/profile")).toBe(false);
+    expect(allowed("User-agent: *\nDisallow: /~admin\n", "/%7eadmin")).toBe(false);
+    expect(allowed("User-agent: *\nDisallow: /a b\n", "/a%20b")).toBe(false);
+    expect(allowed("User-agent: *\nDisallow: /%2A\n", "/anything")).toBe(true);
+    expect(allowed("User-agent: *\nDisallow: /%2A\n", "/%2a")).toBe(false);
   });
 
   test.prop([fc.stringMatching(/^\/[a-z*$/]{0,12}$/), fc.stringMatching(/^\/[a-z/]{0,40}$/)])(

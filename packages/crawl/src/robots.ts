@@ -28,10 +28,6 @@ interface Group {
 }
 
 export const ALLOW_ALL: RobotsPolicy = { isAllowed: () => true, crawlDelaySeconds: undefined };
-export const DISALLOW_ALL: RobotsPolicy = {
-  isAllowed: (path) => path === "/robots.txt",
-  crawlDelaySeconds: undefined,
-};
 
 export function parseRobots(text: string, productToken: string): RobotsPolicy {
   const groups = parseGroups(text.slice(0, ROBOTS_MAX_BYTES));
@@ -105,13 +101,25 @@ function agentToken(value: string): string {
   return (/^[A-Za-z_-]+/.exec(value)?.[0] ?? value).toLowerCase();
 }
 
+const UNRESERVED = /^[A-Za-z0-9._~-]$/;
+
 /**
- * Percent-encodes non-ASCII characters and uppercases existing escapes, so a pattern and a URL
- * path compare octet for octet as the RFC requires.
+ * Brings a rule or a URL path to one encoding, so they compare octet for octet (RFC 9309,
+ * section 2.2.2): escaped unreserved characters are decoded (`%7E` is `~`), other escapes are
+ * uppercased, and characters that never appear literally in a URL path (spaces, quotes, angle
+ * brackets, backticks, braces, control characters, and anything outside ASCII) are
+ * percent-encoded. `*` and `$` keep their meaning; escaped, they are literal.
  */
 function normalizeEncoding(value: string): string {
   return value
-    .replace(/%[0-9a-f]{2}/gi, (sequence) => sequence.toUpperCase())
+    .replace(/%([0-9a-f]{2})/gi, (sequence, hex: string) => {
+      const char = String.fromCharCode(Number.parseInt(hex, 16));
+      return UNRESERVED.test(char) ? char : sequence.toUpperCase();
+    })
+    .replace(
+      /[\p{Cc} "<>`{}]/gu,
+      (char) => `%${char.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`,
+    )
     .replace(/[^\p{ASCII}]+/gu, (text) => encodeURIComponent(text));
 }
 

@@ -31,7 +31,7 @@ export type FetchOutcome =
     }
   | {
       readonly kind: "skipped";
-      readonly reason: "disallowed" | "robots-unreachable";
+      readonly reason: "disallowed" | "robots-unreachable" | "crawl-delay";
     };
 
 export interface HostStats {
@@ -68,6 +68,11 @@ export interface PoliteFetcherOptions {
   readonly maxRetryAfterMs?: number;
   /** Consecutive host-level failures after which requests to the host pause. */
   readonly breakerThreshold?: number;
+  /**
+   * A host whose robots.txt asks for a longer crawl delay is skipped for the run: honoring an
+   * hour-long delay inside one request would stall the run past its time limit.
+   */
+  readonly maxCrawlDelayMs?: number;
   /**
    * How long a host pauses once the breaker opens. The next request then goes out as a probe:
    * success closes the breaker, and failure pauses the host again.
@@ -156,6 +161,7 @@ export function createPoliteFetcher(options: PoliteFetcherOptions): PoliteFetche
   const maxRetryAfterMs = options.maxRetryAfterMs ?? 5 * 60_000;
   const breakerThreshold = options.breakerThreshold ?? 5;
   const breakerCooldownMs = options.breakerCooldownMs ?? 5 * 60_000;
+  const maxCrawlDelayMs = options.maxCrawlDelayMs ?? 60_000;
   const hosts = new Map<string, HostState>();
 
   function hostState(host: string): HostState {
@@ -383,6 +389,9 @@ export function createPoliteFetcher(options: PoliteFetcherOptions): PoliteFetche
       const state = hostState(target.host);
       const robots = await robotsFor(state, target.origin);
       if (robots === "unreachable") return { kind: "skipped", reason: "robots-unreachable" };
+      if ((robots.crawlDelaySeconds ?? 0) * 1000 > maxCrawlDelayMs) {
+        return { kind: "skipped", reason: "crawl-delay" };
+      }
       if (!robots.isAllowed(`${target.pathname}${target.search}`)) {
         return { kind: "skipped", reason: "disallowed" };
       }
