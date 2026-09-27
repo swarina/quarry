@@ -1,0 +1,57 @@
+name: Probe
+
+on:
+  schedule:
+    # Once a day, about six hours after the pipeline starts.
+    - cron: "47 9 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  freshness:
+    name: Store freshness
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      MAX_AGE_HOURS: 30
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      # Catches what the pipeline can't report itself: a schedule that stopped firing, or runs
+      # that finish without committing a snapshot.
+      - name: Check the age of the newest snapshot
+        run: |
+          newest=$(gh release view pipeline-store --json assets \
+            --jq '[.assets[] | select(.name | test("^manifest-[0-9]{8}\\.json$"))] | max_by(.name) | .createdAt // empty' \
+            2> /dev/null || true)
+          label=pipeline-stale
+          gh label create "$label" --color D93F0B \
+            --description "No store snapshot was committed recently" > /dev/null 2>&1 || true
+          issue=$(gh issue list --label "$label" --state open --json number --jq '.[0].number // empty')
+          if [ -z "$newest" ]; then
+            message="No store snapshot exists yet."
+          else
+            age_hours=$(( ( $(date -u +%s) - $(date -u -d "$newest" +%s) ) / 3600 ))
+            echo "Newest snapshot: $newest ($age_hours hours old)"
+            if [ "$age_hours" -le "$MAX_AGE_HOURS" ]; then
+              if [ -n "$issue" ]; then
+                gh issue comment "$issue" --body "A fresh snapshot exists again ($newest): $RUN_URL"
+                gh issue close "$issue"
+              fi
+              exit 0
+            fi
+            message="The newest store snapshot is $age_hours hours old (limit $MAX_AGE_HOURS)."
+          fi
+          echo "::error::$message"
+          if [ -n "$issue" ]; then
+            gh issue comment "$issue" --body "$message $RUN_URL"
+          else
+            gh issue create --label "$label" --title "Pipeline store is stale" --body \
+              "$message Check the Pipeline workflow's recent runs, and that its schedule is enabled. Found by $RUN_URL"
+          fi
+          exit 1

@@ -19,9 +19,9 @@ with calibrated probabilities instead of generated text.
   crawled politely, with the employer's own page as the place to apply.
 
 > **Status:** early development. In place: the Jev client (model pinning, response
-> validation, spend limits, cost accounting) and a pipeline that crawls job boards politely
-> into a local store, recording what every crawl saw. Scheduled runs, enrichment, and the web
-> application are next.
+> validation, spend limits, cost accounting) and a daily pipeline that crawls job boards
+> politely, records what every crawl saw, and keeps encrypted snapshots of its store.
+> Enrichment and the web application are next.
 
 ## Design
 
@@ -66,6 +66,36 @@ pnpm pipeline crawl --store data/pipeline.sqlite --max-boards 5
 
 Run it again and unchanged boards answer `304 Not Modified`, so a repeat crawl costs almost
 nothing.
+
+## Operations
+
+The [Pipeline workflow](.github/workflows/pipeline.yml) runs once a day at 03:17 UTC:
+
+1. **Crawl** (read-only token): restores the pipeline store from the newest snapshot in the
+   `pipeline-store` release, crawls every active board, and packs an encrypted snapshot.
+2. **Commit** (write token, no third-party code): uploads the snapshot, then its manifest.
+   Manifest names are unique, so two runs can never commit the same snapshot number.
+   Snapshots outside retention (14 daily, 12 weekly) are deleted.
+3. **Report:** a failed scheduled run opens an issue labeled `pipeline-failure`, and the next
+   successful run closes it. The [Probe workflow](.github/workflows/probe.yml) opens a
+   `pipeline-stale` issue if no snapshot is committed for 30 hours.
+
+Setup, once:
+
+1. Create a 256-bit key, keep a copy in a password manager (snapshots can't be restored
+   without it), and store it as the repository secret `QUARRY_STORE_KEY`:
+   `openssl rand -base64 32`, then `gh secret set QUARRY_STORE_KEY`.
+2. Run the Pipeline workflow manually with **bootstrap** checked. Scheduled runs take over
+   from there.
+
+To inspect production data locally, restore the newest snapshot (needs the key and a token
+that can read the repository):
+
+```sh
+GH_TOKEN=$(gh auth token) GITHUB_REPOSITORY=swarina/quarry QUARRY_STORE_KEY=... \
+  pnpm pipeline store pull --store data/restored.sqlite
+pnpm pipeline store verify --store data/restored.sqlite
+```
 
 ## Sources
 
