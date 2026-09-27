@@ -33,19 +33,21 @@ const job = z.looseObject({
     .nullish(),
 });
 
-const WORKPLACES: Readonly<Record<string, Workplace>> = {
-  onsite: "onsite",
-  hybrid: "hybrid",
-  remote: "remote",
-};
+// Maps, not object literals: a lookup must never reach Object.prototype, whatever string the
+// API sends (for example "constructor").
+const WORKPLACES: ReadonlyMap<string, Workplace> = new Map([
+  ["onsite", "onsite"],
+  ["hybrid", "hybrid"],
+  ["remote", "remote"],
+]);
 
-const PAY_INTERVALS: Readonly<Record<string, PayInterval>> = {
-  "1 YEAR": "year",
-  "1 MONTH": "month",
-  "1 WEEK": "week",
-  "1 DAY": "day",
-  "1 HOUR": "hour",
-};
+const PAY_INTERVALS: ReadonlyMap<string, PayInterval> = new Map([
+  ["1 YEAR", "year"],
+  ["1 MONTH", "month"],
+  ["1 WEEK", "week"],
+  ["1 DAY", "day"],
+  ["1 HOUR", "hour"],
+]);
 
 /**
  * Ashby public job posting API: `GET /posting-api/job-board/{board}?includeCompensation=true`
@@ -93,7 +95,7 @@ export const ashby: AtsAdapter = {
           ...(data.secondaryLocations ?? []).map((entry) => entry.location),
         ]),
         country: null,
-        workplace: WORKPLACES[declared] ?? (data.isRemote === true ? "remote" : null),
+        workplace: WORKPLACES.get(declared) ?? (data.isRemote === true ? "remote" : null),
         employmentType: cleanText(data.employmentType),
         department: cleanText(data.department),
         team: cleanText(data.team),
@@ -103,7 +105,7 @@ export const ashby: AtsAdapter = {
           pay?.minValue,
           pay?.maxValue,
           pay?.currencyCode,
-          PAY_INTERVALS[pay?.interval ?? ""],
+          PAY_INTERVALS.get(pay?.interval ?? ""),
         ),
         descriptionHtml: data.descriptionHtml,
       },

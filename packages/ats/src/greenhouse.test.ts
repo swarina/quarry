@@ -75,4 +75,14 @@ describe("greenhouse", () => {
       problem: "title: empty",
     });
   });
+
+  it("uses content that is already unescaped HTML as is", () => {
+    const result = greenhouse.mapJob(
+      { ...job, content: "<p>Wrap text in &lt;b&gt; tags</p>" },
+      "1",
+    );
+    expect(result.kind === "posting" && result.posting.descriptionHtml).toBe(
+      "<p>Wrap text in &lt;b&gt; tags</p>",
+    );
+  });
 });

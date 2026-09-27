@@ -11,13 +11,21 @@ const jobId = z.looseObject({
 const job = z.looseObject({
   title: z.string(),
   absolute_url: httpUrl,
-  // Greenhouse HTML-escapes the markup, so the HTML has to be decoded once before use.
   content: z.string(),
   location: z.looseObject({ name: z.string().nullish() }).nullish(),
   language: z.string().nullish(),
   first_published: z.string().nullish(),
   departments: z.array(z.looseObject({ name: z.string() })).nullish(),
 });
+
+/**
+ * Greenhouse sends its content HTML-escaped (`&lt;p&gt;`), so it is decoded once. Content that
+ * already contains tags was not escaped and is used as is: decoding it again would turn text
+ * such as `&lt;b&gt;` into markup.
+ */
+function unescapeContent(content: string): string {
+  return /<[a-z!/]/i.test(content) ? content : decodeHTML(content);
+}
 
 /**
  * Greenhouse Job Board API: `GET /v1/boards/{board}/jobs?content=true` on
@@ -63,7 +71,7 @@ export const greenhouse: AtsAdapter = {
         language: cleanText(data.language),
         publishedAt: parseTimestamp(data.first_published),
         salary: null,
-        descriptionHtml: decodeHTML(data.content),
+        descriptionHtml: unescapeContent(data.content),
       },
     };
   },

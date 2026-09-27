@@ -35,20 +35,22 @@ const job = z.looseObject({
     .nullish(),
 });
 
-const WORKPLACES: Readonly<Record<string, Workplace>> = {
-  onsite: "onsite",
-  "on-site": "onsite",
-  hybrid: "hybrid",
-  remote: "remote",
-};
+// Maps, not object literals: a lookup must never reach Object.prototype, whatever string the
+// API sends (for example "constructor").
+const WORKPLACES: ReadonlyMap<string, Workplace> = new Map([
+  ["onsite", "onsite"],
+  ["on-site", "onsite"],
+  ["hybrid", "hybrid"],
+  ["remote", "remote"],
+]);
 
-const PAY_INTERVALS: Readonly<Record<string, PayInterval>> = {
-  "per-year-salary": "year",
-  "per-month-salary": "month",
-  "per-week-salary": "week",
-  "per-day-wage": "day",
-  "per-hour-wage": "hour",
-};
+const PAY_INTERVALS: ReadonlyMap<string, PayInterval> = new Map([
+  ["per-year-salary", "year"],
+  ["per-month-salary", "month"],
+  ["per-week-salary", "week"],
+  ["per-day-wage", "day"],
+  ["per-hour-wage", "hour"],
+]);
 
 /**
  * Lever Postings API: `GET /v0/postings/{site}?mode=json` lists every published posting with
@@ -88,19 +90,22 @@ export function createLeverAdapter(host: "api.lever.co" | "api.eu.lever.co"): At
           title,
           url: data.hostedUrl,
           applyUrl: data.applyUrl ?? null,
-          locations: cleanList(categories?.allLocations ?? [categories?.location]),
+          locations: cleanList(
+            categories?.allLocations?.length ? categories.allLocations : [categories?.location],
+          ),
           country: countryCode(data.country),
-          workplace: WORKPLACES[data.workplaceType?.trim().toLowerCase() ?? ""] ?? null,
+          workplace: WORKPLACES.get(data.workplaceType?.trim().toLowerCase() ?? "") ?? null,
           employmentType: cleanText(categories?.commitment),
           department: cleanText(categories?.department),
           team: cleanText(categories?.team),
           language: null,
+          // Lever exposes only when the posting was created, which is the closest it has.
           publishedAt: typeof data.createdAt === "number" ? data.createdAt : null,
           salary: salaryRange(
             salary?.min,
             salary?.max,
             salary?.currency,
-            PAY_INTERVALS[salary?.interval ?? ""],
+            PAY_INTERVALS.get(salary?.interval ?? ""),
           ),
           descriptionHtml: [
             data.description ?? "",

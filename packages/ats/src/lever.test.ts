@@ -101,4 +101,27 @@ describe("lever", () => {
       problem: "text: empty",
     });
   });
+
+  it("never resolves API values to properties inherited from Object.prototype", () => {
+    for (const odd of ["constructor", "__proto__", "toString", "hasOwnProperty"]) {
+      const result = lever.mapJob(
+        {
+          ...job,
+          workplaceType: odd,
+          salaryRange: { min: 1, max: 2, currency: "USD", interval: odd },
+        },
+        job.id,
+      );
+      expect(result.kind === "posting" && result.posting.workplace).toBeNull();
+      expect(result.kind === "posting" && result.posting.salary).toBeNull();
+    }
+  });
+
+  it("uses the primary location when allLocations is empty", () => {
+    const result = lever.mapJob(
+      { ...job, categories: { location: "Paris", allLocations: [] } },
+      job.id,
+    );
+    expect(result.kind === "posting" && result.posting.locations).toEqual(["Paris"]);
+  });
 });

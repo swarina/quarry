@@ -99,4 +99,27 @@ describe("ashby", () => {
       problem: "title: empty",
     });
   });
+
+  it("never resolves API values to properties inherited from Object.prototype", () => {
+    const result = ashby.mapJob(
+      {
+        ...job,
+        workplaceType: "Constructor",
+        isRemote: null,
+        compensation: {
+          summaryComponents: [
+            {
+              compensationType: "Salary",
+              interval: "constructor",
+              currencyCode: "USD",
+              minValue: 1,
+            },
+          ],
+        },
+      },
+      job.id,
+    );
+    expect(result.kind === "posting" && result.posting.workplace).toBeNull();
+    expect(result.kind === "posting" && result.posting.salary).toBeNull();
+  });
 });
