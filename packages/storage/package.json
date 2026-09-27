@@ -1,0 +1,15 @@
+{
+  "name": "@quarry/storage",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The pipeline's SQLite store: schema, migrations, and the queries that record crawls.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./node": "./src/node/index.ts"
+  },
+  "dependencies": {
+    "@quarry/domain": "workspace:*"
+  }
+}

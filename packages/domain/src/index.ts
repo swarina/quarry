@@ -1,6 +1,13 @@
 export type { AtsSource } from "./ats-source.ts";
 export { ATS_SOURCES, isAtsSource } from "./ats-source.ts";
 export { base32 } from "./base32.ts";
+export type { BoardStatus } from "./board.ts";
+export {
+  BOARD_GONE_AFTER_NOT_FOUND,
+  BOARD_GONE_MIN_SPAN_MS,
+  BOARD_STATUSES,
+  isBoardGone,
+} from "./board.ts";
 export type { Brand } from "./brand.ts";
 export { CanonicalJsonError, canonicalJson } from "./canonical-json.ts";
 export { contentHash, sha256, sha256Hex } from "./hash.ts";
