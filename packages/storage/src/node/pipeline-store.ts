@@ -133,6 +133,17 @@ export interface FreshnessSample {
   readonly latencyMs: number | null;
 }
 
+/** A posting its board's latest listing includes, as the search index takes it. */
+export interface CurrentPosting {
+  readonly id: PostingId;
+  readonly company: string;
+  /** The company's home country, from the seed list. */
+  readonly companyCountry: string | null;
+  readonly firstSeenAt: number;
+  /** The posting as last read, without its description. */
+  readonly posting: Omit<NormalizedPosting, "descriptionHtml">;
+}
+
 export interface PipelineStore {
   readonly db: DatabaseSync;
   close(): void;
@@ -166,6 +177,11 @@ export interface PipelineStore {
    * everything there is new to us however long it has been published.
    */
   freshnessSamples(since: number): FreshnessSample[];
+  /**
+   * The postings each active board's latest successful listing includes, read one at a time
+   * (descriptions are left out, to keep memory small).
+   */
+  currentPostings(): Iterable<CurrentPosting>;
 }
 
 type Row = Record<string, SQLInputValue>;
@@ -323,6 +339,16 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
              AND earlier.id < p.first_seen_crawl_id
          )
        ORDER BY p.first_seen_at, p.id`,
+    ),
+    currentPostings: db.prepare(
+      `SELECT p.id, p.first_seen_at, b.company, b.country,
+         json_remove(c.normalized_json, '$.descriptionHtml') AS posting
+       FROM boards b
+       JOIN posting_presence pp ON pp.last_crawl_id = b.last_listed_crawl_id
+       JOIN postings p ON p.id = pp.posting_id AND p.board_id = b.id
+       JOIN posting_contents c ON c.posting_id = p.id AND c.content_hash = p.content_hash
+       WHERE b.status = 'active'
+       ORDER BY p.id`,
     ),
   };
 
@@ -668,6 +694,23 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
         source: row["source"] as AtsSource,
         latencyMs: (row["latency_ms"] as number | null) ?? null,
       }));
+    },
+
+    *currentPostings() {
+      for (const row of statements.currentPostings.iterate() as Iterable<Row>) {
+        const posting = JSON.parse(row["posting"] as string) as Omit<
+          NormalizedPosting,
+          "descriptionHtml"
+        >;
+        yield {
+          id: row["id"] as PostingId,
+          company: row["company"] as string,
+          companyCountry: row["country"] as string | null,
+          firstSeenAt: row["first_seen_at"] as number,
+          // Content stored before places existed has none.
+          posting: { ...posting, places: posting.places ?? [] },
+        };
+      }
     },
   };
 }

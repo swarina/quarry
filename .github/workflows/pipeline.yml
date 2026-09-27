@@ -96,6 +96,24 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+      # Not served yet: kept as an artifact until the site can serve it. A build over its size
+      # budgets fails the job, which a scheduled run reports like any failure.
+      - name: Build the search index
+        id: index
+        if: ${{ !cancelled() && (inputs.dry-run || steps.restore.outcome == 'success') }}
+        run: >
+          pnpm pipeline index --store "$STORE" --out "$RUNNER_TEMP/search-index"
+          --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the search index
+        if: ${{ !cancelled() && steps.index.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: search-index
+          path: ${{ runner.temp }}/search-index/
+          retention-days: 7
+          if-no-files-found: error
+
       - name: Keep the dry run's statistics
         if: ${{ !cancelled() && inputs.dry-run }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

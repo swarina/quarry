@@ -72,10 +72,12 @@ nothing.
 The [Pipeline workflow](.github/workflows/pipeline.yml) runs once a day at 03:17 UTC:
 
 1. **Crawl** (read-only token): restores the pipeline store from the newest snapshot in the
-   `pipeline-store` release, crawls every active board, and packs an encrypted snapshot. The
-   job summary reports crawl success per source, and freshness: how long after their stated
-   publish time new postings were first seen (median and 95th percentile, per run and over
-   the last 7 days).
+   `pipeline-store` release, crawls every active board, and packs an encrypted snapshot. It then
+   builds the search index from the postings boards list now (kept as the `search-index`
+   artifact until the site serves it). The job summary reports crawl success per source;
+   freshness, which is how long after their stated publish time new postings were first seen
+   (median and 95th percentile, per run and over the last 7 days); and how many postings the
+   index placed, with the budgets each shard is held to.
 2. **Commit** (write token, no third-party code): uploads the snapshot, then its manifest.
    Manifest names are unique, so two runs can never commit the same snapshot number.
    Snapshots outside retention (14 daily, 12 weekly) are deleted.

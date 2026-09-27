@@ -479,6 +479,35 @@ describe("freshnessSamples", () => {
   });
 });
 
+describe("currentPostings", () => {
+  it("reads what each board's latest listing includes, without descriptions", async () => {
+    const berlin = { label: null, text: "Berlin, Germany" };
+    await list(T0, [posting("1"), posting("2", { places: [berlin] })]);
+    await list(T0 + HOUR, [posting("2", { places: [berlin] })]);
+    const current = [...store.currentPostings()];
+    expect(current).toHaveLength(1);
+    expect(current[0]).toMatchObject({
+      company: "Acme",
+      companyCountry: "US",
+      firstSeenAt: T0 + 1_000,
+      posting: { externalId: "2", title: "Engineer 2", places: [berlin] },
+    });
+    expect(current[0]?.posting).not.toHaveProperty("descriptionHtml");
+  });
+
+  it("gives content stored before places existed no places", async () => {
+    const { places: _, ...older } = posting("1");
+    await list(T0, [older as NormalizedPosting]);
+    expect([...store.currentPostings()][0]?.posting.places).toEqual([]);
+  });
+
+  it("leaves out boards that are no longer active", async () => {
+    await list(T0, [posting("1")]);
+    store.syncBoards([], [], T0);
+    expect([...store.currentPostings()]).toEqual([]);
+  });
+});
+
 describe("meta and runs", () => {
   it("stores metadata and run status", () => {
     expect(store.getMeta("snapshot_seq")).toBeUndefined();

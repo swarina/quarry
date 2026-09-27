@@ -41,6 +41,12 @@ importers:
       '@quarry/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@quarry/facets':
+        specifier: workspace:*
+        version: link:../../packages/facets
+      '@quarry/search-index':
+        specifier: workspace:*
+        version: link:../../packages/search-index
       '@quarry/storage':
         specifier: workspace:*
         version: link:../../packages/storage
