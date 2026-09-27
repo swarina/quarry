@@ -1,0 +1,174 @@
+name: Pipeline
+
+on:
+  schedule:
+    # Once a day, off the top of the hour (when GitHub delays scheduled runs), after the
+    # 00:00 UTC reset of Cloudflare's daily limits.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      bootstrap:
+        description: Start with an empty store. Only allowed while no snapshot exists yet.
+        type: boolean
+        default: false
+      max-boards:
+        description: Crawl at most this many boards (leave empty for all)
+        type: string
+        default: ""
+
+permissions: {}
+
+# Runs never overlap, and a queued run waits instead of cancelling the one in progress.
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  crawl:
+    name: Crawl
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Runs third-party npm code, so it can read the repository but not write to it.
+    permissions:
+      contents: read
+    outputs:
+      packed: ${{ steps.pack.outcome == 'success' }}
+    steps:
+      - name: Choose working paths
+        run: |
+          echo "STORE=$RUNNER_TEMP/store.sqlite" >> "$GITHUB_ENV"
+          echo "OUT=$RUNNER_TEMP/out" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/out"
+
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install runtime dependencies
+        run: pnpm install --frozen-lockfile --prod
+
+      - name: Restore the store
+        id: restore
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QUARRY_STORE_KEY: ${{ secrets.QUARRY_STORE_KEY }}
+          BOOTSTRAP: ${{ inputs.bootstrap && '--bootstrap' || '' }}
+        run: pnpm pipeline store pull --store "$STORE" --prune-list "$OUT/prune.txt" $BOOTSTRAP
+
+      - name: Crawl
+        env:
+          MAX_BOARDS: ${{ inputs.max-boards }}
+        run: >
+          pnpm pipeline crawl --store "$STORE"
+          --summary "$GITHUB_STEP_SUMMARY" --stats "$OUT/stats.json"
+          ${MAX_BOARDS:+--max-boards "$MAX_BOARDS"}
+
+      # Packed even when the crawl failed: every board's result is committed as it completes,
+      # so a partial run's progress is worth keeping.
+      - name: Pack the store
+        id: pack
+        if: ${{ !cancelled() && steps.restore.outcome == 'success' }}
+        env:
+          QUARRY_STORE_KEY: ${{ secrets.QUARRY_STORE_KEY }}
+        run: pnpm pipeline store pack --store "$STORE" --out "$OUT"
+
+      - name: Hand the snapshot to the commit job
+        if: ${{ !cancelled() && steps.pack.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: store-snapshot
+          path: ${{ runner.temp }}/out/
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Check crawl health
+        if: ${{ !cancelled() && steps.restore.outcome == 'success' }}
+        run: |
+          if [ ! -f "$OUT/stats.json" ] || ! jq -e \
+            '.status == "succeeded" and (.successRate == null or .successRate >= 0.95)' \
+            "$OUT/stats.json" > /dev/null; then
+            echo "::error::The crawl failed or fewer than 95% of boards were crawled successfully."
+            exit 1
+          fi
+
+  commit:
+    name: Commit snapshot
+    needs: crawl
+    if: ${{ !cancelled() && needs.crawl.outputs.packed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Can write to the repository, so it checks out nothing and runs only the gh CLI.
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: pipeline-store
+    steps:
+      - name: Download the snapshot
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: store-snapshot
+          path: out
+
+      - name: Upload the snapshot, then its manifest
+        run: |
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            gh release create "$TAG" --prerelease --latest=false --title "Pipeline store" \
+              --notes "Encrypted snapshots of the pipeline store, one per run. Not a software release."
+          fi
+          gh release upload "$TAG" out/store-*.sqlite.br.enc
+          # Asset names are unique within a release, so if another run already committed this
+          # sequence number, this upload fails instead of overwriting history.
+          gh release upload "$TAG" out/manifest-*.json
+
+      - name: Prune snapshots outside retention
+        run: |
+          while IFS= read -r name; do
+            if [ -n "$name" ]; then gh release delete-asset "$TAG" "$name" --yes; fi
+          done < out/prune.txt
+
+  report:
+    name: Report
+    needs: [crawl, commit]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      EVENT: ${{ github.event_name }}
+      FAILED: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Open, update, or close the failure issue
+        run: |
+          label=pipeline-failure
+          gh label create "$label" --color B60205 \
+            --description "The scheduled pipeline run failed" > /dev/null 2>&1 || true
+          issue=$(gh issue list --label "$label" --state open --json number --jq '.[0].number // empty')
+          if [ "$FAILED" = "true" ]; then
+            if [ "$EVENT" != "schedule" ]; then
+              echo "A manually started run failed; alerts are only raised for scheduled runs."
+            elif [ -n "$issue" ]; then
+              gh issue comment "$issue" --body "Failed again: $RUN_URL"
+            else
+              gh issue create --label "$label" --title "Scheduled pipeline run failed" --body \
+                "The daily pipeline run failed: $RUN_URL. The job summary shows which step failed and which boards could not be crawled. This issue closes automatically after the next successful run."
+            fi
+          elif [ -n "$issue" ]; then
+            gh issue comment "$issue" --body "Recovered: $RUN_URL"
+            gh issue close "$issue"
+          fi
