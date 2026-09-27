@@ -30,7 +30,7 @@ pnpm check             # typography, lint, typecheck, and tests
 
 | Path | Contents |
 | --- | --- |
-| `packages/domain` | Pure logic shared by every runtime. No third-party dependencies. |
+| `packages/domain` | Pure logic shared by every runtime: canonical JSON and hashing, board and posting identity, the normalized posting, and HTML-to-text |
 | `packages/jev` | The only code that calls TypeSafe: pinned model, validated answers, spend limits, rate limiting, cost ledger, record and replay |
 | `scripts` | Repository tooling |
 

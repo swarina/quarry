@@ -39,7 +39,7 @@ Quarry is being built in four parts:
 
 | Path | Contents |
 | --- | --- |
-| [`packages/domain`](packages/domain) | Deterministic JSON and content hashing, shared by every runtime |
+| [`packages/domain`](packages/domain) | Pure logic shared by every runtime: deterministic JSON and hashing, board and posting identity, and posting text |
 | [`packages/jev`](packages/jev) | The single entry point for Jev: pinned model, validated answers, spend limits, rate limiting, cost ledger, record and replay |
 | [`scripts`](scripts) | Repository tooling |
 
