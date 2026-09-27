@@ -31,7 +31,7 @@ export type FetchOutcome =
     }
   | {
       readonly kind: "skipped";
-      readonly reason: "disallowed" | "robots-unreachable" | "circuit-open";
+      readonly reason: "disallowed" | "robots-unreachable";
     };
 
 export interface HostStats {
@@ -40,7 +40,10 @@ export interface HostStats {
   readonly retries: number;
   readonly failures: number;
   readonly bytes: number;
+  /** Whether requests to the host are paused right now after repeated failures. */
   readonly circuitOpen: boolean;
+  /** How many times the breaker opened during the run. */
+  readonly breakerTrips: number;
   readonly robots: "pending" | "allowed-all" | "parsed" | "unreachable";
   readonly crawlDelaySeconds: number | undefined;
 }
@@ -63,14 +66,22 @@ export interface PoliteFetcherOptions {
   readonly backoffCapMs?: number;
   /** A longer `Retry-After` fails the request instead of blocking the host. */
   readonly maxRetryAfterMs?: number;
-  /** Consecutive failed requests after which a host is skipped for the rest of the run. */
+  /** Consecutive host-level failures after which requests to the host pause. */
   readonly breakerThreshold?: number;
+  /**
+   * How long a host pauses once the breaker opens. The next request then goes out as a probe:
+   * success closes the breaker, and failure pauses the host again.
+   */
+  readonly breakerCooldownMs?: number;
 }
 
 export interface GetOptions {
   /** Sent as `If-None-Match`; a 304 then comes back as `not-modified`. */
   readonly etag?: string | null;
-  /** Aborting rejects the call with the signal's reason; it is not reported as a failure. */
+  /**
+   * Aborting rejects the call with the signal's reason, including while the host is paused; it
+   * is not reported as a failure.
+   */
   readonly signal?: AbortSignal;
 }
 
@@ -86,6 +97,9 @@ interface HostState {
   robotsState: HostStats["robots"];
   crawlDelaySeconds: number | undefined;
   consecutiveFailures: number;
+  /** While set, requests wait until this time; the first one after it is a probe. */
+  pausedUntil: number | null;
+  breakerTrips: number;
   requests: number;
   retries: number;
   failures: number;
@@ -124,7 +138,8 @@ const HOST_FAILURES: ReadonlySet<FetchFailure> = new Set([
  * An HTTP client that is polite by construction (ADR-0018): it checks robots.txt before the
  * first request to a host, sends one request at a time per host with a minimum gap (or the
  * site's crawl delay, if longer), retries transient failures with jittered backoff while
- * honoring `Retry-After`, and stops calling a host after repeated failures.
+ * honoring `Retry-After`, and pauses a host after repeated failures, probing it again after a
+ * cooldown so a brief outage costs time rather than a whole run.
  */
 export function createPoliteFetcher(options: PoliteFetcherOptions): PoliteFetcher {
   const fetchImpl = options.fetch ?? globalThis.fetch;
@@ -140,6 +155,7 @@ export function createPoliteFetcher(options: PoliteFetcherOptions): PoliteFetche
   const backoffCapMs = options.backoffCapMs ?? 60_000;
   const maxRetryAfterMs = options.maxRetryAfterMs ?? 5 * 60_000;
   const breakerThreshold = options.breakerThreshold ?? 5;
+  const breakerCooldownMs = options.breakerCooldownMs ?? 5 * 60_000;
   const hosts = new Map<string, HostState>();
 
   function hostState(host: string): HostState {
@@ -152,6 +168,8 @@ export function createPoliteFetcher(options: PoliteFetcherOptions): PoliteFetche
         robotsState: "pending",
         crawlDelaySeconds: undefined,
         consecutiveFailures: 0,
+        pausedUntil: null,
+        breakerTrips: 0,
         requests: 0,
         retries: 0,
         failures: 0,
@@ -208,11 +226,7 @@ export function createPoliteFetcher(options: PoliteFetcherOptions): PoliteFetche
     } catch (error) {
       signal?.throwIfAborted();
       const timedOut = error instanceof Error && error.name === "TimeoutError";
-      return {
-        kind: "error",
-        failure: timedOut ? "timeout" : "network",
-        message: error instanceof Error ? error.message : String(error),
-      };
+      return { kind: "error", failure: timedOut ? "timeout" : "network", message: describe(error) };
     } finally {
       const gapMs = Math.max(minGapMs, (state.crawlDelaySeconds ?? 0) * 1000);
       state.nextRequestAt = now() + gapMs;
@@ -331,6 +345,29 @@ export function createPoliteFetcher(options: PoliteFetcherOptions): PoliteFetche
     }
   }
 
+  function updateBreaker(state: HostState, outcome: FetchOutcome): void {
+    if (outcome.kind !== "failed") {
+      state.consecutiveFailures = 0;
+      state.pausedUntil = null;
+      return;
+    }
+    state.failures += 1;
+    if (!HOST_FAILURES.has(outcome.failure)) return;
+    state.consecutiveFailures += 1;
+    if (state.consecutiveFailures < breakerThreshold) return;
+    if (state.pausedUntil === null) state.breakerTrips += 1;
+    state.pausedUntil = now() + breakerCooldownMs;
+  }
+
+  /** Sleeps until `time` in short steps, so an abort is noticed within a few seconds. */
+  async function waitUntil(time: number, signal: AbortSignal | undefined): Promise<void> {
+    for (let remaining = time - now(); remaining > 0; remaining = time - now()) {
+      signal?.throwIfAborted();
+      await sleep(Math.min(remaining, 5_000));
+    }
+    signal?.throwIfAborted();
+  }
+
   function fail(
     failure: FetchFailure,
     status: number | null,
@@ -344,29 +381,20 @@ export function createPoliteFetcher(options: PoliteFetcherOptions): PoliteFetche
     async get(url, getOptions = {}) {
       const target = new URL(url);
       const state = hostState(target.host);
-      if (state.consecutiveFailures >= breakerThreshold) {
-        return { kind: "skipped", reason: "circuit-open" };
-      }
       const robots = await robotsFor(state, target.origin);
       if (robots === "unreachable") return { kind: "skipped", reason: "robots-unreachable" };
       if (!robots.isAllowed(`${target.pathname}${target.search}`)) {
         return { kind: "skipped", reason: "disallowed" };
       }
 
-      const outcome = await exclusive(state, () => {
-        // The breaker may have opened while this request waited for its turn.
-        if (state.consecutiveFailures >= breakerThreshold) {
-          return Promise.resolve<FetchOutcome>({ kind: "skipped", reason: "circuit-open" });
-        }
-        return fetchWithRetries(state, url, getOptions);
+      return exclusive(state, async () => {
+        // A paused host gets no requests until the cooldown ends; this one is then the probe.
+        if (state.pausedUntil !== null) await waitUntil(state.pausedUntil, getOptions.signal);
+        const outcome = await fetchWithRetries(state, url, getOptions);
+        // Updated before the next queued request for this host starts.
+        updateBreaker(state, outcome);
+        return outcome;
       });
-      if (outcome.kind === "failed") {
-        state.failures += 1;
-        if (HOST_FAILURES.has(outcome.failure)) state.consecutiveFailures += 1;
-      } else if (outcome.kind !== "skipped") {
-        state.consecutiveFailures = 0;
-      }
-      return outcome;
     },
 
     stats() {
@@ -378,7 +406,8 @@ export function createPoliteFetcher(options: PoliteFetcherOptions): PoliteFetche
             retries: state.retries,
             failures: state.failures,
             bytes: state.bytes,
-            circuitOpen: state.consecutiveFailures >= breakerThreshold,
+            circuitOpen: state.pausedUntil !== null,
+            breakerTrips: state.breakerTrips,
             robots: state.robotsState,
             crawlDelaySeconds: state.crawlDelaySeconds,
           },
@@ -386,6 +415,13 @@ export function createPoliteFetcher(options: PoliteFetcherOptions): PoliteFetche
       );
     },
   };
+}
+
+/** An error message with its cause, which is where fetch keeps the real reason (DNS, reset). */
+function describe(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  const cause = error.cause instanceof Error ? error.cause.message : undefined;
+  return cause === undefined || cause.length === 0 ? error.message : `${error.message}: ${cause}`;
 }
 
 /**

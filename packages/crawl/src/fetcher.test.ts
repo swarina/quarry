@@ -230,17 +230,78 @@ describe("createPoliteFetcher", () => {
     expect(await fetcher.get(JOBS)).toMatchObject({ kind: "failed", failure: "too-large" });
   });
 
-  it("stops calling a host after consecutive failures", async () => {
+  it("pauses a host after consecutive failures, then probes it after the cooldown", async () => {
     const { fetcher, log } = harness(
-      { [ROBOTS]: text(""), [JOBS]: status(500) },
-      { maxRetries: 0, breakerThreshold: 2 },
+      { [ROBOTS]: text(""), [JOBS]: [status(500), status(500), json(["back"])] },
+      { maxRetries: 0, breakerThreshold: 2, breakerCooldownMs: 60_000, minGapMs: 0 },
     );
     expect((await fetcher.get(JOBS)).kind).toBe("failed");
     expect((await fetcher.get(JOBS)).kind).toBe("failed");
-    const sent = log.length;
-    expect(await fetcher.get(JOBS)).toEqual({ kind: "skipped", reason: "circuit-open" });
-    expect(log).toHaveLength(sent);
-    expect(fetcher.stats().get("api.example.com")?.circuitOpen).toBe(true);
+    expect(fetcher.stats().get("api.example.com")).toMatchObject({
+      circuitOpen: true,
+      breakerTrips: 1,
+    });
+    const trippedAt = log.at(-1)?.at ?? 0;
+
+    // The next request waits out the cooldown instead of failing, and succeeds as the probe.
+    expect(await fetcher.get(JOBS)).toMatchObject({ kind: "ok", body: '["back"]' });
+    expect((log.at(-1)?.at ?? 0) - trippedAt).toBeGreaterThanOrEqual(60_000);
+    expect(fetcher.stats().get("api.example.com")).toMatchObject({
+      circuitOpen: false,
+      breakerTrips: 1,
+    });
+  });
+
+  it("pauses again when the probe fails", async () => {
+    const { fetcher, log } = harness(
+      { [ROBOTS]: text(""), [JOBS]: status(503) },
+      { maxRetries: 0, breakerThreshold: 1, breakerCooldownMs: 60_000, minGapMs: 0 },
+    );
+    await fetcher.get(JOBS);
+    await fetcher.get(JOBS);
+    await fetcher.get(JOBS);
+    const times = log.slice(1).map((entry) => entry.at);
+    expect(times).toHaveLength(3);
+    expect((times[1] ?? 0) - (times[0] ?? 0)).toBeGreaterThanOrEqual(60_000);
+    expect((times[2] ?? 0) - (times[1] ?? 0)).toBeGreaterThanOrEqual(60_000);
+    expect(fetcher.stats().get("api.example.com")).toMatchObject({
+      circuitOpen: true,
+      breakerTrips: 1,
+    });
+  });
+
+  it("lets a caller abort while the host is paused", async () => {
+    const controller = new AbortController();
+    let slept = 0;
+    const { fetcher } = harness(
+      { [ROBOTS]: text(""), [JOBS]: status(500) },
+      {
+        maxRetries: 0,
+        breakerThreshold: 1,
+        breakerCooldownMs: 60_000,
+        sleep: async () => {
+          slept += 1;
+          if (slept > 2) controller.abort(new Error("run cancelled"));
+        },
+      },
+    );
+    await fetcher.get(JOBS);
+    await expect(fetcher.get(JOBS, { signal: controller.signal })).rejects.toThrow("run cancelled");
+  });
+
+  it("reports the cause of network errors", async () => {
+    const cause = Object.assign(new Error("getaddrinfo ENOTFOUND api.example.com"), {
+      code: "ENOTFOUND",
+    });
+    const { fetcher } = harness(
+      { [ROBOTS]: text(""), [JOBS]: new TypeError("fetch failed", { cause }) },
+      { maxRetries: 0 },
+    );
+    expect(await fetcher.get(JOBS)).toMatchObject({
+      kind: "failed",
+      failure: "network",
+      message: "fetch failed: getaddrinfo ENOTFOUND api.example.com",
+    });
   });
 
   it("treats not-found as a healthy host and board-specific failures as not the host's", async () => {
@@ -296,6 +357,7 @@ describe("createPoliteFetcher", () => {
       failures: 1,
       bytes: 17,
       circuitOpen: false,
+      breakerTrips: 0,
       robots: "parsed",
       crawlDelaySeconds: undefined,
     });
