@@ -98,6 +98,21 @@ importers:
         specifier: workspace:*
         version: link:../domain
 
+  packages/search-index:
+    dependencies:
+      '@quarry/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@quarry/facets':
+        specifier: workspace:*
+        version: link:../facets
+      '@quarry/places':
+        specifier: workspace:*
+        version: link:../places
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+
   packages/storage:
     dependencies:
       '@quarry/domain':
