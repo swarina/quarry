@@ -9,6 +9,8 @@
     "@quarry/ats": "workspace:*",
     "@quarry/crawl": "workspace:*",
     "@quarry/domain": "workspace:*",
+    "@quarry/facets": "workspace:*",
+    "@quarry/search-index": "workspace:*",
     "@quarry/storage": "workspace:*",
     "yaml": "2.9.1",
     "zod": "4.6.5"
