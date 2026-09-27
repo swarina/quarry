@@ -8,6 +8,9 @@ import type { Migration } from "./database.ts";
  * board returned, and `posting_presence` stores, per posting, runs of consecutive successful
  * crawls in which it was listed. Lifecycle state is derived from those facts, never stored as
  * the only record.
+ *
+ * `WITHOUT ROWID` is used only for tables with small rows, as SQLite recommends; tables with
+ * large rows (postings, their contents) are ordinary rowid tables.
  */
 export const PIPELINE_MIGRATIONS: readonly Migration[] = [
   {
@@ -49,8 +52,9 @@ export const PIPELINE_MIGRATIONS: readonly Migration[] = [
         not_found_since         INTEGER
       ) STRICT, WITHOUT ROWID;
 
+      -- AUTOINCREMENT: crawl ids must never be reused, because the lifecycle orders by them.
       CREATE TABLE board_crawls (
-        id            INTEGER PRIMARY KEY,
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
         board_id      TEXT NOT NULL REFERENCES boards (id) ON DELETE CASCADE,
         run_id        TEXT NOT NULL REFERENCES runs (id),
         started_at    INTEGER NOT NULL,
@@ -85,7 +89,7 @@ export const PIPELINE_MIGRATIONS: readonly Migration[] = [
         last_seen_crawl_id  INTEGER NOT NULL,
         last_seen_at        INTEGER NOT NULL,
         UNIQUE (board_id, external_id)
-      ) STRICT, WITHOUT ROWID;
+      ) STRICT;
 
       -- Each distinct content a posting has had, with the raw item it was parsed from.
       CREATE TABLE posting_contents (
@@ -95,7 +99,7 @@ export const PIPELINE_MIGRATIONS: readonly Migration[] = [
         normalized_json    TEXT NOT NULL,
         raw_json           TEXT,
         PRIMARY KEY (posting_id, content_hash)
-      ) STRICT, WITHOUT ROWID;
+      ) STRICT;
 
       -- Every crawl at which a posting's content differed from what we had (including the
       -- first sighting), so A -> B -> A edits are all visible.

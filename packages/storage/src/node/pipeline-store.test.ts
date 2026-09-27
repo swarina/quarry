@@ -129,7 +129,12 @@ describe("syncBoards", () => {
       denied: 1,
       purgedPostings: 2,
     });
-    expect(acme().status).toBe("denied");
+    expect(acme()).toMatchObject({
+      status: "denied",
+      etag: null,
+      lastListedCrawlId: null,
+      lastListedCount: null,
+    });
     expect(store.db.prepare("SELECT count(*) AS n FROM posting_presence").get()).toEqual({ n: 0 });
     expect(store.syncBoards([ACME], [{ source: "lever", slug: "acme" }], T0).denied).toBe(0);
   });
@@ -231,6 +236,28 @@ describe("recordListing", () => {
       store.recordListing(acme(), repeat, { items, etag: null, normalizerVersion: 1 }),
     ).toThrow(/UNIQUE/);
     expect(store.db.prepare("SELECT count(*) AS n FROM board_crawls").get()).toEqual({ n: 2 });
+  });
+});
+
+describe("stale board records", () => {
+  it("are ignored in favor of the stored board state", async () => {
+    const stale = acme();
+    const items = async (ids: string[]) => Promise.all(ids.map((id) => item(posting(id))));
+    const first = store.recordListing(stale, attempt(T0), {
+      items: await items(["1"]),
+      etag: null,
+      normalizerVersion: 1,
+    });
+    const second = store.recordListing(stale, attempt(T0 + HOUR), {
+      items: await items(["1"]),
+      etag: null,
+      normalizerVersion: 1,
+    });
+    expect(presence("1")).toEqual([{ first: first.crawlId, last: second.crawlId }]);
+    const notFound = { kind: "not-found", code: "not-found", message: null } as const;
+    store.recordFailure(stale, attempt(T0 + 2 * HOUR), notFound);
+    store.recordFailure(stale, attempt(T0 + 3 * HOUR), notFound);
+    expect(acme().notFoundCount).toBe(2);
   });
 });
 

@@ -184,10 +184,17 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
        VALUES ($id, $source, $slug, $company, $country, 'seed', $status, $createdAt)`,
     ),
     updateSeedBoard: db.prepare(
-      `UPDATE boards SET slug = $slug, company = $company, country = $country, status = $status
+      `UPDATE boards SET slug = $slug, company = $company, country = $country, status = $status,
+         origin = 'seed'
        WHERE id = $id`,
     ),
-    setBoardStatus: db.prepare("UPDATE boards SET status = $status, etag = NULL WHERE id = $id"),
+    retireBoard: db.prepare("UPDATE boards SET status = 'retired', etag = NULL WHERE id = ?"),
+    // A denied board starts over if it is ever allowed again: its postings are gone.
+    denyBoard: db.prepare(
+      `UPDATE boards SET status = 'denied', etag = NULL, etag_normalizer_version = NULL,
+         last_listed_crawl_id = NULL, last_listed_count = NULL
+       WHERE id = ?`,
+    ),
     deleteBoardPostings: db.prepare("DELETE FROM postings WHERE board_id = ?"),
     insertCrawl: db.prepare(
       `INSERT INTO board_crawls
@@ -300,6 +307,16 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
     return row.id;
   }
 
+  /**
+   * The board as stored now. Callers pass the record they read at the start of a run; the
+   * writes below use the stored state, so an old record can never mislead them.
+   */
+  function currentBoard(board: BoardRecord): BoardRecord {
+    const row = statements.board.get(board.id) as Row | undefined;
+    if (row === undefined) throw new Error(`Unknown board ${board.id}`);
+    return toBoardRecord(row);
+  }
+
   function boardSucceeded(
     board: BoardRecord,
     attempt: CrawlAttempt,
@@ -381,7 +398,7 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
         let retired = 0;
         for (const row of statements.seedBoardIds.all() as { id: string }[]) {
           if (seeded.has(row.id) || deniedIds.has(row.id)) continue;
-          statements.setBoardStatus.run({ id: row.id, status: "retired" });
+          statements.retireBoard.run(row.id);
           retired += 1;
         }
 
@@ -401,7 +418,7 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
               createdAt: now,
             });
           } else if (existing["status"] !== "denied") {
-            statements.setBoardStatus.run({ id, status: "denied" });
+            statements.denyBoard.run(id);
           } else {
             continue;
           }
@@ -421,8 +438,9 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
       return row === undefined ? undefined : toBoardRecord(row);
     },
 
-    recordListing(board, attempt, listing) {
+    recordListing(given, attempt, listing) {
       return transaction(db, () => {
+        const board = currentBoard(given);
         const crawlId = insertCrawl(board, attempt, "listed", null);
         const previous = board.lastListedCrawlId;
         const at = attempt.finishedAt;
@@ -511,12 +529,13 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
       });
     },
 
-    recordNotModified(board, attempt) {
-      const previous = board.lastListedCrawlId;
-      if (previous === null) {
-        throw new Error(`Board ${board.id} has no earlier listing to be unchanged from`);
-      }
+    recordNotModified(given, attempt) {
       return transaction(db, () => {
+        const board = currentBoard(given);
+        const previous = board.lastListedCrawlId;
+        if (previous === null) {
+          throw new Error(`Board ${board.id} has no earlier listing to be unchanged from`);
+        }
         const crawlId = insertCrawl(board, attempt, "not-modified", board.lastListedCount);
         const listed = Number(statements.extendBoardPresence.run({ previous, crawlId }).changes);
         statements.touchPresentPostings.run({ crawlId, at: attempt.finishedAt });
@@ -532,8 +551,9 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
       });
     },
 
-    recordFailure(board, attempt, failure) {
+    recordFailure(given, attempt, failure) {
       return transaction(db, () => {
+        const board = currentBoard(given);
         let outcome: CrawlOutcome = failure.kind;
         let notFoundCount = 0;
         let notFoundSince: number | null = null;
