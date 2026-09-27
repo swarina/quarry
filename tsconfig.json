@@ -5,6 +5,7 @@
     "types": ["node"]
   },
   "include": [
+    "apps/*/src/**/*.ts",
     "packages/*/src/**/*.ts",
     "packages/*/scripts/**/*.ts",
     "scripts/**/*.ts",

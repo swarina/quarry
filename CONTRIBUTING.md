@@ -25,13 +25,20 @@ pnpm check             # typography, lint, typecheck, and tests
 | `pnpm test` | Vitest |
 | `pnpm test:coverage` | Vitest with coverage thresholds (as CI runs it) |
 | `pnpm check:text` | Rejects forbidden typography in tracked files |
+| `pnpm pipeline <command>` | The pipeline command line; `pnpm pipeline help` lists commands and options |
+| `pnpm --filter @quarry/ats record-fixtures` | Re-records the ATS contract-test fixtures from the live APIs |
 
 ## Repository layout
 
 | Path | Contents |
 | --- | --- |
+| `apps/pipeline` | The pipeline command line (Node.js only) |
+| `packages/ats` | Job board API adapters: listing URLs, response schemas, and mapping to normalized postings |
+| `packages/crawl` | The polite HTTP client every crawl request goes through |
 | `packages/domain` | Pure logic shared by every runtime: canonical JSON and hashing, board and posting identity, the normalized posting, and HTML-to-text |
 | `packages/jev` | The only code that calls TypeSafe: pinned model, validated answers, spend limits, rate limiting, cost ledger, record and replay |
+| `packages/storage` | The pipeline's SQLite store (Node.js only, under `src/node/`) |
+| `seeds` | `boards.yaml` (boards to crawl) and `denylist.yaml` (boards removed on request) |
 | `scripts` | Repository tooling |
 
 Internal packages export TypeScript source directly; there is no build step.
@@ -46,6 +53,8 @@ These are enforced by Biome, so `pnpm lint` fails when one is broken:
 - Library code runs in Node.js and Cloudflare Workers. Node built-ins are only allowed
   under `src/node/`.
 - Only `packages/jev` may import `@typesafe-ai/sdk`.
+- Apps may use Node built-ins. Environment variables are read in one place per app
+  (`apps/pipeline/src/config.ts`).
 - Production code never imports test files.
 
 ## Conventions
@@ -71,3 +80,13 @@ These are enforced by Biome, so `pnpm lint` fails when one is broken:
   - Changes are squash-merged.
   - Every pull request states its resource impact.
 - **Typography:** no em dashes anywhere; use commas, colons, parentheses, or separate sentences.
+
+## Adding a job board
+
+1. Find the board's slug in its public URL, for example `job-boards.greenhouse.io/<slug>`,
+   `jobs.lever.co/<slug>`, or `jobs.ashbyhq.com/<slug>`.
+2. Check that its listing API returns jobs, for example
+   `https://boards-api.greenhouse.io/v1/boards/<slug>/jobs`,
+   `https://api.lever.co/v0/postings/<slug>?mode=json`, or
+   `https://api.ashbyhq.com/posting-api/job-board/<slug>`.
+3. Add one line to `seeds/boards.yaml`. CI validates the file, including duplicates.

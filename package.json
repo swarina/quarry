@@ -17,7 +17,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "pipeline": "node apps/pipeline/src/main.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
