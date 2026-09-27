@@ -35,6 +35,7 @@ pnpm check             # typography, lint, typecheck, and tests
 | `apps/pipeline` | The pipeline command line (Node.js only) |
 | `packages/ats` | Job board API adapters: listing URLs, response schemas, and mapping to normalized postings |
 | `packages/crawl` | The polite HTTP client every crawl request goes through |
+| `packages/facets` | Standard facets of a posting: location, arrangement, employment type, and pay from structured fields and labels (Jev-answered facets come later) |
 | `packages/domain` | Pure logic shared by every runtime: canonical JSON and hashing, board and posting identity, the normalized posting, and HTML-to-text |
 | `packages/jev` | The only code that calls TypeSafe: pinned model, validated answers, spend limits, rate limiting, cost ledger, record and replay |
 | `packages/places` | Reading location labels into places, with a gazetteer built from GeoNames (`data/`, refreshed by a script) |
