@@ -1,0 +1,111 @@
+name: Restore drill
+
+on:
+  schedule:
+    # Once a month, well away from the daily pipeline (03:17) and probe (09:47) runs.
+    - cron: "37 14 2 * *"
+  workflow_dispatch:
+    inputs:
+      snapshot:
+        description: Snapshot to restore (oldest, newest, or its number)
+        type: string
+        default: oldest
+
+permissions: {}
+
+concurrency:
+  group: restore-drill
+  cancel-in-progress: false
+
+jobs:
+  drill:
+    name: Restore and resume
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Restores into a throwaway store on this runner and commits nothing.
+    permissions:
+      contents: read
+    steps:
+      - name: Choose working paths
+        run: echo "STORE=$RUNNER_TEMP/drill.sqlite" >> "$GITHUB_ENV"
+
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install runtime dependencies
+        run: pnpm install --frozen-lockfile --prod
+
+      # The daily pipeline restores the newest snapshot every run, so by default the drill
+      # restores the oldest one retention keeps: the one we would fall back to after damage
+      # that went unnoticed, and the one furthest behind the current schema.
+      - name: Restore the snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QUARRY_STORE_KEY: ${{ secrets.QUARRY_STORE_KEY }}
+          SNAPSHOT: ${{ inputs.snapshot || 'oldest' }}
+        run: >
+          pnpm pipeline store pull --store "$STORE" --snapshot "$SNAPSHOT"
+          --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Check the restored store
+        run: |
+          pnpm --silent pipeline store verify --store "$STORE" \
+            --summary "$GITHUB_STEP_SUMMARY" > "$RUNNER_TEMP/verify.json"
+          if ! jq -e '.postings > 0 and .crawls > 0' "$RUNNER_TEMP/verify.json" > /dev/null; then
+            echo "::error::The restored store holds no crawl history."
+            exit 1
+          fi
+
+      # Opening the store migrates it to the current schema; the crawl then uses its board
+      # state (ETags, presence) as a scheduled run would.
+      - name: Resume crawling on it
+        run: pnpm pipeline crawl --store "$STORE" --max-boards 5 --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Check the store after resuming
+        run: pnpm pipeline store verify --store "$STORE" --summary "$GITHUB_STEP_SUMMARY"
+
+  report:
+    name: Report
+    needs: drill
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      EVENT: ${{ github.event_name }}
+      FAILED: ${{ needs.drill.result != 'success' }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Open, update, or close the drill issue
+        run: |
+          label=restore-drill
+          gh label create "$label" --color B60205 \
+            --description "The monthly restore drill failed" > /dev/null 2>&1 || true
+          issue=$(gh issue list --label "$label" --state open --json number --jq '.[0].number // empty')
+          if [ "$FAILED" = "true" ]; then
+            if [ "$EVENT" != "schedule" ]; then
+              echo "A manually started drill failed; alerts are only raised for scheduled drills."
+            elif [ -n "$issue" ]; then
+              gh issue comment "$issue" --body "Failed again: $RUN_URL"
+            else
+              gh issue create --label "$label" --title "Restore drill failed" --body \
+                "The monthly restore drill could not restore a snapshot and resume from it: $RUN_URL. Until it passes, treat the snapshots as unverified backups. This issue closes automatically after the next successful drill."
+            fi
+          elif [ -n "$issue" ]; then
+            gh issue comment "$issue" --body "Recovered: $RUN_URL"
+            gh issue close "$issue"
+          fi

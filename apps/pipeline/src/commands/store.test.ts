@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { manifestName, openPipelineStore, packSnapshot, storeSeq } from "@quarry/storage/node";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ReleaseAsset, ReleaseAssets } from "../releases.ts";
-import { restoreLatest } from "./store.ts";
+import { parseSnapshotChoice, restoreSnapshot } from "./store.ts";
 
 const KEY = new Uint8Array(randomBytes(32));
 
@@ -53,34 +53,49 @@ async function packed(count: number): Promise<Record<string, string>> {
   return files;
 }
 
-describe("restoreLatest", () => {
-  it("restores the newest snapshot and lists the release's assets", async () => {
+describe("restoreSnapshot", () => {
+  it("restores the newest snapshot by default and lists the release's assets", async () => {
     const files = await packed(3);
     const destination = join(dir, "restored.sqlite");
-    const result = await restoreLatest(fakeRelease(files), destination, KEY, false);
-    expect(result).toMatchObject({ kind: "restored", seq: 3 });
+    const result = await restoreSnapshot(fakeRelease(files), destination, KEY);
+    expect(result.kind === "restored" && result.manifest.seq).toBe(3);
     expect(result.kind === "restored" && result.assets).toHaveLength(6);
     const restored = openPipelineStore(destination);
     expect(storeSeq(restored)).toBe(3);
     restored.close();
   });
 
+  it("restores the oldest snapshot, or one by number", async () => {
+    const files = await packed(3);
+    const release = fakeRelease(files);
+    const oldest = await restoreSnapshot(release, join(dir, "oldest.sqlite"), KEY, {
+      choice: "oldest",
+    });
+    expect(oldest.kind === "restored" && oldest.manifest.seq).toBe(1);
+    const second = await restoreSnapshot(release, join(dir, "second.sqlite"), KEY, { choice: 2 });
+    expect(second.kind === "restored" && second.manifest.seq).toBe(2);
+    const restored = openPipelineStore(join(dir, "second.sqlite"));
+    expect(storeSeq(restored)).toBe(2);
+    restored.close();
+    await expect(
+      restoreSnapshot(release, join(dir, "missing.sqlite"), KEY, { choice: 7 }),
+    ).rejects.toThrow(/Snapshot 7 is not in the "pipeline-store" release, which holds 1, 2, 3/);
+  });
+
   it("refuses to start empty unless asked, and only when there is no snapshot", async () => {
     const destination = join(dir, "new.sqlite");
-    await expect(restoreLatest(fakeRelease(undefined), destination, KEY, false)).rejects.toThrow(
+    await expect(restoreSnapshot(fakeRelease(undefined), destination, KEY)).rejects.toThrow(
       /--bootstrap/,
     );
-    await expect(restoreLatest(fakeRelease({}), destination, KEY, false)).rejects.toThrow(
-      /--bootstrap/,
-    );
-    expect(await restoreLatest(fakeRelease(undefined), destination, KEY, true)).toEqual({
-      kind: "bootstrapped",
-    });
+    await expect(restoreSnapshot(fakeRelease({}), destination, KEY)).rejects.toThrow(/--bootstrap/);
+    expect(
+      await restoreSnapshot(fakeRelease(undefined), destination, KEY, { bootstrap: true }),
+    ).toEqual({ kind: "bootstrapped" });
     expect((await stat(destination)).size).toBeGreaterThan(0);
 
     const files = await packed(1);
     await expect(
-      restoreLatest(fakeRelease(files), join(dir, "other.sqlite"), KEY, true),
+      restoreSnapshot(fakeRelease(files), join(dir, "other.sqlite"), KEY, { bootstrap: true }),
     ).rejects.toThrow(/refusing to bootstrap/);
   });
 
@@ -90,7 +105,22 @@ describe("restoreLatest", () => {
       Object.entries(files).filter(([name]) => name.startsWith("manifest-")),
     );
     await expect(
-      restoreLatest(fakeRelease(withoutSnapshot), join(dir, "x.sqlite"), KEY, false),
+      restoreSnapshot(fakeRelease(withoutSnapshot), join(dir, "x.sqlite"), KEY),
     ).rejects.toThrow(/which is missing/);
+  });
+});
+
+describe("parseSnapshotChoice", () => {
+  it("accepts newest, oldest, and snapshot numbers, padded or not", () => {
+    expect(parseSnapshotChoice("newest")).toBe("newest");
+    expect(parseSnapshotChoice("oldest")).toBe("oldest");
+    expect(parseSnapshotChoice("12")).toBe(12);
+    expect(parseSnapshotChoice("00000012")).toBe(12);
+  });
+
+  it("rejects anything else", () => {
+    for (const value of ["0", "-1", "1.5", "latest", "", "123456789"]) {
+      expect(() => parseSnapshotChoice(value)).toThrow(/--snapshot must be/);
+    }
   });
 });

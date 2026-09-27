@@ -95,8 +95,15 @@ A manual run with **dry-run** checked crawls into a throwaway store and saves no
 needs no key. It is the way to check the crawl from GitHub's runners, for example after changing
 seeds or adapters; the job summary and a `crawl-stats` artifact show the results.
 
-To inspect production data locally, restore the newest snapshot (needs the key and a token
-that can read the repository):
+The [Restore drill workflow](.github/workflows/restore-drill.yml) proves the snapshots are
+usable backups. Once a month it restores the oldest snapshot retention keeps onto a fresh
+runner, checks it, and resumes from it: opening the store migrates it to the current schema,
+and five boards are crawled on top of it. It commits nothing. A failed scheduled drill opens a
+`restore-drill` issue, and the next successful drill closes it. A manual run can restore any
+snapshot (`oldest`, `newest`, or its number).
+
+To inspect production data locally, restore a snapshot (needs the key and a token that can
+read the repository). `--snapshot` picks one other than the newest:
 
 ```sh
 GH_TOKEN=$(gh auth token) GITHUB_REPOSITORY=swarina/quarry QUARRY_STORE_KEY=... \
