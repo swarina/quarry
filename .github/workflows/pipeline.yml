@@ -15,6 +15,10 @@ on:
         description: Crawl at most this many boards (leave empty for all)
         type: string
         default: ""
+      dry-run:
+        description: Crawl into a throwaway store; restore, save, and alert on nothing (no key needed)
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -59,6 +63,7 @@ jobs:
 
       - name: Restore the store
         id: restore
+        if: ${{ !inputs.dry-run }}
         env:
           GH_TOKEN: ${{ github.token }}
           QUARRY_STORE_KEY: ${{ secrets.QUARRY_STORE_KEY }}
@@ -91,8 +96,17 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+      - name: Keep the dry run's statistics
+        if: ${{ !cancelled() && inputs.dry-run }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: crawl-stats
+          path: ${{ runner.temp }}/out/stats.json
+          retention-days: 7
+          if-no-files-found: warn
+
       - name: Check crawl health
-        if: ${{ !cancelled() && steps.restore.outcome == 'success' }}
+        if: ${{ !cancelled() && (inputs.dry-run || steps.restore.outcome == 'success') }}
         run: |
           if [ ! -f "$OUT/stats.json" ] || ! jq -e \
             '.status == "succeeded" and (.successRate == null or .successRate >= 0.95)' \
@@ -141,7 +155,8 @@ jobs:
   report:
     name: Report
     needs: [crawl, commit]
-    if: ${{ !cancelled() }}
+    # A dry run commits nothing, so it neither raises nor clears alerts.
+    if: ${{ !cancelled() && !inputs.dry-run }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
