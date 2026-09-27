@@ -1,6 +1,7 @@
 import type { HostStats } from "@quarry/crawl";
 import type { CrawlOutcome, RunSummary } from "@quarry/storage/node";
 import type { CrawlReport } from "./crawl.ts";
+import type { Freshness, FreshnessStats } from "./freshness.ts";
 
 export interface RunStats {
   readonly runId: string;
@@ -12,6 +13,7 @@ export interface RunStats {
   /** Share of attempted boards whose crawl gave a usable listing (listed or not modified). */
   readonly successRate: number | null;
   readonly summary: RunSummary;
+  readonly freshness: Freshness;
   readonly hosts: Readonly<Record<string, HostStats>>;
 }
 
@@ -24,6 +26,7 @@ export function buildRunStats(input: {
   readonly status: "succeeded" | "failed";
   readonly crawl: CrawlReport;
   readonly summary: RunSummary;
+  readonly freshness: Freshness;
   readonly hosts: ReadonlyMap<string, HostStats>;
 }): RunStats {
   const succeeded = input.summary.bySource
@@ -39,6 +42,7 @@ export function buildRunStats(input: {
     crawl: input.crawl,
     successRate: attempted === 0 ? null : succeeded / attempted,
     summary: input.summary,
+    freshness: input.freshness,
     hosts: Object.fromEntries(input.hosts),
   };
 }
@@ -88,6 +92,7 @@ export function renderSummary(stats: RunStats): string {
     `- Crawl success: ${formatRate(stats.successRate)} of ${stats.crawl.attempted.toLocaleString("en-US")} boards attempted; ${stats.crawl.deferred.toLocaleString("en-US")} deferred to the next run.`,
     `- Active boards: ${summary.activeBoards.toLocaleString("en-US")}. Postings in the latest listings: ${summary.listedPostings.toLocaleString("en-US")}. Postings ever seen: ${summary.knownPostings.toLocaleString("en-US")}.`,
     `- Requests: ${sum(stats.hosts, "requests").toLocaleString("en-US")} (${sum(stats.hosts, "retries").toLocaleString("en-US")} retries), ${formatBytes(sum(stats.hosts, "bytes"))} downloaded, in ${formatDuration(stats.durationMs)}.`,
+    ...renderFreshness(stats.freshness),
   ];
 
   if (summary.failures.length > 0) {
@@ -113,12 +118,36 @@ export function renderSummary(stats: RunStats): string {
   return `${lines.join("\n")}\n`;
 }
 
+function renderFreshness(freshness: Freshness): string[] {
+  const window = `Last ${freshness.windowDays} days`;
+  const row = (label: string, stats: FreshnessStats) =>
+    `| ${label} | ${stats.postings.toLocaleString("en-US")} | ${stats.timed.toLocaleString("en-US")} | ${formatHours(stats.p50Hours)} | ${formatHours(stats.p95Hours)} |`;
+  return [
+    "",
+    "### Freshness of new postings",
+    "",
+    "Time from the publish time an ATS states to our first sighting, for new postings on boards we had listed before. Lever only states when a posting was created, which can be earlier.",
+    "",
+    "| First seen | New postings | With a publish time | Median | 95th percentile |",
+    "| --- | ---: | ---: | ---: | ---: |",
+    row("This run", freshness.run),
+    row(window, freshness.window),
+    ...Object.entries(freshness.bySource).map(([source, stats]) =>
+      row(`${window}, ${source}`, stats),
+    ),
+  ];
+}
+
 function sum(hosts: RunStats["hosts"], field: "requests" | "retries" | "bytes"): number {
   return Object.values(hosts).reduce((total, host) => total + host[field], 0);
 }
 
 function formatRate(rate: number | null): string {
   return rate === null ? "n/a" : `${(rate * 100).toFixed(1)}%`;
+}
+
+function formatHours(hours: number | null): string {
+  return hours === null ? "n/a" : `${hours.toFixed(1)} h`;
 }
 
 function formatBytes(bytes: number): string {

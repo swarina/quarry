@@ -6,6 +6,7 @@ import { openPipelineStore } from "@quarry/storage/node";
 import { positiveNumber, requireOption, writeOut } from "../cli.ts";
 import { PRODUCT_TOKEN, runIdentity, userAgent } from "../config.ts";
 import { type CrawlReport, crawlBoards } from "../crawl.ts";
+import { FRESHNESS_WINDOW_MS, summarizeFreshness } from "../freshness.ts";
 import { createLogger } from "../log.ts";
 import { parseDenylist, parseSeeds } from "../seeds.ts";
 import { buildRunStats, renderSummary } from "../summary.ts";
@@ -103,6 +104,10 @@ export async function crawlCommand(args: readonly string[]): Promise<number> {
         status,
         crawl: report,
         summary: store.runSummary(identity.runId),
+        freshness: summarizeFreshness(
+          store.freshnessSamples(finishedAt - FRESHNESS_WINDOW_MS),
+          identity.runId,
+        ),
         hosts: fetcher.stats(),
       });
       if (values.stats !== undefined) {

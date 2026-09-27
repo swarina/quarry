@@ -1,6 +1,7 @@
 import type { RunSummary } from "@quarry/storage/node";
 import { describe, expect, it } from "vitest";
 import type { CrawlReport } from "./crawl.ts";
+import type { Freshness } from "./freshness.ts";
 import { buildRunStats, renderSummary } from "./summary.ts";
 
 const crawl: CrawlReport = {
@@ -87,6 +88,16 @@ const hosts = new Map([
   ],
 ]);
 
+const freshness: Freshness = {
+  windowDays: 7,
+  run: { postings: 12, timed: 11, p50Hours: 9.5, p95Hours: 22 },
+  window: { postings: 80, timed: 78, p50Hours: 11.2, p95Hours: 40.3 },
+  bySource: {
+    greenhouse: { postings: 70, timed: 68, p50Hours: 10.8, p95Hours: 30 },
+    lever: { postings: 10, timed: 10, p50Hours: 20, p95Hours: 300.4 },
+  },
+};
+
 const stats = buildRunStats({
   runId: "gh-1-1",
   startedAt: Date.UTC(2026, 8, 27, 3, 17),
@@ -94,6 +105,7 @@ const stats = buildRunStats({
   status: "succeeded",
   crawl,
   summary,
+  freshness,
   hosts,
 });
 
@@ -132,6 +144,18 @@ describe("renderSummary", () => {
     expect(markdown).toContain("Crawl success: 75.0% of 4 boards attempted; 0 deferred");
     expect(markdown).toContain("Postings in the latest listings: 1,500");
     expect(markdown).toContain("Requests: 8 (2 retries), 2.0 MB downloaded, in 3 min 5 s.");
+  });
+
+  it("reports freshness for the run, the window, and each source", () => {
+    expect(markdown).toContain("### Freshness of new postings");
+    expect(markdown).toContain("| This run | 12 | 11 | 9.5 h | 22.0 h |");
+    expect(markdown).toContain("| Last 7 days | 80 | 78 | 11.2 h | 40.3 h |");
+    expect(markdown).toContain("| Last 7 days, lever | 10 | 10 | 20.0 h | 300.4 h |");
+    const empty = renderSummary({
+      ...stats,
+      freshness: { ...freshness, run: { postings: 0, timed: 0, p50Hours: null, p95Hours: null } },
+    });
+    expect(empty).toContain("| This run | 0 | 0 | n/a | n/a |");
   });
 
   it("lists failed boards with escaped cells", () => {
