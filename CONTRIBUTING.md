@@ -37,6 +37,7 @@ pnpm check             # typography, lint, typecheck, and tests
 | `packages/crawl` | The polite HTTP client every crawl request goes through |
 | `packages/domain` | Pure logic shared by every runtime: canonical JSON and hashing, board and posting identity, the normalized posting, and HTML-to-text |
 | `packages/jev` | The only code that calls TypeSafe: pinned model, validated answers, spend limits, rate limiting, cost ledger, record and replay |
+| `packages/places` | Reading location labels into places, with a gazetteer built from GeoNames (`data/`, refreshed by a script) |
 | `packages/storage` | The pipeline's SQLite store (Node.js only, under `src/node/`) |
 | `seeds` | `boards.yaml` (boards to crawl) and `denylist.yaml` (boards removed on request) |
 | `scripts` | Repository tooling |

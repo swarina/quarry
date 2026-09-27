@@ -83,6 +83,8 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
 
+  packages/places: {}
+
   packages/storage:
     dependencies:
       '@quarry/domain':

@@ -1,0 +1,15 @@
+{
+  "name": "@quarry/places",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Reads job location labels into countries, divisions, and cities, with a gazetteer built from GeoNames.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build-gazetteer": "node scripts/build-gazetteer.ts"
+  }
+}

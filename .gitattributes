@@ -3,3 +3,6 @@
 
 # Keep lockfile diffs out of reviews and language statistics.
 pnpm-lock.yaml linguist-generated=true -diff
+
+# Generated from GeoNames by packages/places/scripts/build-gazetteer.ts.
+packages/places/data/gazetteer.json linguist-generated=true

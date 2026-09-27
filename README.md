@@ -120,6 +120,10 @@ least a second between requests, and revalidates unchanged boards with condition
 A company can ask for its board to be excluded; removals are honored within a day through
 [`seeds/denylist.yaml`](seeds/denylist.yaml).
 
+Place names come from [GeoNames](https://www.geonames.org), licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); see
+[`packages/places/data`](packages/places/data/README.md) for what is used and how it was changed.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for scripts, conventions, and architecture rules, and
 [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
 
