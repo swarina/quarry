@@ -66,7 +66,7 @@ export function searchFold(text: string): string {
  */
 export function openIndex(manifestJson: unknown, shardJsons: readonly unknown[]): IndexTable {
   const manifest = manifestSchema.parse(manifestJson);
-  const shards = shardJsons.map((json) => shardSchema.parse(json));
+  const shards = shardJsons.map((json) => checkShard(shardSchema.parse(json)));
   const dictionaries = {
     company: coder<string>(),
     location: coder<string>(),
@@ -200,6 +200,52 @@ export function workplaceOf(code: number): Workplace | null {
 /** The employment types a bit set stands for. */
 export function employmentOf(bits: number): EmploymentType[] {
   return EMPLOYMENT_CODES.filter((_, bit) => (bits & (1 << bit)) !== 0);
+}
+
+/**
+ * Rejects a shard whose columns disagree: a length other than its row count, list counts that
+ * don't add up, or a code outside its dictionary. The schema checks types; this checks that
+ * the columns describe the same rows.
+ */
+function checkShard(shard: Shard): Shard {
+  const { columns, dictionaries, rows } = shard;
+  const problems: string[] = [];
+  const scalars = {
+    id: columns.id,
+    title: columns.title,
+    company: columns.company,
+    workplace: columns.workplace,
+    anywhere: columns.anywhere,
+    employment: columns.employment,
+    department: columns.department,
+    payMin: columns.payMin,
+    payMax: columns.payMax,
+    currency: columns.currency,
+    posted: columns.posted,
+  };
+  for (const [name, values] of Object.entries(scalars)) {
+    if (values.length !== rows) problems.push(`${name} has ${values.length} rows, not ${rows}`);
+  }
+  const within = (name: string, codes: readonly number[], size: number, optional: boolean) => {
+    if (codes.some((code) => code >= size || code < (optional ? -1 : 0))) {
+      problems.push(`${name} has a code outside its ${size} values`);
+    }
+  };
+  within("company", columns.company, dictionaries.company.length, false);
+  within("department", columns.department, dictionaries.department.length, true);
+  within("currency", columns.currency, dictionaries.currency.length, true);
+  within("workplace", columns.workplace, WORKPLACE_CODES.length, true);
+  for (const name of LIST_NAMES) {
+    const { counts, values } = columns[name];
+    if (counts.length !== rows) problems.push(`${name} has ${counts.length} rows, not ${rows}`);
+    const total = counts.reduce((sum, count) => sum + count, 0);
+    if (values.length !== total) problems.push(`${name} has ${values.length} values, not ${total}`);
+    within(name, values, dictionaries[name].length, false);
+  }
+  if (problems.length > 0) {
+    throw new Error(`Shard ${shard.region}-${shard.part} is inconsistent: ${problems.join("; ")}`);
+  }
+  return shard;
 }
 
 const LIST_NAMES = ["location", "country", "division", "city"] as const;

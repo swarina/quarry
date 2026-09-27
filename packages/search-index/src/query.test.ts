@@ -122,6 +122,26 @@ describe("openIndex", () => {
     expect(() => openIndex({ format: 2 }, [])).toThrow();
     expect(() => openIndex(index.manifest, [{ format: 1, region: "europe" }])).toThrow();
   });
+
+  it("refuses a shard whose columns disagree", async () => {
+    const build = await buildIndex(ROWS, { builtAt: TODAY * DAY, facetsVersion: 1 });
+    const [manifest, europe] = build.files;
+    const shard = JSON.parse(europe?.content ?? "");
+    const broken = (change: (columns: Record<string, unknown>) => void) => {
+      const copy = structuredClone(shard);
+      change(copy.columns);
+      return () => openIndex(JSON.parse(manifest?.content ?? ""), [copy]);
+    };
+    expect(broken((columns) => (columns["title"] as string[]).pop())).toThrow(
+      /title has \d+ rows, not \d+/,
+    );
+    expect(broken((columns) => ((columns["company"] as number[])[0] = 99))).toThrow(
+      /company has a code outside its \d+ values/,
+    );
+    expect(
+      broken((columns) => (columns["country"] as { values: number[] }).values.push(0)),
+    ).toThrow(/country has \d+ values, not \d+/);
+  });
 });
 
 describe("queryIndex", () => {
