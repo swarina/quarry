@@ -1,0 +1,19 @@
+{
+  "name": "@quarry/search-index",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The static search index: columnar shards by region, their manifest, and the queries the browser runs over them.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./build": "./src/build.ts"
+  },
+  "dependencies": {
+    "@quarry/domain": "workspace:*",
+    "@quarry/facets": "workspace:*",
+    "@quarry/places": "workspace:*",
+    "zod": "4.6.5"
+  }
+}
