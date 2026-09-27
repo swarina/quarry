@@ -8,66 +8,254 @@
 # Every board here was checked against its live API when it was added. A board removed from
 # this list is retired: it is no longer crawled, and its history is kept.
 boards:
+  - { source: greenhouse, slug: adyen, company: Adyen, country: NL }
   - { source: greenhouse, slug: affirm, company: Affirm, country: US }
   - { source: greenhouse, slug: airbnb, company: Airbnb, country: US }
+  - { source: greenhouse, slug: airtable, company: Airtable, country: US }
+  - { source: greenhouse, slug: algolia, company: Algolia, country: US }
+  - { source: greenhouse, slug: amplitude, company: Amplitude, country: US }
+  - { source: greenhouse, slug: anthropic, company: Anthropic, country: US }
   - { source: greenhouse, slug: asana, company: Asana, country: US }
+  - { source: greenhouse, slug: attentive, company: Attentive, country: US }
+  - { source: greenhouse, slug: bitpanda, company: Bitpanda, country: AT }
+  - { source: greenhouse, slug: buildkite, company: Buildkite, country: AU }
   - { source: greenhouse, slug: cabify, company: Cabify, country: ES }
+  - { source: greenhouse, slug: calendly, company: Calendly, country: US }
   - { source: greenhouse, slug: canonical, company: Canonical, country: GB }
+  - { source: greenhouse, slug: careem, company: Careem, country: AE }
+  - { source: greenhouse, slug: carta, company: Carta, country: US }
+  - { source: greenhouse, slug: catawiki, company: Catawiki, country: NL }
   - { source: greenhouse, slug: celonis, company: Celonis, country: DE }
+  - { source: greenhouse, slug: chainguard, company: Chainguard, country: US }
+  - { source: greenhouse, slug: checkr, company: Checkr, country: US }
+  - { source: greenhouse, slug: chime, company: Chime, country: US }
+  - { source: greenhouse, slug: cleo, company: Cleo, country: GB }
   - { source: greenhouse, slug: cloudflare, company: Cloudflare, country: US }
+  - { source: greenhouse, slug: cockroachlabs, company: Cockroach Labs, country: US }
+  - { source: greenhouse, slug: commercetools, company: commercetools, country: DE }
+  - { source: greenhouse, slug: contentful, company: Contentful, country: DE }
+  - { source: greenhouse, slug: cultureamp, company: Culture Amp, country: AU }
+  - { source: greenhouse, slug: datadog, company: Datadog, country: US }
+  - { source: greenhouse, slug: dataiku, company: Dataiku, country: US }
+  - { source: greenhouse, slug: deliveroo, company: Deliveroo, country: GB }
+  - { source: greenhouse, slug: descript, company: Descript, country: US }
   - { source: greenhouse, slug: discord, company: Discord, country: US }
+  - { source: greenhouse, slug: doctolib, company: Doctolib, country: FR }
+  - { source: greenhouse, slug: dropbox, company: Dropbox, country: US }
+  - { source: greenhouse, slug: druva, company: Druva, country: US }
+  - { source: greenhouse, slug: duolingo, company: Duolingo, country: US }
+  - { source: greenhouse, slug: ebanx, company: EBANX, country: BR }
   - { source: greenhouse, slug: elastic, company: Elastic }
+  - { source: greenhouse, slug: faire, company: Faire, country: US }
+  - { source: greenhouse, slug: feedzai, company: Feedzai }
   - { source: greenhouse, slug: figma, company: Figma, country: US }
+  - { source: greenhouse, slug: flipdish, company: Flipdish, country: IE }
+  - { source: greenhouse, slug: gemini, company: Gemini, country: US }
+  - { source: greenhouse, slug: getyourguide, company: GetYourGuide, country: DE }
+  - { source: greenhouse, slug: glossier, company: Glossier, country: US }
+  - { source: greenhouse, slug: gocardless, company: GoCardless, country: GB }
+  - { source: greenhouse, slug: gostudent, company: GoStudent, country: AT }
   - { source: greenhouse, slug: grafanalabs, company: Grafana Labs }
+  - { source: greenhouse, slug: graphcore, company: Graphcore, country: GB }
+  - { source: greenhouse, slug: groww, company: Groww, country: IN }
   - { source: greenhouse, slug: gusto, company: Gusto, country: US }
+  - { source: greenhouse, slug: gymshark, company: Gymshark, country: GB }
   - { source: greenhouse, slug: hellofresh, company: HelloFresh, country: DE }
+  - { source: greenhouse, slug: helsing, company: Helsing, country: DE }
+  - { source: greenhouse, slug: hightouch, company: Hightouch, country: US }
+  - { source: greenhouse, slug: hootsuite, company: Hootsuite, country: CA }
+  - { source: greenhouse, slug: instacart, company: Instacart, country: US }
+  - { source: greenhouse, slug: intercom, company: Fin }
+  - { source: greenhouse, slug: isaraerospace, company: Isar Aerospace, country: DE }
+  - { source: greenhouse, slug: iterable, company: Iterable, country: US }
+  - { source: greenhouse, slug: justworks, company: Justworks, country: US }
+  - { source: greenhouse, slug: klaviyo, company: Klaviyo, country: US }
+  - { source: greenhouse, slug: lattice, company: Lattice, country: US }
+  - { source: greenhouse, slug: launchdarkly, company: LaunchDarkly, country: US }
   - { source: greenhouse, slug: lyft, company: Lyft, country: US }
+  - { source: greenhouse, slug: mercury, company: Mercury, country: US }
+  - { source: greenhouse, slug: mirakl, company: Mirakl, country: FR }
+  - { source: greenhouse, slug: mixpanel, company: Mixpanel, country: US }
+  - { source: greenhouse, slug: modernhealth, company: Modern Health, country: US }
   - { source: greenhouse, slug: mongodb, company: MongoDB, country: US }
+  - { source: greenhouse, slug: moniepoint, company: Moniepoint }
   - { source: greenhouse, slug: monzo, company: Monzo, country: GB }
   - { source: greenhouse, slug: n26, company: N26, country: DE }
+  - { source: greenhouse, slug: netlify, company: Netlify, country: US }
+  - { source: greenhouse, slug: newrelic, company: New Relic, country: US }
+  - { source: greenhouse, slug: nothing, company: Nothing, country: GB }
+  - { source: greenhouse, slug: nuro, company: Nuro, country: US }
+  - { source: greenhouse, slug: ocadogroup, company: Ocado Group, country: GB }
   - { source: greenhouse, slug: okta, company: Okta, country: US }
+  - { source: greenhouse, slug: onrunning, company: "On", country: CH }
+  - { source: greenhouse, slug: pagerduty, company: PagerDuty, country: US }
+  - { source: greenhouse, slug: peloton, company: Peloton, country: US }
   - { source: greenhouse, slug: pinterest, company: Pinterest, country: US }
+  - { source: greenhouse, slug: planetscale, company: PlanetScale, country: US }
+  - { source: greenhouse, slug: proton, company: Proton, country: CH }
+  - { source: greenhouse, slug: quintoandar, company: QuintoAndar, country: BR }
+  - { source: greenhouse, slug: raisin, company: Raisin, country: DE }
   - { source: greenhouse, slug: reddit, company: Reddit, country: US }
+  - { source: greenhouse, slug: refurbed, company: refurbed, country: AT }
   - { source: greenhouse, slug: remotecom, company: Remote }
+  - { source: greenhouse, slug: ripple, company: Ripple, country: US }
+  - { source: greenhouse, slug: riskified, company: Riskified, country: IL }
+  - { source: greenhouse, slug: salesloft, company: Salesloft, country: US }
   - { source: greenhouse, slug: samsara, company: Samsara, country: US }
+  - { source: greenhouse, slug: scandit, company: Scandit, country: CH }
+  - { source: greenhouse, slug: similarweb, company: Similarweb, country: IL }
+  - { source: greenhouse, slug: slice, company: Slice }
+  - { source: greenhouse, slug: sofi, company: SoFi, country: US }
+  - { source: greenhouse, slug: solarisbank, company: Solaris, country: DE }
+  - { source: greenhouse, slug: springhealth66, company: Spring Health, country: US }
+  - { source: greenhouse, slug: squarespace, company: Squarespace, country: US }
+  - { source: greenhouse, slug: staffbase, company: Staffbase, country: DE }
+  - { source: greenhouse, slug: stone, company: Stone, country: BR }
   - { source: greenhouse, slug: stripe, company: Stripe, country: US }
+  - { source: greenhouse, slug: sumup, company: SumUp, country: GB }
+  - { source: greenhouse, slug: sweetgreen, company: sweetgreen, country: US }
+  - { source: greenhouse, slug: tailscale, company: Tailscale, country: CA }
+  - { source: greenhouse, slug: tamara, company: Tamara, country: SA }
+  - { source: greenhouse, slug: tide, company: Tide, country: GB }
+  - { source: greenhouse, slug: tines, company: Tines, country: IE }
   - { source: greenhouse, slug: toast, company: Toast, country: US }
+  - { source: greenhouse, slug: togetherai, company: Together AI, country: US }
+  - { source: greenhouse, slug: trustpilot, company: Trustpilot, country: DK }
+  - { source: greenhouse, slug: twilio, company: Twilio, country: US }
+  - { source: greenhouse, slug: twitch, company: Twitch, country: US }
+  - { source: greenhouse, slug: typeform, company: Typeform, country: ES }
+  - { source: greenhouse, slug: vercel, company: Vercel, country: US }
+  - { source: greenhouse, slug: veriff, company: Veriff, country: EE }
+  - { source: greenhouse, slug: vtex, company: VTEX }
+  - { source: greenhouse, slug: wallapop, company: Wallapop, country: ES }
+  - { source: greenhouse, slug: wayve, company: Wayve, country: GB }
+  - { source: greenhouse, slug: webflow, company: Webflow, country: US }
+  - { source: greenhouse, slug: wolt, company: Wolt, country: FI }
+  - { source: greenhouse, slug: xendit, company: Xendit, country: ID }
+  - { source: lever, slug: agicap, company: Agicap, country: FR }
   - { source: lever, slug: alice-bob, company: Alice & Bob, country: FR }
   - { source: lever, slug: allegiantair, company: Allegiant Air, country: US }
   - { source: lever, slug: binance, company: Binance }
+  - { source: lever, slug: blablacar, company: BlaBlaCar, country: FR }
   - { source: lever, slug: blueland, company: Blueland, country: US }
+  - { source: lever, slug: contentsquare, company: Contentsquare, country: FR }
   - { source: lever, slug: cred, company: CRED, country: IN }
+  - { source: lever, slug: deputy, company: Deputy, country: AU }
+  - { source: lever, slug: dlocal, company: dLocal, country: UY }
+  - { source: lever, slug: everlywell, company: Everlywell, country: US }
+  - { source: lever, slug: farfetch, company: Farfetch, country: GB }
   - { source: lever, slug: gopuff, company: Gopuff, country: US }
+  - { source: lever, slug: hermeus, company: Hermeus, country: US }
+  - { source: lever, slug: immutable, company: Immutable, country: AU }
+  - { source: lever, slug: jobandtalent, company: Jobandtalent, country: ES }
+  - { source: lever, slug: kavak, company: Kavak, country: MX }
+  - { source: lever, slug: malt, company: Malt, country: FR }
   - { source: lever, slug: matchgroup, company: Match Group, country: US }
+  - { source: lever, slug: meesho, company: Meesho, country: IN }
+  - { source: lever, slug: ninjavan, company: Ninja Van, country: SG }
   - { source: lever, slug: nium, company: Nium, country: SG }
   - { source: lever, slug: outreach, company: Outreach, country: US }
   - { source: lever, slug: palantir, company: Palantir, country: US }
+  - { source: lever, slug: pipedrive, company: Pipedrive }
   - { source: lever, slug: qonto, company: Qonto, country: FR }
+  - { source: lever, slug: ro, company: Ro, country: US }
   - { source: lever, slug: shieldai, company: Shield AI, country: US }
   - { source: lever, slug: spotify, company: Spotify, country: SE }
   - { source: lever, slug: swile, company: Swile, country: FR }
+  - { source: lever, slug: tala, company: Tala, country: US }
+  - { source: lever, slug: wattpad, company: Wattpad, country: CA }
+  - { source: lever, slug: zeta, company: Zeta }
   - { source: lever, slug: zoox, company: Zoox, country: US }
+  - { source: lever, slug: zopa, company: Zopa, country: GB }
   - { source: ashby, slug: 0g, company: 0G }
+  - { source: ashby, slug: 1password, company: 1Password, country: CA }
+  - { source: ashby, slug: abridge, company: Abridge, country: US }
+  - { source: ashby, slug: airbyte, company: Airbyte, country: US }
+  - { source: ashby, slug: airtasker, company: Airtasker, country: AU }
   - { source: ashby, slug: airwallex, company: Airwallex }
   - { source: ashby, slug: alan, company: Alan, country: FR }
+  - { source: ashby, slug: alchemy, company: Alchemy, country: US }
+  - { source: ashby, slug: andela, company: Andela, country: US }
   - { source: ashby, slug: anyscale, company: Anyscale, country: US }
+  - { source: ashby, slug: atlan, company: Atlan }
   - { source: ashby, slug: attio, company: Attio, country: GB }
+  - { source: ashby, slug: babbel, company: Babbel, country: DE }
+  - { source: ashby, slug: backmarket, company: Back Market, country: FR }
+  - { source: ashby, slug: baseten, company: Baseten, country: US }
+  - { source: ashby, slug: beamery, company: Beamery, country: GB }
+  - { source: ashby, slug: benchling, company: Benchling, country: US }
+  - { source: ashby, slug: benevity, company: Benevity, country: CA }
+  - { source: ashby, slug: bitvavo, company: Bitvavo, country: NL }
+  - { source: ashby, slug: clickup, company: ClickUp, country: US }
   - { source: ashby, slug: cohere, company: Cohere, country: CA }
+  - { source: ashby, slug: commure, company: Commure, country: US }
+  - { source: ashby, slug: confluent, company: Confluent, country: US }
+  - { source: ashby, slug: deepl, company: DeepL, country: DE }
+  - { source: ashby, slug: docplanner, company: Docplanner, country: PL }
   - { source: ashby, slug: elevenlabs, company: ElevenLabs }
+  - { source: ashby, slug: enpal, company: Enpal, country: DE }
+  - { source: ashby, slug: expensify, company: Expensify, country: US }
+  - { source: ashby, slug: faculty, company: Faculty, country: GB }
+  - { source: ashby, slug: forto, company: Forto, country: DE }
+  - { source: ashby, slug: frontify, company: Frontify, country: CH }
+  - { source: ashby, slug: glia, company: Glia }
+  - { source: ashby, slug: headway, company: Headway, country: US }
+  - { source: ashby, slug: improbable, company: Improbable, country: GB }
+  - { source: ashby, slug: jobber, company: Jobber, country: CA }
+  - { source: ashby, slug: koho, company: KOHO, country: CA }
+  - { source: ashby, slug: kong, company: Kong, country: US }
+  - { source: ashby, slug: ledger, company: Ledger, country: FR }
+  - { source: ashby, slug: legora, company: Legora, country: SE }
+  - { source: ashby, slug: lemonade, company: Lemonade, country: US }
+  - { source: ashby, slug: lendable, company: Lendable, country: GB }
+  - { source: ashby, slug: lightspeedhq, company: Lightspeed, country: CA }
   - { source: ashby, slug: linear, company: Linear, country: US }
   - { source: ashby, slug: lovable, company: Lovable, country: SE }
+  - { source: ashby, slug: manychat, company: Manychat }
+  - { source: ashby, slug: marshmallow, company: Marshmallow, country: GB }
+  - { source: ashby, slug: miro, company: Miro }
   - { source: ashby, slug: modal, company: Modal, country: US }
+  - { source: ashby, slug: mollie, company: Mollie, country: NL }
+  - { source: ashby, slug: moneybox, company: Moneybox, country: GB }
+  - { source: ashby, slug: motorway, company: Motorway, country: GB }
+  - { source: ashby, slug: multiverse, company: Multiverse, country: GB }
   - { source: ashby, slug: n8n, company: n8n, country: DE }
+  - { source: ashby, slug: nerdwallet, company: NerdWallet, country: US }
   - { source: ashby, slug: notion, company: Notion, country: US }
+  - { source: ashby, slug: nubank, company: Nubank, country: BR }
+  - { source: ashby, slug: oaknorth, company: OakNorth, country: GB }
   - { source: ashby, slug: openai, company: OpenAI, country: US }
+  - { source: ashby, slug: paddle, company: Paddle, country: GB }
+  - { source: ashby, slug: pennylane, company: Pennylane, country: FR }
   - { source: ashby, slug: perplexity, company: Perplexity, country: US }
+  - { source: ashby, slug: phantom, company: Phantom, country: US }
   - { source: ashby, slug: photoroom, company: Photoroom, country: FR }
+  - { source: ashby, slug: pinecone, company: Pinecone, country: US }
+  - { source: ashby, slug: plaid, company: Plaid, country: US }
   - { source: ashby, slug: pleo, company: Pleo, country: DK }
   - { source: ashby, slug: posthog, company: PostHog }
   - { source: ashby, slug: ramp, company: Ramp, country: US }
   - { source: ashby, slug: replit, company: Replit, country: US }
+  - { source: ashby, slug: rohlik, company: Rohlik, country: CZ }
   - { source: ashby, slug: sanity, company: Sanity }
+  - { source: ashby, slug: satispay, company: Satispay, country: IT }
+  - { source: ashby, slug: sorare, company: Sorare, country: FR }
+  - { source: ashby, slug: strava, company: Strava, country: US }
   - { source: ashby, slug: supabase, company: Supabase }
+  - { source: ashby, slug: supercell, company: Supercell, country: FI }
   - { source: ashby, slug: synthesia, company: Synthesia, country: GB }
+  - { source: ashby, slug: temporal, company: Temporal, country: US }
+  - { source: ashby, slug: toogoodtogo, company: Too Good To Go, country: DK }
+  - { source: ashby, slug: tractable, company: Tractable, country: GB }
+  - { source: ashby, slug: trainline, company: Trainline, country: GB }
+  - { source: ashby, slug: uipath, company: UiPath, country: US }
   - { source: ashby, slug: vanta, company: Vanta, country: US }
+  - { source: ashby, slug: voodoo, company: Voodoo, country: FR }
+  - { source: ashby, slug: wayflyer, company: Wayflyer, country: IE }
+  - { source: ashby, slug: wealthsimple, company: Wealthsimple, country: CA }
+  - { source: ashby, slug: weaviate, company: Weaviate, country: NL }
+  - { source: ashby, slug: workhuman, company: Workhuman, country: IE }
+  - { source: ashby, slug: writer, company: Writer, country: US }
+  - { source: ashby, slug: xero, company: Xero, country: NZ }
   - { source: ashby, slug: zapier, company: Zapier, country: US }
+  - { source: ashby, slug: zilch, company: Zilch, country: GB }
