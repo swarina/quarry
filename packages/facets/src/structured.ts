@@ -65,7 +65,7 @@ const PER_YEAR: Readonly<Record<PayInterval, number>> = {
 
 /** Employment types by the words labels use for them, in English and a few other languages. */
 const EMPLOYMENT_WORDS: readonly (readonly [EmploymentType, RegExp])[] = [
-  ["full-time", /\b(?:full ?time|permanent|cdi|employee)\b/],
+  ["full-time", /\bfull ?time\b/],
   ["part-time", /\b(?:part ?time|working student|werkstudent)\b/],
   ["contract", /\b(?:contract|contractor|freelance|freelancer|project based)\b/],
   [
@@ -74,6 +74,12 @@ const EMPLOYMENT_WORDS: readonly (readonly [EmploymentType, RegExp])[] = [
   ],
   ["temporary", /\b(?:temporary|temp|fixed term|short term|cdd)\b/],
 ];
+
+/**
+ * Words for an ordinary employee ("Permanent", "Employee", the French CDI and cadre). They mean
+ * full-time only when the label names no type itself: "Part Time Employee" is part-time.
+ */
+const EMPLOYEE_WORDS = /\b(?:permanent|employee|cdi|cadre)\b/;
 
 /**
  * A posting's structured facets. `board.country` is the company's home country, the weakest
@@ -102,7 +108,8 @@ export function employmentTypes(label: string | null): EmploymentType[] {
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .toLowerCase()
     .replace(/[^a-z]+/g, " ");
-  return EMPLOYMENT_WORDS.filter(([, pattern]) => pattern.test(words)).map(([type]) => type);
+  const types = EMPLOYMENT_WORDS.filter(([, pattern]) => pattern.test(words)).map(([type]) => type);
+  return types.length === 0 && EMPLOYEE_WORDS.test(words) ? ["full-time"] : types;
 }
 
 /** The stated salary as a yearly range, or null without one. */

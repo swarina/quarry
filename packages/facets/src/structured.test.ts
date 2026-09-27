@@ -50,6 +50,12 @@ describe("employmentTypes", () => {
     ["Short Term", ["temporary"]],
     ["Freelancer", ["contract"]],
     ["Project - Based", ["contract"]],
+    ["FR Executive/Cadre", ["full-time"]],
+    ["GE Employee", ["full-time"]],
+    // An employee word names full-time only when nothing else names a type.
+    ["Part Time Employee", ["part-time"]],
+    ["Permanent Part-time", ["part-time"]],
+    ["Temporary, Part-time", ["part-time", "temporary"]],
   ])("reads %s", (label, types) => {
     expect(employmentTypes(label)).toEqual(types);
   });
