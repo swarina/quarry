@@ -30,6 +30,7 @@ function posting(
     url: `https://jobs.lever.co/acme/${externalId}`,
     applyUrl: null,
     locations: ["Berlin"],
+    places: [],
     country: "DE",
     workplace: null,
     employmentType: null,
@@ -173,6 +174,51 @@ describe("recordListing", () => {
       lastSuccessAt: T0 + 1_000,
     });
     expect(store.db.prepare("SELECT count(*) AS n FROM posting_contents").get()).toEqual({ n: 2 });
+  });
+
+  it("stores a newer normalizer's reading of unchanged content, without counting an edit", async () => {
+    const listWith = async (at: number, value: NormalizedPosting, normalizerVersion: number) =>
+      store.recordListing(acme(), attempt(at), {
+        items: [await item(value)],
+        etag: null,
+        normalizerVersion,
+      });
+    const contents = () =>
+      (
+        store.db
+          .prepare("SELECT normalizer_version, normalized_json FROM posting_contents")
+          .all() as { normalizer_version: number; normalized_json: string }[]
+      ).map((row) => ({
+        version: row.normalizer_version,
+        places: (JSON.parse(row.normalized_json) as NormalizedPosting).places,
+      }));
+    const place = { label: "Berlin", text: "Berlin, Germany" };
+
+    await listWith(T0, posting("1"), 1);
+    const reread = await listWith(T0 + HOUR, posting("1", { places: [place] }), 2);
+    expect(reread.changedPostings).toBe(0);
+    expect(contents()).toEqual([{ version: 2, places: [place] }]);
+    // An older normalizer never replaces a newer reading.
+    await listWith(T0 + 2 * HOUR, posting("1"), 1);
+    expect(contents()).toEqual([{ version: 2, places: [place] }]);
+    expect(store.db.prepare("SELECT count(*) AS n FROM posting_changes").get()).toEqual({ n: 1 });
+  });
+
+  it("refreshes earlier content that returns under a newer normalizer", async () => {
+    const listWith = async (at: number, value: NormalizedPosting, normalizerVersion: number) =>
+      store.recordListing(acme(), attempt(at), {
+        items: [await item(value)],
+        etag: null,
+        normalizerVersion,
+      });
+    await listWith(T0, posting("1"), 1);
+    await listWith(T0 + HOUR, posting("1", { title: "Edited" }), 1);
+    await listWith(T0 + 2 * HOUR, posting("1", { places: [{ label: null, text: "Berlin" }] }), 2);
+    expect(
+      store.db
+        .prepare("SELECT normalizer_version AS version FROM posting_contents ORDER BY rowid")
+        .all(),
+    ).toEqual([{ version: 2 }, { version: 1 }]);
   });
 
   it("extends presence while a posting stays listed and starts a new run after a gap", async () => {
