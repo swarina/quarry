@@ -1,0 +1,6 @@
+# Boards whose companies asked not to be included. Requests are honored within 24 hours: the
+# next pipeline run stops crawling the board and deletes its postings.
+#
+# Add one line per board, with the date of the request and its source, for example:
+#   - { source: greenhouse, slug: example, requested: 2026-10-01, reason: Email from the company }
+boards: []

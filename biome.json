@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["packages/**", "scripts/**", "*.ts", "*.json", "!**/fixtures"]
+    "includes": ["apps/**", "packages/**", "scripts/**", "*.ts", "*.json", "!**/fixtures"]
   },
   "formatter": {
     "enabled": true,
@@ -179,6 +179,16 @@
           },
           "suspicious": {
             "noConsole": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/pipeline/src/config.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noProcessEnv": "off"
           }
         }
       }

@@ -19,6 +19,8 @@ coverage/
 # Local databases
 *.sqlite
 *.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
 *.db
 
 # Logs

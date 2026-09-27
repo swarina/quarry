@@ -1,0 +1,16 @@
+{
+  "name": "@quarry/pipeline",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The scheduled pipeline: crawl job boards into the pipeline store and report on each run.",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@quarry/ats": "workspace:*",
+    "@quarry/crawl": "workspace:*",
+    "@quarry/domain": "workspace:*",
+    "@quarry/storage": "workspace:*",
+    "yaml": "2.9.1",
+    "zod": "4.6.5"
+  }
+}
