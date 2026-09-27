@@ -1,5 +1,5 @@
 import type { HostStats } from "@quarry/crawl";
-import type { CrawlOutcome, RunSummary } from "@quarry/storage/node";
+import type { CrawlOutcome, RunSummary, SnapshotManifest, StoreReport } from "@quarry/storage/node";
 import type { CrawlReport } from "./crawl.ts";
 import type { Freshness, FreshnessStats } from "./freshness.ts";
 
@@ -136,6 +136,36 @@ function renderFreshness(freshness: Freshness): string[] {
       row(`${window}, ${source}`, stats),
     ),
   ];
+}
+
+/** What `store pull` restored, as Markdown; `manifest` is null for a store started empty. */
+export function renderRestore(manifest: SnapshotManifest | null, durationMs: number): string {
+  const text =
+    manifest === null
+      ? "Started an empty store: the release holds no snapshot yet."
+      : `Restored snapshot ${manifest.seq} (made ${manifest.createdAt} by run \`${manifest.runId}\`, schema version ${manifest.schemaVersion}): ${formatBytes(manifest.snapshot.bytes)} downloaded and ${formatBytes(manifest.sqliteBytes)} restored in ${formatDuration(durationMs)}.`;
+  return `### Store restore\n\n${text}\n\n`;
+}
+
+/** A `store verify` report as Markdown. */
+export function renderStoreReport(report: StoreReport): string {
+  const healthy = report.integrity.length === 1 && report.integrity[0] === "ok";
+  const boards = Object.entries(report.boards)
+    .map(([status, count]) => `${count.toLocaleString("en-US")} ${status}`)
+    .join(", ");
+  const lastRun =
+    report.lastRun === null
+      ? "none"
+      : `\`${report.lastRun.id}\` (${report.lastRun.status}), started ${new Date(report.lastRun.startedAt).toISOString()}`;
+  return [
+    "### Store check",
+    "",
+    "| Integrity | Schema version | Snapshot | Boards | Postings | Crawls | Last run |",
+    "| --- | ---: | ---: | --- | ---: | ---: | --- |",
+    `| ${healthy ? "ok" : escapeCell(report.integrity.slice(0, 3).join("; "))} | ${report.schemaVersion} | ${report.snapshotSeq} | ${boards || "none"} | ${report.postings.toLocaleString("en-US")} | ${report.crawls.toLocaleString("en-US")} | ${lastRun} |`,
+    "",
+    "",
+  ].join("\n");
 }
 
 function sum(hosts: RunStats["hosts"], field: "requests" | "retries" | "bytes"): number {

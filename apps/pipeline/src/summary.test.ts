@@ -1,8 +1,8 @@
-import type { RunSummary } from "@quarry/storage/node";
+import type { RunSummary, SnapshotManifest, StoreReport } from "@quarry/storage/node";
 import { describe, expect, it } from "vitest";
 import type { CrawlReport } from "./crawl.ts";
 import type { Freshness } from "./freshness.ts";
-import { buildRunStats, renderSummary } from "./summary.ts";
+import { buildRunStats, renderRestore, renderStoreReport, renderSummary } from "./summary.ts";
 
 const crawl: CrawlReport = {
   due: 4,
@@ -161,5 +161,66 @@ describe("renderSummary", () => {
   it("lists failed boards with escaped cells", () => {
     expect(markdown).toContain("### Boards that failed (1)");
     expect(markdown).toContain("| `ashby:beta` | failed | 503 | server-error: HTTP \\| 503 |");
+  });
+});
+
+describe("renderRestore", () => {
+  const manifest: SnapshotManifest = {
+    format: 1,
+    seq: 12,
+    runId: "gh-9-1",
+    createdAt: "2026-09-27T03:21:40.000Z",
+    schemaVersion: 1,
+    sqliteBytes: 530 * 1024 * 1024,
+    snapshot: {
+      name: "store-00000012-gh-9-1.sqlite.br.enc",
+      bytes: 61 * 1024 * 1024,
+      sha256: "0".repeat(64),
+    },
+  };
+
+  it("names the snapshot, its sizes, and how long the restore took", () => {
+    expect(renderRestore(manifest, 14_200)).toBe(
+      "### Store restore\n\nRestored snapshot 12 (made 2026-09-27T03:21:40.000Z by run `gh-9-1`, schema version 1): 61.0 MB downloaded and 530.0 MB restored in 14 s.\n\n",
+    );
+  });
+
+  it("says when the store started empty", () => {
+    expect(renderRestore(null, 5)).toContain("Started an empty store");
+  });
+});
+
+describe("renderStoreReport", () => {
+  const report: StoreReport = {
+    integrity: ["ok"],
+    schemaVersion: 2,
+    snapshotSeq: 12,
+    boards: { active: 251, gone: 2 },
+    postings: 22_311,
+    crawls: 1_506,
+    lastRun: {
+      id: "gh-9-1",
+      status: "succeeded",
+      startedAt: Date.UTC(2026, 8, 27, 3, 17),
+      finishedAt: Date.UTC(2026, 8, 27, 3, 20),
+    },
+  };
+
+  it("tabulates integrity, schema, counts, and the last run", () => {
+    expect(renderStoreReport(report)).toContain(
+      "| ok | 2 | 12 | 251 active, 2 gone | 22,311 | 1,506 | `gh-9-1` (succeeded), started 2026-09-27T03:17:00.000Z |",
+    );
+  });
+
+  it("shows integrity problems and an empty store", () => {
+    const markdown = renderStoreReport({
+      ...report,
+      integrity: ["row 3 missing from index x", "page 7: btree | error"],
+      boards: {},
+      lastRun: null,
+    });
+    expect(markdown).toContain(
+      "| row 3 missing from index x; page 7: btree \\| error | 2 | 12 | none | 22,311 | 1,506 | none |",
+    );
   });
 });
