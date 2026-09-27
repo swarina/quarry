@@ -24,6 +24,7 @@ export interface LogFields {
   readonly boards_retired?: number;
   readonly boards_denied?: number;
   readonly postings_purged?: number;
+  readonly snapshot_seq?: number;
 }
 
 export type Logger = Record<LogLevel, (message: string, fields?: LogFields) => void>;

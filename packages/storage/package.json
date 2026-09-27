@@ -10,6 +10,7 @@
     "./node": "./src/node/index.ts"
   },
   "dependencies": {
-    "@quarry/domain": "workspace:*"
+    "@quarry/domain": "workspace:*",
+    "zod": "4.6.5"
   }
 }
