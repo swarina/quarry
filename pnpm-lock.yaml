@@ -71,6 +71,15 @@ importers:
         specifier: 8.1.0
         version: 8.1.0
 
+  packages/facets:
+    dependencies:
+      '@quarry/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@quarry/places':
+        specifier: workspace:*
+        version: link:../places
+
   packages/jev:
     dependencies:
       '@quarry/domain':

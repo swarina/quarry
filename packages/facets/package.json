@@ -1,0 +1,16 @@
+{
+  "name": "@quarry/facets",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Standard facets of a posting: those derived from structured fields and labels, and later those answered by Jev.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@quarry/domain": "workspace:*",
+    "@quarry/places": "workspace:*"
+  }
+}
