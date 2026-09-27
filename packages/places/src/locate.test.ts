@@ -1,0 +1,86 @@
+import type { NormalizedPosting } from "@quarry/domain";
+import { describe, expect, it } from "vitest";
+import { gazetteer } from "./gazetteer.ts";
+import { locatePosting, type PostingLocation } from "./locate.ts";
+
+const cityNames = new Map(gazetteer().cities.map((city) => [city.id, city.name]));
+
+type Located = Pick<NormalizedPosting, "locations" | "places" | "country">;
+
+function locate(posting: Partial<Located>, home: string | null = null) {
+  return locatePosting({ locations: [], places: [], country: null, ...posting }, home);
+}
+
+function where(location: PostingLocation): string[] {
+  return location.places.map((place) =>
+    [place.country, place.division, place.city === null ? null : cityNames.get(place.city)]
+      .filter((part) => part !== null)
+      .join("/"),
+  );
+}
+
+describe("locatePosting", () => {
+  it("places a posting by its labels, without repeats", () => {
+    const location = locate({ locations: ["London, UK", "London", "Paris; London"] });
+    expect(where(location)).toEqual(["GB/ENG/London", "FR/11/Paris"]);
+    expect(location).toMatchObject({
+      basis: "labels",
+      workplace: null,
+      anywhere: false,
+      unplaced: [],
+    });
+  });
+
+  it("reads labels with the structured places as hints", () => {
+    // Lever states the country; an office or address names it too.
+    expect(where(locate({ locations: ["Georgia"], country: "US" }))).toEqual(["US/GA"]);
+    expect(
+      where(
+        locate({
+          locations: ["London"],
+          places: [{ label: null, text: "London, Ontario, Canada" }],
+        }),
+      ),
+    ).toEqual(["CA/08/London"]);
+  });
+
+  it("takes the address the ATS pairs with a label that names no place", () => {
+    const location = locate({
+      locations: ["Remote", "New York"],
+      places: [{ label: "Remote", text: "Austin, Texas, United States" }],
+    });
+    expect(where(location)).toEqual(["US/TX/Austin", "US/NY/New York City"]);
+    expect(location.workplace).toBe("remote");
+  });
+
+  it("falls back to structured places when no label names one", () => {
+    const offices = locate({
+      locations: ["Hybrid"],
+      places: [{ label: null, text: "Berlin, Germany" }],
+    });
+    expect(where(offices)).toEqual(["DE/16/Berlin"]);
+    expect(offices).toMatchObject({ basis: "structured", workplace: "hybrid" });
+
+    const country = locate({ locations: ["Remote"], country: "DE" });
+    expect(where(country)).toEqual(["DE"]);
+    expect(country.basis).toBe("structured");
+
+    const nowhere = locate({ locations: ["Home based - Worldwide"] });
+    expect(nowhere).toMatchObject({
+      places: [],
+      basis: "none",
+      workplace: "remote",
+      anywhere: true,
+    });
+  });
+
+  it("prefers remote, then hybrid, then on-site, when labels differ", () => {
+    expect(locate({ locations: ["Berlin (Hybrid)", "Remote - Germany"] }).workplace).toBe("remote");
+    expect(locate({ locations: ["Office Based - Berlin", "Hybrid"] }).workplace).toBe("hybrid");
+    expect(locate({ locations: ["Office Based - Berlin"] }).workplace).toBe("onsite");
+  });
+
+  it("reports labels that name neither a place nor an arrangement", () => {
+    expect(locate({ locations: ["Jobs.cz", "Remote", "Prague"] }).unplaced).toEqual(["Jobs.cz"]);
+  });
+});

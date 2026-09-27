@@ -11,5 +11,8 @@
   },
   "scripts": {
     "build-gazetteer": "node scripts/build-gazetteer.ts"
+  },
+  "dependencies": {
+    "@quarry/domain": "workspace:*"
   }
 }
