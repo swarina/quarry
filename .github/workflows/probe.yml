@@ -27,7 +27,7 @@ jobs:
       - name: Check the age of the newest snapshot
         run: |
           newest=$(gh release view pipeline-store --json assets \
-            --jq '[.assets[] | select(.name | test("^manifest-[0-9]{8}\\.json$"))] | max_by(.name) | .createdAt // empty' \
+            --jq '[.assets[] | select(.state == "uploaded" and (.name | test("^manifest-[0-9]{8}\\.json$")))] | max_by(.name) | .createdAt // empty' \
             2> /dev/null || true)
           label=pipeline-stale
           gh label create "$label" --color D93F0B \
