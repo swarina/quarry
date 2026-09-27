@@ -25,7 +25,7 @@ const MAX_NAME_LENGTH = 40;
  * A capitalized name in Latin letters (with any accents), spaces, and the punctuation place
  * names use. Lowercase entries are romanizations of other scripts ("baeng-geollo").
  */
-const WRITABLE_NAME = /^\p{Lu}[\p{Script=Latin}\p{M} .'’-]*$/u;
+const WRITABLE_NAME = /^\p{Lu}[\p{Script=Latin}\p{M} .'\u2019-]*$/u;
 /** All capitals: airport and other codes ("MUC", "BLR"), which the parser curates instead. */
 const CODE = /^[\p{Lu} .-]+$/u;
 
