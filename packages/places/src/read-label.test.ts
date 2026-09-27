@@ -143,6 +143,25 @@ describe("readLabel", () => {
     expect(readLabel("Jobs.cz").unmatched).toEqual(["Jobs.cz"]);
   });
 
+  it("reads two-letter time zones as zones only where a label talks about time", () => {
+    expect(short("Remote - CT; Remote - NY")).toBe("US/CT + US/NY + remote");
+    expect(short("Hartford, CT")).toBe("US/CT/Hartford");
+    expect(short("PT Lisboa, Portugal")).toBe("PT/14/Lisbon");
+    expect(short("Addis Ababa, ET")).toBe("ET/44/Addis Ababa");
+    expect(short("Remote (PST or MT timezone)")).toBe("remote");
+    expect(readLabel("US Remote (EST Timezone Only)")).toMatchObject({
+      places: [{ country: "US", division: null, city: null }],
+      unmatched: [],
+    });
+  });
+
+  it("reads three capitals as a code, and longer capitals as names", () => {
+    expect(short("OSLO")).toBe("NO/12/Oslo");
+    expect(short("CDMX")).toBe("MX/09/Mexico City");
+    expect(short("NYC")).toBe("US/NY/New York City");
+    expect(short("BLR")).toBe("BY");
+  });
+
   it("reads flag emoji as countries", () => {
     const flag = (code: string) =>
       String.fromCodePoint(...Array.from(code, (letter) => 0x1f1e6 + letter.charCodeAt(0) - 65));

@@ -142,6 +142,7 @@ const CITY_ALIASES: readonly (readonly [readonly string[], string, string])[] = 
   [["ATL"], "Atlanta", "US"],
   [["BOS"], "Boston", "US"],
   [["KL"], "Kuala Lumpur", "MY"],
+  [["CDMX"], "Mexico City", "MX"],
   [["greater london"], "London", "GB"],
   [["greater boston"], "Boston", "US"],
   [["GTA", "greater toronto area"], "Toronto", "CA"],

@@ -123,15 +123,16 @@ const FLAG = new RegExp(
   `[${String.fromCodePoint(REGIONAL_A)}-${String.fromCodePoint(REGIONAL_A + 25)}]{2}`,
   "gu",
 );
-/** Time zone abbreviations, which look like country codes ("PT" is not Portugal here). */
-const TIME_ZONES: ReadonlySet<string> = new Set(
-  ["PT", "ET", "CT", "PST", "EST", "CST", "MST", "PDT", "EDT", "CDT", "MDT", "GMT", "UTC"].concat([
-    "CET",
-    "CEST",
+/**
+ * Time zone abbreviations that look like codes. Three or more letters are always time zones
+ * ("EST" is also Estonia's code, but labels name Estonia in full).
+ */
+const LONG_ZONES: ReadonlySet<string> = new Set(
+  ["PST", "EST", "CST", "MST", "PDT", "EDT", "CDT", "MDT", "GMT", "UTC", "CET", "CEST"].concat([
     "EET",
     "EEST",
     "WET",
-    "BST",
+    "T",
     "AEST",
     "AEDT",
     "JST",
@@ -139,6 +140,12 @@ const TIME_ZONES: ReadonlySet<string> = new Set(
     "HKT",
   ]),
 );
+/**
+ * Two-letter zones are country and state codes far more often ("Hartford, CT", "PT Lisboa"),
+ * so they are zones only in a label that talks about time ("West Coast/PT").
+ */
+const ALL_ZONES: ReadonlySet<string> = new Set([...LONG_ZONES, "PT", "ET", "CT", "MT"]);
+const TIME_TALK = /\b(?:coast|times?|time ?zones?|zones?|hours)\b/i;
 
 interface Token {
   readonly text: string;
@@ -147,9 +154,11 @@ interface Token {
   readonly candidates: readonly { readonly match: NameMatch; readonly weight: number }[];
 }
 
-interface Flags {
+/** What one reading has found so far, and which codes are time zones in its label. */
+interface State {
   workplace: Workplace | null;
   anywhere: boolean;
+  readonly zones: ReadonlySet<string>;
 }
 
 const cache = new Map<string, LabelReading>();
@@ -172,13 +181,17 @@ export function readLabel(label: string, hints: ReadingHints = {}): LabelReading
 }
 
 function read(label: string, hints: ReadingHints): LabelReading {
-  const flags: Flags = { workplace: null, anywhere: false };
+  const state: State = {
+    workplace: null,
+    anywhere: false,
+    zones: TIME_TALK.test(label) ? ALL_ZONES : LONG_ZONES,
+  };
   const unmatched: string[] = [];
   const tokens: Token[] = [];
   segments(label).forEach((segment, index) => {
     for (const chunk of chunks(segment)) {
-      for (const text of tokenTexts(chunk, flags)) {
-        const candidates = candidatesFor(text);
+      for (const text of tokenTexts(chunk, state)) {
+        const candidates = candidatesFor(text, state.zones);
         if (candidates.length === 0) unmatched.push(text);
         else tokens.push({ text, segment: index, candidates });
       }
@@ -190,8 +203,8 @@ function read(label: string, hints: ReadingHints): LabelReading {
   });
   return {
     places: assemble(chosen),
-    workplace: flags.workplace,
-    anywhere: flags.anywhere,
+    workplace: state.workplace,
+    anywhere: state.anywhere,
     unmatched,
   };
 }
@@ -226,19 +239,21 @@ function chunks(segment: string): string[] {
  * whole is split on "and", "&", and "or", and a trailing code or country is split off
  * ("Austin TX").
  */
-function tokenTexts(chunk: string, flags: Flags): string[] {
-  if (TIME_ZONES.has(chunk)) return [];
-  if (candidatesFor(chunk).length > 0) return [chunk];
+function tokenTexts(chunk: string, state: State): string[] {
+  if (state.zones.has(chunk)) return [];
+  if (candidatesFor(chunk, state.zones).length > 0) return [chunk];
   const words = chunk
     .split(/\s+/)
     .filter((word) => !/\d/.test(word))
     .join(" ");
-  const stripped = stripArrangements(words, flags);
-  if (stripped.length === 0 || STREET.test(foldName(stripped))) return [];
-  if (candidatesFor(stripped).length > 0) return [stripped];
+  const stripped = stripArrangements(words, state);
+  if (stripped.length === 0 || state.zones.has(stripped) || STREET.test(foldName(stripped))) {
+    return [];
+  }
+  if (candidatesFor(stripped, state.zones).length > 0) return [stripped];
   const alternatives = stripped.split(/\s+(?:and|&|or|\+)\s+|\s*&\s*/i);
-  if (alternatives.length > 1) return alternatives.flatMap((part) => tokenTexts(part, flags));
-  return splitNames(stripped);
+  if (alternatives.length > 1) return alternatives.flatMap((part) => tokenTexts(part, state));
+  return splitNames(stripped, state.zones);
 }
 
 /**
@@ -246,18 +261,18 @@ function tokenTexts(chunk: string, flags: Flags): string[] {
  * "Austin TX" into both parts, "Strava SF" into an unmatched "Strava" and "SF". Text ending
  * in "City" is also tried without it ("Hsinchu City").
  */
-function splitNames(text: string): string[] {
+function splitNames(text: string, zones: ReadonlySet<string>): string[] {
   const words = text.split(" ");
   if (words.length > 1 && words.at(-1)?.toLowerCase() === "city") {
     const shorter = words.slice(0, -1).join(" ");
-    if (candidatesFor(shorter).length > 0) return [shorter];
+    if (candidatesFor(shorter, zones).length > 0) return [shorter];
   }
   if (words.length < 2 || words.length > 6) return [text];
   let best: { parts: string[]; named: number } = { parts: [text], named: 0 };
   for (let at = 1; at < words.length; at += 1) {
     const parts = [words.slice(0, at).join(" "), words.slice(at).join(" ")];
     const named = parts
-      .filter((part) => candidatesFor(part).length > 0)
+      .filter((part) => candidatesFor(part, zones).length > 0)
       .reduce((total, part) => total + part.length, 0);
     if (named > best.named) best = { parts, named };
   }
@@ -265,14 +280,14 @@ function splitNames(text: string): string[] {
 }
 
 /** Removes work arrangement and noise phrases from both ends, noting what they said. */
-function stripArrangements(text: string, flags: Flags): string {
+function stripArrangements(text: string, state: State): string {
   const words = text.split(/[\s-]+/).filter((word) => word.length > 0);
   const phrase = (from: number, to: number) => foldName(words.slice(from, to).join(" "));
   const classify = (folded: string): boolean => {
-    if (REMOTE.test(folded)) flags.workplace ??= "remote";
-    else if (HYBRID.test(folded)) flags.workplace = "hybrid";
-    else if (ONSITE.test(folded)) flags.workplace ??= "onsite";
-    else if (ANYWHERE.test(folded)) flags.anywhere = true;
+    if (REMOTE.test(folded)) state.workplace ??= "remote";
+    else if (HYBRID.test(folded)) state.workplace = "hybrid";
+    else if (ONSITE.test(folded)) state.workplace ??= "onsite";
+    else if (ANYWHERE.test(folded)) state.anywhere = true;
     else return NOISE.test(folded);
     return true;
   };
@@ -295,15 +310,21 @@ function stripArrangements(text: string, flags: Flags): string {
   return words.slice(start, end).join(" ");
 }
 
-function candidatesFor(text: string): readonly { match: NameMatch; weight: number }[] {
+function candidatesFor(
+  text: string,
+  zones: ReadonlySet<string>,
+): readonly { match: NameMatch; weight: number }[] {
   const index = nameIndex();
   const code = /^(?:[A-Z]\.?){2,4}$/.test(text) ? text.replaceAll(".", "") : "";
-  // A short word in capitals is a code or an acronym ("UK", "EMEA"), never a city or division
-  // name that happens to match ("CHI" is not a town in Hebei).
+  // Two or three capitals are a code or an acronym ("UK", "USA"), never a city or division
+  // name that happens to match ("CHI" is not a town in Hebei). "OSLO" is still Oslo.
   const matches: NameMatch[] = index
     .byName(foldName(text))
-    .filter((match) => code.length === 0 || match.kind === "country" || match.kind === "region");
-  if (code.length > 0 && !TIME_ZONES.has(code)) matches.push(...index.byCode(code));
+    .filter(
+      (match) =>
+        code.length === 0 || code.length > 3 || match.kind === "country" || match.kind === "region",
+    );
+  if (code.length > 0 && !zones.has(code)) matches.push(...index.byCode(code));
   const folded = foldName(text);
   return matches
     .map((match) => ({ match, weight: weightOf(match, folded) }))
