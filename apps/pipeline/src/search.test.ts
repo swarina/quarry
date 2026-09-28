@@ -73,12 +73,14 @@ describe("buildSearchIndex", () => {
       posting("3", { locations: ["Home based - Worldwide"] }),
       posting("4", { locations: ["Jobs.cz"] }),
       posting("5", { title: "EXTERNAL TEMPLATE - Hybrid adverts" }),
+      // Hybrid, and nothing else says where: placed in the company's home country, inferred.
+      posting("6", { locations: ["Hybrid"] }),
     ]);
     const { build, report } = await buildSearchIndex(store, T0);
     expect(report).toMatchObject({
-      postings: 4,
+      postings: 5,
       placeholders: 1,
-      byBasis: { labels: 1, structured: 1, none: 2 },
+      byBasis: { labels: 1, structured: 1, home: 1, none: 2 },
       withCity: 2,
       anywhere: 1,
       unplacedLabels: [["Jobs.cz", 1]],
@@ -103,6 +105,14 @@ describe("buildSearchIndex", () => {
     expect(queryIndex(table, { employment: ["full-time"] }).rows).toEqual([
       expect.objectContaining({ title: "Engineer 1", cities: ["San Francisco"] }),
     ]);
+    const unitedStates = queryIndex(table, {
+      places: { countries: ["US"] },
+      includeAnywhere: false,
+    });
+    expect(unitedStates.rows.map((row) => [row.title, row.inferred, row.cities]).sort()).toEqual([
+      ["Engineer 1", false, ["San Francisco"]],
+      ["Engineer 6", true, []],
+    ]);
   });
 });
 
@@ -111,7 +121,7 @@ describe("renderSearchIndexSummary", () => {
     build: "1b3543dd7069",
     postings: 1_000,
     placeholders: 0,
-    byBasis: { labels: 950, structured: 40, none: 10 },
+    byBasis: { labels: 950, structured: 35, home: 5, none: 10 },
     withCity: 800,
     anywhere: 12,
     unplacedLabels: [
@@ -129,7 +139,7 @@ describe("renderSearchIndexSummary", () => {
     const markdown = renderSearchIndexSummary(report);
     expect(markdown).toContain("### Search index `1b3543dd7069`");
     expect(markdown).toContain(
-      "- 1,000 postings: 99.0% placed (95.0% by their labels, 4.0% only by offices, addresses, or a stated country), 80.0% to a city; 12 open to anywhere.",
+      "- 1,000 postings: 99.0% placed (95.0% by their labels, 3.5% only by offices, addresses, or a stated country, 0.5% inferred from the company's home country), 80.0% to a city; 12 open to anywhere.",
     );
     expect(markdown).toContain("- 2 shards, 200 KB gzipped in all; the largest is 120 KB.");
     expect(markdown).toContain("most common first: Jobs.cz (5), Office   Field (2).");

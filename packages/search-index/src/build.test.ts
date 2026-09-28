@@ -14,6 +14,7 @@ function row(id: string, overrides: Partial<IndexRow> = {}): IndexRow {
     locations: ["Berlin"],
     places: [BERLIN],
     anywhere: false,
+    inferred: false,
     workplace: null,
     employmentTypes: ["full-time"],
     department: null,

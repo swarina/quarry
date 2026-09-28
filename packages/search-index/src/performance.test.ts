@@ -50,6 +50,7 @@ function syntheticRows(): IndexRow[] {
       locations: [String(place.city ?? place.country)],
       places: [place],
       anywhere: next() < 0.01,
+      inferred: false,
       workplace: pick(["remote", "hybrid", "onsite", null] as const),
       employmentTypes: [pick(["full-time", "part-time", "contract", "internship"] as const)],
       department: pick(["Engineering", "Sales", "Marketing", null]),

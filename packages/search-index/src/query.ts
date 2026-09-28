@@ -45,6 +45,8 @@ export interface ResultRow {
   readonly cities: readonly string[];
   readonly workplace: Workplace | null;
   readonly anywhere: boolean;
+  /** The only place is the company's home country, inferred rather than stated. */
+  readonly inferred: boolean;
   readonly employmentTypes: readonly EmploymentType[];
   readonly department: string | null;
   readonly pay: {
@@ -223,6 +225,7 @@ function resultRow(table: IndexTable, row: number): ResultRow {
     cities: values(table.city).map((code) => dictionaries.city[code]?.[1] ?? ""),
     workplace: workplaceOf(table.workplace[row] ?? -1),
     anywhere: table.anywhere[row] === 1,
+    inferred: table.inferred[row] === 1,
     employmentTypes: employmentOf(table.employment[row] ?? 0),
     department: department < 0 ? null : (dictionaries.department[department] ?? null),
     pay:

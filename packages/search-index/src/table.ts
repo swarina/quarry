@@ -35,6 +35,8 @@ export interface IndexTable {
   /** An index into WORKPLACE_CODES, or -1. */
   readonly workplace: Int8Array;
   readonly anywhere: Uint8Array;
+  /** 1 when the only place is the company's home country, inferred rather than stated. */
+  readonly inferred: Uint8Array;
   /** A bit per EMPLOYMENT_CODES entry. */
   readonly employment: Uint8Array;
   readonly department: Int32Array;
@@ -108,6 +110,7 @@ export function openIndex(manifestJson: unknown, shardJsons: readonly unknown[])
     company: new Int32Array(size),
     workplace: new Int8Array(size),
     anywhere: new Uint8Array(size),
+    inferred: new Uint8Array(size),
     employment: new Uint8Array(size),
     department: new Int32Array(size),
     payMin: new Float64Array(size),
@@ -135,6 +138,7 @@ export function openIndex(manifestJson: unknown, shardJsons: readonly unknown[])
     table.company[index] = dictionaries.company.code(company);
     table.workplace[index] = columns.workplace[row] ?? -1;
     table.anywhere[index] = columns.anywhere[row] ?? 0;
+    table.inferred[index] = columns.inferred[row] ?? 0;
     table.employment[index] = columns.employment[row] ?? 0;
     table.department[index] = recode(
       dictionaries.department,
@@ -216,6 +220,7 @@ function checkShard(shard: Shard): Shard {
     company: columns.company,
     workplace: columns.workplace,
     anywhere: columns.anywhere,
+    inferred: columns.inferred,
     employment: columns.employment,
     department: columns.department,
     payMin: columns.payMin,

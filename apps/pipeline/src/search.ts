@@ -8,8 +8,11 @@ export interface SearchIndexReport {
   readonly postings: number;
   /** Templates and tests published by mistake, left out of the index. */
   readonly placeholders: number;
-  /** Postings placed by their labels, by structured fields, or not at all. */
-  readonly byBasis: Readonly<Record<"labels" | "structured" | "none", number>>;
+  /**
+   * Postings placed by their labels, by structured fields, by their company's home country
+   * (inferred), or not at all.
+   */
+  readonly byBasis: Readonly<Record<"labels" | "structured" | "home" | "none", number>>;
   readonly withCity: number;
   readonly anywhere: number;
   /** Labels that named no place or arrangement, most common first. */
@@ -35,7 +38,7 @@ export async function buildSearchIndex(
   builtAt: number,
 ): Promise<{ readonly build: IndexBuild; readonly report: SearchIndexReport }> {
   const rows: IndexRow[] = [];
-  const byBasis = { labels: 0, structured: 0, none: 0 };
+  const byBasis = { labels: 0, structured: 0, home: 0, none: 0 };
   let withCity = 0;
   let anywhere = 0;
   const unplaced = new Map<string, number>();
@@ -59,6 +62,7 @@ export async function buildSearchIndex(
       locations: posting.locations,
       places: location.places,
       anywhere: location.anywhere,
+      inferred: location.basis === "home",
       workplace: facets.workplace,
       employmentTypes: facets.employmentTypes,
       department: facets.department,
@@ -93,13 +97,13 @@ export function renderSearchIndexSummary(report: SearchIndexReport): string {
   const share = (value: number) =>
     report.postings === 0 ? "n/a" : `${((100 * value) / report.postings).toFixed(1)}%`;
   const kilobytes = (bytes: number) => `${(bytes / 1024).toFixed(0)} KB`;
-  const placed = report.byBasis.labels + report.byBasis.structured;
+  const placed = report.byBasis.labels + report.byBasis.structured + report.byBasis.home;
   const largest = report.shards.reduce((most, shard) => Math.max(most, shard.gzipBytes), 0);
   const total = report.shards.reduce((sum, shard) => sum + shard.gzipBytes, 0);
   const lines = [
     `### Search index \`${report.build}\``,
     "",
-    `- ${number(report.postings)} postings: ${share(placed)} placed (${share(report.byBasis.labels)} by their labels, ${share(report.byBasis.structured)} only by offices, addresses, or a stated country), ${share(report.withCity)} to a city; ${number(report.anywhere)} open to anywhere.`,
+    `- ${number(report.postings)} postings: ${share(placed)} placed (${share(report.byBasis.labels)} by their labels, ${share(report.byBasis.structured)} only by offices, addresses, or a stated country, ${share(report.byBasis.home)} inferred from the company's home country), ${share(report.withCity)} to a city; ${number(report.anywhere)} open to anywhere.`,
     `- ${number(report.shards.length)} shards, ${kilobytes(total)} gzipped in all; the largest is ${kilobytes(largest)}.`,
   ];
   if (report.placeholders > 0) {

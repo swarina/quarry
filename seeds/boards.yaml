@@ -3,7 +3,9 @@
 #   source:  greenhouse, lever, lever-eu (Lever's EU instance), or ashby
 #   slug:    the board name exactly as it appears in the ATS's API URL
 #   company: display name
-#   country: ISO 3166-1 alpha-2 code of the company's headquarters; omit when unsure
+#   country: ISO 3166-1 alpha-2 code of the company's headquarters; omit when unsure. It
+#            settles ambiguous place names, and it places hybrid, on-site, and headquarters
+#            postings that name no place (marked as inferred), so a wrong one misleads.
 #
 # Every board here was checked against its live API when it was added. A board removed from
 # this list is retired: it is no longer crawled, and its history is kept.

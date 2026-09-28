@@ -25,6 +25,8 @@ export interface IndexRow {
   readonly locations: readonly string[];
   readonly places: readonly Place[];
   readonly anywhere: boolean;
+  /** The only place is the company's home country, inferred rather than stated. */
+  readonly inferred: boolean;
   readonly workplace: Workplace | null;
   readonly employmentTypes: readonly EmploymentType[];
   readonly department: string | null;
@@ -196,6 +198,7 @@ function encodeShard(region: RegionId, part: number, rows: readonly IndexRow[], 
     city: list(),
     workplace: [] as number[],
     anywhere: [] as (0 | 1)[],
+    inferred: [] as (0 | 1)[],
     employment: [] as number[],
     department: [] as number[],
     payMin: [] as (number | null)[],
@@ -237,6 +240,7 @@ function encodeShard(region: RegionId, part: number, rows: readonly IndexRow[], 
     );
     columns.workplace.push(row.workplace === null ? -1 : WORKPLACE_CODES.indexOf(row.workplace));
     columns.anywhere.push(row.anywhere ? 1 : 0);
+    columns.inferred.push(row.inferred ? 1 : 0);
     columns.employment.push(
       row.employmentTypes.reduce((bits, type) => bits | (1 << EMPLOYMENT_CODES.indexOf(type)), 0),
     );
