@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildIndex, type IndexRow } from "./build.ts";
+import { INDEX_FORMAT } from "./format.ts";
 import { type IndexQuery, queryIndex } from "./query.ts";
 import { type IndexTable, openIndex } from "./table.ts";
 
@@ -17,6 +18,7 @@ function row(id: string, overrides: Partial<IndexRow> = {}): IndexRow {
     locations: ["Berlin"],
     places: [BERLIN],
     anywhere: false,
+    inferred: false,
     workplace: "onsite",
     employmentTypes: ["full-time"],
     department: null,
@@ -118,9 +120,18 @@ describe("openIndex", () => {
     expect(ids(run({}, europe)).sort()).toEqual(["berlin", "both", "london", "zurich"]);
   });
 
-  it("refuses files in another format", () => {
-    expect(() => openIndex({ format: 2 }, [])).toThrow();
-    expect(() => openIndex(index.manifest, [{ format: 1, region: "europe" }])).toThrow();
+  it("refuses files in another format", async () => {
+    const build = await buildIndex(ROWS, { builtAt: TODAY * DAY, facetsVersion: 1 });
+    const [manifest, ...shards] = build.files.map((file) => JSON.parse(file.content));
+    const format = (file: object, version: number) => ({ ...file, format: version });
+    expect(() => openIndex(manifest, shards)).not.toThrow();
+    expect(() => openIndex(format(manifest, INDEX_FORMAT + 1), shards)).toThrow();
+    expect(() =>
+      openIndex(
+        manifest,
+        shards.map((shard) => format(shard, INDEX_FORMAT - 1)),
+      ),
+    ).toThrow();
   });
 
   it("refuses a shard whose columns disagree", async () => {
@@ -134,6 +145,9 @@ describe("openIndex", () => {
     };
     expect(broken((columns) => (columns["title"] as string[]).pop())).toThrow(
       /title has \d+ rows, not \d+/,
+    );
+    expect(broken((columns) => (columns["inferred"] as number[]).pop())).toThrow(
+      /inferred has \d+ rows, not \d+/,
     );
     expect(broken((columns) => ((columns["company"] as number[])[0] = 99))).toThrow(
       /company has a code outside its \d+ values/,
@@ -156,6 +170,7 @@ describe("queryIndex", () => {
       cities: ["San Francisco"],
       workplace: "onsite",
       anywhere: false,
+      inferred: false,
       employmentTypes: ["full-time"],
       department: "Engineering",
       pay: { min: 180_000, max: 220_000, currency: "USD" },

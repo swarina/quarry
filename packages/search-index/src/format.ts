@@ -3,7 +3,7 @@ import type { EmploymentType } from "@quarry/facets";
 import { z } from "zod";
 
 /** Version of the file formats below; readers refuse others. */
-export const INDEX_FORMAT = 1;
+export const INDEX_FORMAT = 2;
 
 /**
  * Size budgets (ADR-0007): a shard downloads quickly on a phone, the manifest (fetched on every
@@ -119,6 +119,8 @@ export const shardSchema = z.strictObject({
     /** An index into WORKPLACE_CODES, or -1. */
     workplace: codes,
     anywhere: z.array(z.union([z.literal(0), z.literal(1)])),
+    /** 1 when the only place is the company's home country, inferred rather than stated. */
+    inferred: z.array(z.union([z.literal(0), z.literal(1)])),
     /** A bit per EMPLOYMENT_CODES entry. */
     employment: z.array(z.int().nonnegative()),
     department: codes,

@@ -5,10 +5,13 @@ import { locatePosting, type PostingLocation } from "./locate.ts";
 
 const cityNames = new Map(gazetteer().cities.map((city) => [city.id, city.name]));
 
-type Located = Pick<NormalizedPosting, "locations" | "places" | "country">;
+type Located = Pick<NormalizedPosting, "locations" | "places" | "country" | "workplace">;
 
 function locate(posting: Partial<Located>, home: string | null = null) {
-  return locatePosting({ locations: [], places: [], country: null, ...posting }, home);
+  return locatePosting(
+    { locations: [], places: [], country: null, workplace: null, ...posting },
+    home,
+  );
 }
 
 function where(location: PostingLocation): string[] {
@@ -82,5 +85,43 @@ describe("locatePosting", () => {
 
   it("reports labels that name neither a place nor an arrangement", () => {
     expect(locate({ locations: ["Jobs.cz", "Remote", "Prague"] }).unplaced).toEqual(["Jobs.cz"]);
+  });
+
+  it.each([
+    [{ locations: ["Hybrid"], places: [{ label: null, text: "Hybrid" }] }, "JP"],
+    [{ locations: ["In-Office"] }, "JP"],
+    [{ locations: ["Headquarters"] }, "JP"],
+    [{ locations: ["Corporate Headquarters"] }, "JP"],
+    [{ locations: ["HQ", "Hybrid"] }, "JP"],
+    // The arrangement the ATS states counts, when no label says one.
+    [{ locations: [], workplace: "onsite" as const }, "JP"],
+  ])("puts a hybrid, on-site, or headquarters job nothing places at home: %j", (posting, home) => {
+    const location = locate(posting, home);
+    expect(where(location)).toEqual([home]);
+    expect(location.basis).toBe("home");
+  });
+
+  it.each([
+    // Remote jobs can be anywhere, whatever else the posting says.
+    { locations: ["Remote"] },
+    { locations: ["Hybrid or Remote"] },
+    { locations: ["Hybrid"], workplace: "remote" as const },
+    { locations: ["Headquarters"], places: [{ label: null, text: "Remote" }] },
+    // Something we can't read may name the place.
+    { locations: ["In-Office"], places: [{ label: null, text: "APJC" }] },
+    { locations: ["Hybrid", "Parloa Inc."] },
+    { locations: ["Hybrid", "Multiple locations"] },
+    // Nothing says where the job is done.
+    { locations: ["Multiple locations"] },
+    { locations: [] },
+    { locations: ["Home based - Worldwide"] },
+  ])("leaves a posting unplaced rather than guess: %j", (posting) => {
+    expect(locate(posting, "JP")).toMatchObject({ places: [], basis: "none" });
+  });
+
+  it("puts nothing at home when a label, a field, or an unknown home settles it", () => {
+    expect(where(locate({ locations: ["Hybrid - Osaka"] }, "US"))).toEqual(["JP/32/Osaka"]);
+    expect(locate({ locations: ["Hybrid"], country: "DE" }, "US").basis).toBe("structured");
+    expect(locate({ locations: ["Hybrid"] }, null)).toMatchObject({ places: [], basis: "none" });
   });
 });

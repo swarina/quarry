@@ -7,9 +7,11 @@ export interface PostingLocation {
   readonly places: readonly Place[];
   /**
    * Where the places come from: the labels; structured fields (offices, addresses, or a
-   * country) when no label names a place ("Hybrid", "Remote"); or nowhere.
+   * country) when no label names a place ("Hybrid", "Remote"); the company's home country,
+   * inferred, when nothing names a place but the job is hybrid, on-site, or at headquarters;
+   * or nowhere.
    */
-  readonly basis: "labels" | "structured" | "none";
+  readonly basis: "labels" | "structured" | "home" | "none";
   /** The work arrangement the labels state: remote if any says so, then hybrid, then on-site. */
   readonly workplace: Workplace | null;
   /** A label says the job can be done from anywhere. */
@@ -18,14 +20,21 @@ export interface PostingLocation {
   readonly unplaced: readonly string[];
 }
 
+/** A label that means the company's headquarters and names nothing else ("HQ", "Head Office"). */
+const HEADQUARTERS =
+  /^\W*(?:(?:company|corporate|global|main)\s+)?(?:headquarters|hq|head\s*office)\W*$/i;
+/** Remote, as labels spell it; a label like "Hybrid or Remote" reads as hybrid alone. */
+const REMOTE = /\bremot[aeo]\b/i;
+
 /**
  * Locates a posting from its labels, reading them with its structured places as hints: a
  * stated country or address settles "Georgia" or "London". A label that names no place takes
  * the address the ATS pairs with it; when no label names a place, the structured places stand
- * in. `home` is the company's home country, the weakest hint.
+ * in. `home` is the company's home country: the weakest hint, and the place of last resort for
+ * a hybrid, on-site, or headquarters job that nothing else places.
  */
 export function locatePosting(
-  posting: Pick<NormalizedPosting, "locations" | "places" | "country">,
+  posting: Pick<NormalizedPosting, "locations" | "places" | "country" | "workplace">,
   home: string | null,
 ): PostingLocation {
   const stated = posting.places.map((place) => ({
@@ -64,19 +73,49 @@ export function locatePosting(
 
   const said = (workplace: Workplace) =>
     readings.some((reading) => reading.workplace === workplace);
-  return {
-    places,
-    basis,
-    workplace: said("remote")
-      ? "remote"
-      : said("hybrid")
-        ? "hybrid"
-        : said("onsite")
-          ? "onsite"
-          : null,
-    anywhere: readings.some((reading) => reading.anywhere),
-    unplaced,
-  };
+  const workplace = said("remote")
+    ? "remote"
+    : said("hybrid")
+      ? "hybrid"
+      : said("onsite")
+        ? "onsite"
+        : null;
+  const anywhere = readings.some((reading) => reading.anywhere);
+  if (
+    places.length === 0 &&
+    home !== null &&
+    !anywhere &&
+    atHome(posting, readings, stated, workplace)
+  ) {
+    places.push({ country: home, division: null, city: null });
+    basis = "home";
+  }
+  return { places, basis, workplace, anywhere, unplaced };
+}
+
+/**
+ * Whether a posting nothing places can be put in its company's home country. Someone doing a
+ * hybrid or on-site job, or one at headquarters, works at an office, and a company that names
+ * no other place most likely means one at home. Never for remote jobs, which can be anywhere,
+ * and never when a label or field says something we can't read, since the place may be in it.
+ */
+function atHome(
+  posting: Pick<NormalizedPosting, "locations" | "places" | "workplace">,
+  labels: readonly LabelReading[],
+  stated: readonly { readonly reading: LabelReading }[],
+  workplace: Workplace | null,
+): boolean {
+  const arrangement = posting.workplace ?? workplace;
+  if (arrangement === "remote") return false;
+  const texts = [...posting.locations, ...posting.places.map((place) => place.text)];
+  if (texts.some((text) => REMOTE.test(text))) return false;
+  if (stated.some(({ reading }) => reading.unmatched.length > 0)) return false;
+  let headquarters = false;
+  for (const [index, reading] of labels.entries()) {
+    if (HEADQUARTERS.test(posting.locations[index] ?? "")) headquarters = true;
+    else if (reading.workplace === null || reading.unmatched.length > 0) return false;
+  }
+  return headquarters || arrangement === "hybrid" || arrangement === "onsite";
 }
 
 function add(places: Place[], found: readonly Place[]): void {
