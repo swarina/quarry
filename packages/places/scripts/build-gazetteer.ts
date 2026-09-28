@@ -2,9 +2,9 @@
  * Builds `data/gazetteer.json` from GeoNames (https://www.geonames.org), licensed under CC BY
  * 4.0: every country (`countryInfo.txt`), every first-level division (`admin1CodesASCII.txt`),
  * every city with more than 15,000 people or that is a capital (`cities15000.zip`), and the few
- * smaller places in `EXTRA_CITIES` (from the per-country dumps). Only
- * what reading location labels needs is kept. Non-ASCII characters are written as JSON `\u`
- * escapes, so the file is plain ASCII yet decodes to the original names.
+ * smaller places in `EXTRA_CITIES` (from the per-country dumps). Only what reading location
+ * labels needs is kept. Non-ASCII characters are written as JSON `\u` escapes, so the file is
+ * plain ASCII yet decodes to the original names.
  *
  * Usage: pnpm --filter @quarry/places build-gazetteer [--cache <dir>]
  * With `--cache`, downloaded files are kept there and reused on the next run.
