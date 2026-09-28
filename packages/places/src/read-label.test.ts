@@ -43,6 +43,10 @@ describe("readLabel", () => {
     ["Washington, D.C.", "US/DC/Washington"],
     ["Erie, PA", "US/PA/Erie"],
     ["Hsinchu City", "TW/04/Hsinchu"],
+    // Too small for cities15000, so the gazetteer lists it by id; "02" is its ISO 3166-2
+    // region, which GeoNames numbers 14 (its "02" is Al Bahah).
+    ["King Abdullah Economic City, 02", "SA/14/King Abdullah City"],
+    ["Pangyo", "KR/13/Seongnam-si"],
   ])("places a city: %s", (label, expected) => {
     expect(short(label)).toBe(expected);
   });

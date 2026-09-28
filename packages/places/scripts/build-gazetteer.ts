@@ -1,9 +1,10 @@
 /**
  * Builds `data/gazetteer.json` from GeoNames (https://www.geonames.org), licensed under CC BY
  * 4.0: every country (`countryInfo.txt`), every first-level division (`admin1CodesASCII.txt`),
- * and every city with more than 15,000 people or that is a capital (`cities15000.zip`). Only
- * what reading location labels needs is kept. Non-ASCII characters are written as JSON `\u`
- * escapes, so the file is plain ASCII yet decodes to the original names.
+ * every city with more than 15,000 people or that is a capital (`cities15000.zip`), and the few
+ * smaller places in `EXTRA_CITIES` (from the per-country dumps). Only what reading location
+ * labels needs is kept. Non-ASCII characters are written as JSON `\u` escapes, so the file is
+ * plain ASCII yet decodes to the original names.
  *
  * Usage: pnpm --filter @quarry/places build-gazetteer [--cache <dir>]
  * With `--cache`, downloaded files are kept there and reused on the next run.
@@ -134,10 +135,21 @@ function alternates(
   return kept.sort();
 }
 
-const [countryInfo, admin1Codes, citiesZip] = await Promise.all([
+/**
+ * Places too small for `cities15000.zip` that job postings name, by GeoNames id, under the
+ * country whose dump holds them. Kept short on purpose: small places collide with common words
+ * and names far more often than cities do, so each one needs postings that name it.
+ */
+const EXTRA_CITIES: ReadonlyMap<string, readonly number[]> = new Map([
+  // King Abdullah Economic City, where Lucid Motors builds cars.
+  ["SA", [11524299]],
+]);
+
+const [countryInfo, admin1Codes, citiesZip, ...countryZips] = await Promise.all([
   download("countryInfo.txt"),
   download("admin1CodesASCII.txt"),
   download("cities15000.zip"),
+  ...[...EXTRA_CITIES.keys()].map((country) => download(`${country}.zip`)),
 ]);
 
 /** Codes ISO 3166-1 has withdrawn but GeoNames still lists: Netherlands Antilles, Serbia and Montenegro. */
@@ -175,9 +187,22 @@ const reserved: Reserved = {
 
 const divisionIds = new Set(admin1.map(([country, code]) => `${country}.${code}`));
 
+const cityRows = rows(unzipSingle(citiesZip, "cities15000.txt").toString("utf8"));
+const listed = new Set(cityRows.map((row) => row[0]));
+const extraRows = [...EXTRA_CITIES].flatMap(([country, ids], index) => {
+  const archive = countryZips[index];
+  if (archive === undefined) throw new Error(`${country}.zip was not downloaded`);
+  const found = rows(unzipSingle(archive, `${country}.txt`).toString("utf8")).filter((row) =>
+    ids.includes(Number(row[0])),
+  );
+  const missing = ids.filter((id) => !found.some((row) => Number(row[0]) === id));
+  if (missing.length > 0) throw new Error(`${country}.zip has no place ${missing.join(", ")}`);
+  return found.filter((row) => !listed.has(row[0]));
+});
+
 // GeoNames id, name, country, division code, population, alternate names. A division code
 // GeoNames doesn't define (such as "00") becomes empty.
-const cities = rows(unzipSingle(citiesZip, "cities15000.txt").toString("utf8"))
+const cities = [...cityRows, ...extraRows]
   .flatMap((row) => {
     const [id, name, ascii, alternateNames] = row;
     const country = row[8];

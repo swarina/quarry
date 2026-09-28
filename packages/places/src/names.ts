@@ -130,7 +130,10 @@ const DIVISION_CODES: ReadonlyMap<string, ReadonlyMap<string, string>> = new Map
   ],
 ]);
 
-/** Nicknames and abbreviations for cities, to the city's name and country. */
+/**
+ * Nicknames, abbreviations, and districts known on their own, to the city's name and country.
+ * A district belongs here only when its name means that one place in job postings.
+ */
 const CITY_ALIASES: readonly (readonly [readonly string[], string, string])[] = [
   [["NYC"], "New York City", "US"],
   [["SF", "bay area", "sf bay area", "san francisco bay area"], "San Francisco", "US"],
@@ -147,6 +150,8 @@ const CITY_ALIASES: readonly (readonly [readonly string[], string, string])[] = 
   [["greater boston"], "Boston", "US"],
   [["GTA", "greater toronto area"], "Toronto", "CA"],
   [["metro manila"], "Manila", "PH"],
+  // Pangyo Techno Valley, where Kakao, KRAFTON, NCSOFT, and Nexon have their offices.
+  [["pangyo"], "Seongnam-si", "KR"],
 ];
 
 /** Endings and beginnings that divisions carry in some names but not others. */

@@ -5,7 +5,7 @@ import { locatePosting, type PostingLocation } from "@quarry/places";
  * Version of the derivation below. Bump it when the same posting can get different facets, so
  * artifacts built from facets (the search index) say which rules made them.
  */
-export const STRUCTURED_FACETS_VERSION = 1;
+export const STRUCTURED_FACETS_VERSION = 2;
 
 export const EMPLOYMENT_TYPES = [
   "full-time",

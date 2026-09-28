@@ -7,6 +7,8 @@ from [GeoNames](https://www.geonames.org), which is licensed under
 - `countryInfo.txt`: countries with their ISO codes, continent, and population.
 - `admin1CodesASCII.txt`: first-level divisions (states, provinces, regions).
 - `cities15000.zip`: cities with more than 15,000 people, and capitals.
+- Per-country dumps such as `SA.zip`: the few smaller places job postings name, listed by
+  GeoNames id in the build script's `EXTRA_CITIES`.
 
 The file records when it was downloaded. Changes from the source:
 
