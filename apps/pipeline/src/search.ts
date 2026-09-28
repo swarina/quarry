@@ -1,4 +1,4 @@
-import { deriveFacets, STRUCTURED_FACETS_VERSION } from "@quarry/facets";
+import { deriveFacets, isPlaceholder, STRUCTURED_FACETS_VERSION } from "@quarry/facets";
 import { buildIndex, type IndexBuild, type IndexRow } from "@quarry/search-index/build";
 import type { PipelineStore } from "@quarry/storage/node";
 
@@ -6,6 +6,8 @@ import type { PipelineStore } from "@quarry/storage/node";
 export interface SearchIndexReport {
   readonly build: string;
   readonly postings: number;
+  /** Templates and tests published by mistake, left out of the index. */
+  readonly placeholders: number;
   /** Postings placed by their labels, by structured fields, or not at all. */
   readonly byBasis: Readonly<Record<"labels" | "structured" | "none", number>>;
   readonly withCity: number;
@@ -26,6 +28,7 @@ const UNPLACED_SHOWN = 15;
 /**
  * Builds the search index from the postings boards list now: structured facets for each
  * (locations read from labels, offices, and addresses), then the shards and manifest.
+ * Placeholders (templates and tests an employer published by mistake) are left out.
  */
 export async function buildSearchIndex(
   store: PipelineStore,
@@ -36,8 +39,13 @@ export async function buildSearchIndex(
   let withCity = 0;
   let anywhere = 0;
   const unplaced = new Map<string, number>();
+  let placeholders = 0;
   for (const current of store.currentPostings()) {
     const { posting } = current;
+    if (isPlaceholder(posting)) {
+      placeholders += 1;
+      continue;
+    }
     const facets = deriveFacets(posting, { country: current.companyCountry });
     const { location } = facets;
     byBasis[location.basis] += 1;
@@ -64,6 +72,7 @@ export async function buildSearchIndex(
     report: {
       build: build.manifest.build,
       postings: rows.length,
+      placeholders,
       byBasis,
       withCity,
       anywhere,
@@ -93,6 +102,11 @@ export function renderSearchIndexSummary(report: SearchIndexReport): string {
     `- ${number(report.postings)} postings: ${share(placed)} placed (${share(report.byBasis.labels)} by their labels, ${share(report.byBasis.structured)} only by offices, addresses, or a stated country), ${share(report.withCity)} to a city; ${number(report.anywhere)} open to anywhere.`,
     `- ${number(report.shards.length)} shards, ${kilobytes(total)} gzipped in all; the largest is ${kilobytes(largest)}.`,
   ];
+  if (report.placeholders > 0) {
+    lines.push(
+      `- Left out ${number(report.placeholders)} templates and tests that employers published by mistake.`,
+    );
+  }
   if (report.unplacedLabels.length > 0) {
     lines.push(
       `- Labels that named no place, most common first: ${report.unplacedLabels

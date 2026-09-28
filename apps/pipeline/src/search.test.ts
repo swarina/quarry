@@ -72,10 +72,12 @@ describe("buildSearchIndex", () => {
       }),
       posting("3", { locations: ["Home based - Worldwide"] }),
       posting("4", { locations: ["Jobs.cz"] }),
+      posting("5", { title: "EXTERNAL TEMPLATE - Hybrid adverts" }),
     ]);
     const { build, report } = await buildSearchIndex(store, T0);
     expect(report).toMatchObject({
       postings: 4,
+      placeholders: 1,
       byBasis: { labels: 1, structured: 1, none: 2 },
       withCity: 2,
       anywhere: 1,
@@ -108,6 +110,7 @@ describe("renderSearchIndexSummary", () => {
   const report: SearchIndexReport = {
     build: "1b3543dd7069",
     postings: 1_000,
+    placeholders: 0,
     byBasis: { labels: 950, structured: 40, none: 10 },
     withCity: 800,
     anywhere: 12,
@@ -131,6 +134,13 @@ describe("renderSearchIndexSummary", () => {
     expect(markdown).toContain("- 2 shards, 200 KB gzipped in all; the largest is 120 KB.");
     expect(markdown).toContain("most common first: Jobs.cz (5), Office   Field (2).");
     expect(markdown).not.toContain("Over budget");
+    expect(markdown).not.toContain("Left out");
+  });
+
+  it("reports the placeholders it left out", () => {
+    expect(renderSearchIndexSummary({ ...report, placeholders: 19 })).toContain(
+      "- Left out 19 templates and tests that employers published by mistake.",
+    );
   });
 
   it("lists budgets the build exceeds", () => {

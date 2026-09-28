@@ -1,3 +1,4 @@
+export { isPlaceholder } from "./placeholder.ts";
 export type { AnnualPay, EmploymentType, FacetInput, StructuredFacets } from "./structured.ts";
 export {
   annualPay,
