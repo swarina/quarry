@@ -111,6 +111,7 @@ describe("locatePosting", () => {
     { locations: ["In-Office"], places: [{ label: null, text: "APJC" }] },
     { locations: ["Hybrid", "Parloa Inc."] },
     { locations: ["Hybrid", "Multiple locations"] },
+    { locations: ["Hybrid"], places: [{ label: null, text: "Multiple locations" }] },
     // Nothing says where the job is done.
     { locations: ["Multiple locations"] },
     { locations: [] },

@@ -96,8 +96,9 @@ export function locatePosting(
 /**
  * Whether a posting nothing places can be put in its company's home country. Someone doing a
  * hybrid or on-site job, or one at headquarters, works at an office, and a company that names
- * no other place most likely means one at home. Never for remote jobs, which can be anywhere,
- * and never when a label or field says something we can't read, since the place may be in it.
+ * no other place most likely means one at home. So every label and structured field must say
+ * only that: none may say remote (remote jobs can be anywhere), name nothing we can use
+ * ("Multiple locations"), or hold text we can't read, since the place may be in it.
  */
 function atHome(
   posting: Pick<NormalizedPosting, "locations" | "places" | "workplace">,
@@ -107,13 +108,20 @@ function atHome(
 ): boolean {
   const arrangement = posting.workplace ?? workplace;
   if (arrangement === "remote") return false;
-  const texts = [...posting.locations, ...posting.places.map((place) => place.text)];
-  if (texts.some((text) => REMOTE.test(text))) return false;
-  if (stated.some(({ reading }) => reading.unmatched.length > 0)) return false;
+  const texts = [
+    ...posting.locations.map((text, index) => ({ text, reading: labels[index] })),
+    ...posting.places.map((place, index) => ({
+      text: place.text,
+      reading: stated[index]?.reading,
+    })),
+  ];
   let headquarters = false;
-  for (const [index, reading] of labels.entries()) {
-    if (HEADQUARTERS.test(posting.locations[index] ?? "")) headquarters = true;
-    else if (reading.workplace === null || reading.unmatched.length > 0) return false;
+  for (const { text, reading } of texts) {
+    if (REMOTE.test(text)) return false;
+    if (HEADQUARTERS.test(text)) headquarters = true;
+    else if (reading === undefined || reading.workplace === null || reading.unmatched.length > 0) {
+      return false;
+    }
   }
   return headquarters || arrangement === "hybrid" || arrangement === "onsite";
 }
