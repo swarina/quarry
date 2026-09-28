@@ -11,7 +11,7 @@ boards:
   - { source: greenhouse, slug: abnormalsecurity, company: Abnormal, country: US }
   - { source: greenhouse, slug: adyen, company: Adyen, country: NL }
   - { source: greenhouse, slug: affirm, company: Affirm, country: US }
-  - { source: greenhouse, slug: agoda, company: Agoda, country: SG }
+  - { source: greenhouse, slug: agoda, company: Agoda, country: TH }
   - { source: greenhouse, slug: airbnb, company: Airbnb, country: US }
   - { source: greenhouse, slug: airtable, company: Airtable, country: US }
   - { source: greenhouse, slug: algolia, company: Algolia, country: US }
@@ -84,7 +84,7 @@ boards:
   - { source: greenhouse, slug: everlaw, company: Everlaw, country: US }
   - { source: greenhouse, slug: faire, company: Faire, country: US }
   - { source: greenhouse, slug: feedzai, company: Feedzai }
-  - { source: greenhouse, slug: feverup, company: Fever }
+  - { source: greenhouse, slug: feverup, company: Fever, country: ES }
   - { source: greenhouse, slug: figma, company: Figma, country: US }
   - { source: greenhouse, slug: finanzcheck, company: FINANZCHECK.de, country: DE }
   - { source: greenhouse, slug: fireblocks, company: Fireblocks, country: US }
@@ -106,7 +106,7 @@ boards:
   - { source: greenhouse, slug: guardsquare, company: Guardsquare, country: BE }
   - { source: greenhouse, slug: guild, company: Guild, country: US }
   - { source: greenhouse, slug: gusto, company: Gusto, country: US }
-  - { source: greenhouse, slug: gympass, company: Wellhub }
+  - { source: greenhouse, slug: gympass, company: Wellhub, country: US }
   - { source: greenhouse, slug: gymshark, company: Gymshark, country: GB }
   - { source: greenhouse, slug: harrys, company: Harry's, country: US }
   - { source: greenhouse, slug: hellofresh, company: HelloFresh, country: DE }
