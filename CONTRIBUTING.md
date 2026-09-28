@@ -87,9 +87,13 @@ These are enforced by Biome, so `pnpm lint` fails when one is broken:
 ## Adding a job board
 
 1. Find the board's slug in its public URL, for example `job-boards.greenhouse.io/<slug>`,
-   `jobs.lever.co/<slug>`, or `jobs.ashbyhq.com/<slug>`.
+   `jobs.lever.co/<slug>`, `jobs.eu.lever.co/<slug>` (Lever's EU instance, source `lever-eu`),
+   or `jobs.ashbyhq.com/<slug>`.
 2. Check that its listing API returns jobs, for example
    `https://boards-api.greenhouse.io/v1/boards/<slug>/jobs`,
-   `https://api.lever.co/v0/postings/<slug>?mode=json`, or
+   `https://api.lever.co/v0/postings/<slug>?mode=json`,
+   `https://api.eu.lever.co/v0/postings/<slug>?mode=json`, or
    `https://api.ashbyhq.com/posting-api/job-board/<slug>`.
-3. Add one line to `seeds/boards.yaml`. CI validates the file, including duplicates.
+3. Check that the board belongs to the company you expect: a slug like `sunday` or `volta` can
+   belong to an unrelated company with the same name. The job descriptions usually say.
+4. Add one line to `seeds/boards.yaml`. CI validates the file, including duplicates.
