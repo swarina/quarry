@@ -6,6 +6,7 @@ import {
   type Budgets,
   EMPLOYMENT_CODES,
   INDEX_FORMAT,
+  type Links,
   type Manifest,
   MIN_ID_LENGTH,
   REGIONS,
@@ -33,6 +34,8 @@ export interface IndexRow {
   readonly pay: AnnualPay | null;
   /** When the ATS says it was published, else when it was first seen, in epoch milliseconds. */
   readonly postedAt: number | null;
+  /** Where to apply, which only opening a posting needs, so it is kept out of the shards. */
+  readonly url: string;
 }
 
 export interface IndexFile {
@@ -43,7 +46,7 @@ export interface IndexFile {
 
 export interface IndexBuild {
   readonly manifest: Manifest;
-  /** "manifest.json", then every shard. */
+  /** "manifest.json", then every shard, then every links file. */
   readonly files: readonly IndexFile[];
   /** The budgets the build exceeds; empty when it fits. */
   readonly overBudget: readonly string[];
@@ -78,21 +81,31 @@ export async function buildIndex(
     for (const region of regionsOf(row)) byRegion.get(region)?.push(row);
   }
 
-  const parts: { region: RegionId; part: number; rows: number; content: string }[] = [];
+  const parts: {
+    region: RegionId;
+    part: number;
+    rows: number;
+    content: string;
+    links: string;
+  }[] = [];
   for (const region of REGIONS) {
     const members = byRegion.get(region.id) ?? [];
     for (let part = 0; part * rowsPerPart < members.length; part += 1) {
       const slice = members.slice(part * rowsPerPart, (part + 1) * rowsPerPart);
-      const content = JSON.stringify(encodeShard(region.id, part, slice, idLength));
-      parts.push({ region: region.id, part, rows: slice.length, content });
+      parts.push({
+        region: region.id,
+        part,
+        rows: slice.length,
+        content: JSON.stringify(encodeShard(region.id, part, slice, idLength)),
+        links: JSON.stringify(encodeLinks(region.id, part, slice)),
+      });
     }
   }
   const measured = await Promise.all(
     parts.map(async (shard) => ({
       ...shard,
-      sha256: await sha256Hex(shard.content),
-      bytes: new TextEncoder().encode(shard.content).byteLength,
-      gzipBytes: await gzipSize(shard.content),
+      ...(await measure(shard.content)),
+      linksFile: await measure(shard.links),
     })),
   );
   const build = (
@@ -101,13 +114,14 @@ export async function buildIndex(
         INDEX_FORMAT,
         options.facetsVersion,
         idLength,
-        ...measured.map((shard) => shard.sha256),
+        ...measured.flatMap((shard) => [shard.sha256, shard.linksFile.sha256]),
       ].join("\n"),
     )
   ).slice(0, 12);
   const placed = measured.map((shard) => ({
     ...shard,
     path: `${build}/shards/${shard.region}-${shard.part}.json`,
+    linksPath: `${build}/links/${shard.region}-${shard.part}.json`,
   }));
 
   const manifest: Manifest = {
@@ -123,12 +137,13 @@ export async function buildIndex(
       rows: byRegion.get(region.id)?.length ?? 0,
       shards: placed
         .filter((shard) => shard.region === region.id)
-        .map(({ path, rows: count, bytes, gzipBytes, sha256 }) => ({
+        .map(({ path, rows: count, bytes, gzipBytes, sha256, linksPath, linksFile }) => ({
           path,
           rows: count,
           bytes,
           gzipBytes,
           sha256,
+          links: { path: linksPath, rows: count, ...linksFile },
         })),
     })),
   };
@@ -136,14 +151,23 @@ export async function buildIndex(
   const files: IndexFile[] = [
     { path: "manifest.json", content: manifestText },
     ...placed.map(({ path, content }) => ({ path, content })),
+    ...placed.map(({ linksPath, links }) => ({ path: linksPath, content: links })),
   ];
 
-  const overBudget = placed
-    .filter((shard) => shard.gzipBytes > budgets.shardGzipBytes)
-    .map(
-      (shard) =>
-        `${shard.path} is ${shard.gzipBytes} bytes gzipped (budget ${budgets.shardGzipBytes})`,
-    );
+  const overBudget = [
+    ...placed
+      .filter((shard) => shard.gzipBytes > budgets.shardGzipBytes)
+      .map(
+        (shard) =>
+          `${shard.path} is ${shard.gzipBytes} bytes gzipped (budget ${budgets.shardGzipBytes})`,
+      ),
+    ...placed
+      .filter((shard) => shard.linksFile.gzipBytes > budgets.linksGzipBytes)
+      .map(
+        (shard) =>
+          `${shard.linksPath} is ${shard.linksFile.gzipBytes} bytes gzipped (budget ${budgets.linksGzipBytes})`,
+      ),
+  ];
   const manifestBytes = new TextEncoder().encode(manifestText).byteLength;
   if (manifestBytes > budgets.manifestBytes) {
     overBudget.push(`manifest.json is ${manifestBytes} bytes (budget ${budgets.manifestBytes})`);
@@ -174,6 +198,16 @@ export function shortestUniquePrefix(ids: readonly string[]): number {
     if (new Set(ids.map((id) => id.slice(0, length))).size === new Set(ids).size) return length;
   }
   return longest;
+}
+
+function encodeLinks(region: RegionId, part: number, rows: readonly IndexRow[]): Links {
+  return {
+    format: INDEX_FORMAT,
+    region,
+    part,
+    rows: rows.length,
+    urls: rows.map((row) => row.url),
+  };
 }
 
 function encodeShard(region: RegionId, part: number, rows: readonly IndexRow[], idLength: number) {
@@ -303,8 +337,14 @@ function continentsByCountry(): ReadonlyMap<string, string> {
   return continents;
 }
 
-/** Bytes after gzip at its default level, which is what a browser downloads at most. */
-async function gzipSize(text: string): Promise<number> {
-  const stream = new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));
-  return (await new Response(stream).arrayBuffer()).byteLength;
+/** A file's hash and its size before and after gzip, which is what a browser downloads. */
+async function measure(
+  content: string,
+): Promise<{ sha256: string; bytes: number; gzipBytes: number }> {
+  const stream = new Blob([content]).stream().pipeThrough(new CompressionStream("gzip"));
+  return {
+    sha256: await sha256Hex(content),
+    bytes: new TextEncoder().encode(content).byteLength,
+    gzipBytes: (await new Response(stream).arrayBuffer()).byteLength,
+  };
 }

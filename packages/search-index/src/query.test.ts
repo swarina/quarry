@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildIndex, type IndexRow } from "./build.ts";
+import { buildIndex, type IndexBuild, type IndexRow } from "./build.ts";
 import { INDEX_FORMAT } from "./format.ts";
 import { type IndexQuery, queryIndex } from "./query.ts";
-import { type IndexTable, openIndex } from "./table.ts";
+import { type IndexTable, openIndex, readLinks } from "./table.ts";
+
+/** Shard files only; `build.files` also holds the manifest and the links files. */
+const shardsOf = (build: IndexBuild) =>
+  build.files.filter((file) => file.path.includes("/shards/"));
 
 const DAY = 24 * 60 * 60 * 1000;
 const TODAY = 20_100;
@@ -24,6 +28,7 @@ function row(id: string, overrides: Partial<IndexRow> = {}): IndexRow {
     department: null,
     pay: null,
     postedAt: (TODAY - 1) * DAY,
+    url: `https://example.com/jobs/${id}`,
     ...overrides,
   };
 }
@@ -84,8 +89,8 @@ const ROWS: IndexRow[] = [
 
 async function table(rows: readonly IndexRow[] = ROWS, regions?: readonly string[]) {
   const build = await buildIndex(rows, { builtAt: TODAY * DAY, facetsVersion: 1 });
-  const [manifest, ...shards] = build.files;
-  const loaded = shards.filter(
+  const manifest = build.files[0];
+  const loaded = shardsOf(build).filter(
     (file) => regions === undefined || regions.some((region) => file.path.includes(`/${region}-`)),
   );
   return openIndex(
@@ -122,7 +127,8 @@ describe("openIndex", () => {
 
   it("refuses files in another format", async () => {
     const build = await buildIndex(ROWS, { builtAt: TODAY * DAY, facetsVersion: 1 });
-    const [manifest, ...shards] = build.files.map((file) => JSON.parse(file.content));
+    const manifest = JSON.parse(build.files[0]?.content ?? "");
+    const shards = shardsOf(build).map((file) => JSON.parse(file.content));
     const format = (file: object, version: number) => ({ ...file, format: version });
     expect(() => openIndex(manifest, shards)).not.toThrow();
     expect(() => openIndex(format(manifest, INDEX_FORMAT + 1), shards)).toThrow();
@@ -136,8 +142,8 @@ describe("openIndex", () => {
 
   it("refuses a shard whose columns disagree", async () => {
     const build = await buildIndex(ROWS, { builtAt: TODAY * DAY, facetsVersion: 1 });
-    const [manifest, europe] = build.files;
-    const shard = JSON.parse(europe?.content ?? "");
+    const manifest = build.files[0];
+    const shard = JSON.parse(shardsOf(build)[0]?.content ?? "");
     const broken = (change: (columns: Record<string, unknown>) => void) => {
       const copy = structuredClone(shard);
       change(copy.columns);
@@ -155,6 +161,30 @@ describe("openIndex", () => {
     expect(
       broken((columns) => (columns["country"] as { values: number[] }).values.push(0)),
     ).toThrow(/country has \d+ values, not \d+/);
+  });
+});
+
+const linked = await buildIndex(ROWS, { builtAt: TODAY * DAY, facetsVersion: 1 });
+const shard = JSON.parse(shardsOf(linked)[0]?.content ?? "");
+const links = JSON.parse(linked.files.find((file) => file.path.includes("/links/"))?.content ?? "");
+
+describe("readLinks", () => {
+  it("maps each posting id to its apply link", () => {
+    const found = readLinks(shard.columns.id, links);
+    expect(found.size).toBe(shard.rows);
+    for (const [index, id] of (shard.columns.id as string[]).entries()) {
+      expect(found.get(id)).toBe(links.urls[index]);
+    }
+  });
+
+  it("refuses a links file that does not line up with its shard", () => {
+    expect(() => readLinks(shard.columns.id, { ...links, rows: links.rows + 1 })).toThrow(
+      /urls, not/,
+    );
+    expect(() => readLinks([...shard.columns.id, "extra00000"], links)).toThrow(
+      /but the shard has/,
+    );
+    expect(() => readLinks(shard.columns.id, { ...links, format: INDEX_FORMAT + 1 })).toThrow();
   });
 });
 

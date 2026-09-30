@@ -2,6 +2,7 @@ import type { Workplace } from "@quarry/domain";
 import type { EmploymentType } from "@quarry/facets";
 import {
   EMPLOYMENT_CODES,
+  linksSchema,
   type Manifest,
   manifestSchema,
   type Shard,
@@ -314,4 +315,24 @@ function coder<T>() {
 
 function compare(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
+}
+
+/**
+ * The apply links of one shard, as a map from posting id to URL. `ids` is that shard's `id`
+ * column, which the links file matches row for row; a file that doesn't match is refused,
+ * since a silent misalignment would send people to the wrong job.
+ */
+export function readLinks(ids: readonly string[], linksJson: unknown): Map<string, string> {
+  const links = linksSchema.parse(linksJson);
+  if (links.rows !== links.urls.length) {
+    throw new Error(
+      `${links.region}-${links.part} links: ${links.urls.length} urls, not ${links.rows}`,
+    );
+  }
+  if (links.rows !== ids.length) {
+    throw new Error(
+      `${links.region}-${links.part} links: ${links.rows} rows, but the shard has ${ids.length}`,
+    );
+  }
+  return new Map(ids.map((id, row) => [id, links.urls[row] ?? ""]));
 }

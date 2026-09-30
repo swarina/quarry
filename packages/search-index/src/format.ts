@@ -3,7 +3,7 @@ import type { EmploymentType } from "@quarry/facets";
 import { z } from "zod";
 
 /** Version of the file formats below; readers refuse others. */
-export const INDEX_FORMAT = 2;
+export const INDEX_FORMAT = 3;
 
 /**
  * Size budgets (ADR-0007): a shard downloads quickly on a phone, the manifest (fetched on every
@@ -11,12 +11,15 @@ export const INDEX_FORMAT = 2;
  */
 export const BUDGETS: Budgets = {
   shardGzipBytes: 600 * 1024,
+  linksGzipBytes: 600 * 1024,
   manifestBytes: 20 * 1024,
   files: 5_000,
 };
 
 export interface Budgets {
   readonly shardGzipBytes: number;
+  /** A links file is fetched after results are shown, so it may be as large as a shard. */
+  readonly linksGzipBytes: number;
   readonly manifestBytes: number;
   readonly files: number;
 }
@@ -53,13 +56,22 @@ export const REGIONS = [
 ] as const;
 export type RegionId = (typeof REGIONS)[number]["id"];
 
-const shardEntry = z.strictObject({
-  /** Relative to the manifest. */
-  path: z.string().regex(/^[0-9a-f]{12}\/shards\/[a-z-]+-\d+\.json$/),
+const fileEntry = {
   rows: z.int().nonnegative(),
   bytes: z.int().positive(),
   gzipBytes: z.int().positive(),
   sha256: z.string().regex(/^[0-9a-f]{64}$/),
+};
+
+const shardEntry = z.strictObject({
+  /** Relative to the manifest. */
+  path: z.string().regex(/^[0-9a-f]{12}\/shards\/[a-z-]+-\d+\.json$/),
+  ...fileEntry,
+  /** The apply links for these rows, in the same order; fetched only when one is needed. */
+  links: z.strictObject({
+    path: z.string().regex(/^[0-9a-f]{12}\/links\/[a-z-]+-\d+\.json$/),
+    ...fileEntry,
+  }),
 });
 
 export const manifestSchema = z.strictObject({
@@ -83,6 +95,19 @@ export const manifestSchema = z.strictObject({
 });
 export type Manifest = z.infer<typeof manifestSchema>;
 export type ShardEntry = z.infer<typeof shardEntry>;
+
+/**
+ * The apply links of one shard's rows, in the same order. They are kept out of the shard
+ * because searching never needs them: only opening a posting does.
+ */
+export const linksSchema = z.strictObject({
+  format: z.literal(INDEX_FORMAT),
+  region: z.enum(REGIONS.map((region) => region.id)),
+  part: z.int().nonnegative(),
+  rows: z.int().nonnegative(),
+  urls: z.array(z.string()),
+});
+export type Links = z.infer<typeof linksSchema>;
 
 /** A column of lists, as counts per row and the values in row order. */
 const listColumn = z.strictObject({
