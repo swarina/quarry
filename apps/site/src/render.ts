@@ -24,7 +24,8 @@ type Go = (state: SearchState) => void;
 
 /** One result. The description is deliberately not here: we link to the source (product 7.4). */
 function resultItem(row: ResultRow, view: View): HTMLElement {
-  const url = view.links.get(row.id);
+  // An empty URL would be a link to nowhere, so it counts as not having one.
+  const url = view.links.get(row.id) || undefined;
   const title = el("span", { class: "title", text: row.title });
   const facts: (Node | string)[] = [el("span", { class: "where", text: where(row, view.locale) })];
   if (row.inferred) {
