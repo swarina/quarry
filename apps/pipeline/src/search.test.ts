@@ -87,7 +87,8 @@ describe("buildSearchIndex", () => {
       overBudget: [],
     });
 
-    const [manifest, ...shards] = build.files;
+    const manifest = build.files[0];
+    const shards = build.files.filter((file) => file.path.includes("/shards/"));
     const table = openIndex(
       JSON.parse(manifest?.content ?? ""),
       shards.map((file) => JSON.parse(file.content)),

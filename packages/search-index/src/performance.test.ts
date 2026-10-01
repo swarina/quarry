@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildIndex, type IndexRow } from "./build.ts";
+import { buildIndex, type IndexBuild, type IndexRow } from "./build.ts";
 import { type IndexQuery, queryIndex } from "./query.ts";
 import { openIndex } from "./table.ts";
+
+/** Shard files only; `build.files` also holds the manifest and the links files. */
+const shardsOf = (build: IndexBuild) =>
+  build.files.filter((file) => file.path.includes("/shards/"));
 
 const DAY = 24 * 60 * 60 * 1000;
 const TODAY = 20_725;
@@ -45,6 +49,7 @@ function syntheticRows(): IndexRow[] {
     const paid = next() < 0.3;
     return {
       id: index.toString(36).padStart(16, "0"),
+      url: `https://example.com/jobs/${index}`,
       title: `${pick(WORDS)} ${pick(WORDS)} ${pick(ROLES)}`,
       company: `Company ${Math.floor(next() * 400)}`,
       locations: [String(place.city ?? place.country)],
@@ -84,7 +89,8 @@ describe("query speed", () => {
   it(`filters ${ROWS.toLocaleString("en-US")} postings within budget`, async () => {
     const build = await buildIndex(syntheticRows(), { builtAt: TODAY * DAY, facetsVersion: 1 });
     expect(build.overBudget).toEqual([]);
-    const [manifest, ...shards] = build.files;
+    const manifest = build.files[0];
+    const shards = shardsOf(build);
     const table = openIndex(
       JSON.parse(manifest?.content ?? ""),
       shards.map((file) => JSON.parse(file.content)),

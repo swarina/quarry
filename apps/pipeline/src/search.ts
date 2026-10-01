@@ -68,6 +68,7 @@ export async function buildSearchIndex(
       department: facets.department,
       pay: facets.pay,
       postedAt: facets.publishedAt ?? current.firstSeenAt,
+      url: posting.url,
     });
   }
   const build = await buildIndex(rows, { builtAt, facetsVersion: STRUCTURED_FACETS_VERSION });

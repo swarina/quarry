@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { buildIndex, type IndexRow, regionsOf, shortestUniquePrefix } from "./build.ts";
-import { manifestSchema, shardSchema } from "./format.ts";
+import {
+  buildIndex,
+  type IndexBuild,
+  type IndexRow,
+  regionsOf,
+  shortestUniquePrefix,
+} from "./build.ts";
+import { manifestSchema, shardSchema } from "./schema.ts";
+
+/** Shard files only; `build.files` also holds the manifest and the links files. */
+const shardsOf = (build: IndexBuild) =>
+  build.files.filter((file) => file.path.includes("/shards/"));
 
 const DAY = 24 * 60 * 60 * 1000;
 const BERLIN = { country: "DE", division: "16", city: 2950159 };
@@ -20,6 +30,7 @@ function row(id: string, overrides: Partial<IndexRow> = {}): IndexRow {
     department: null,
     pay: null,
     postedAt: 20_000 * DAY,
+    url: `https://example.com/jobs/${id}`,
     ...overrides,
   };
 }
@@ -36,7 +47,8 @@ describe("buildIndex", () => {
       ],
       options,
     );
-    const [manifestFile, ...shardFiles] = build.files;
+    const manifestFile = build.files[0];
+    const shardFiles = shardsOf(build);
     expect(manifestFile?.path).toBe("manifest.json");
     const manifest = manifestSchema.parse(JSON.parse(manifestFile?.content ?? ""));
     expect(manifest).toEqual(build.manifest);
@@ -76,15 +88,16 @@ describe("buildIndex", () => {
     const build = await buildIndex(rows, {
       ...options,
       rowsPerPart: 2,
-      budgets: { shardGzipBytes: 100, manifestBytes: 100, files: 3 },
+      budgets: { shardGzipBytes: 100, linksGzipBytes: 100, manifestBytes: 100, files: 3 },
     });
     const europe = build.manifest.regions.find((region) => region.id === "europe");
     expect(europe?.shards.map((shard) => shard.rows)).toEqual([2, 2, 1]);
     expect(build.overBudget).toEqual(
       expect.arrayContaining([
-        expect.stringMatching(/europe-0\.json is \d+ bytes gzipped \(budget 100\)/),
+        expect.stringMatching(/shards\/europe-0\.json is \d+ bytes gzipped \(budget 100\)/),
+        expect.stringMatching(/links\/europe-0\.json is \d+ bytes gzipped \(budget 100\)/),
         expect.stringMatching(/^manifest\.json is \d+ bytes \(budget 100\)$/),
-        "4 files (budget 3)",
+        "7 files (budget 3)",
       ]),
     );
   });
