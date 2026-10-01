@@ -6,7 +6,7 @@ import {
   regionsOf,
   shortestUniquePrefix,
 } from "./build.ts";
-import { manifestSchema, shardSchema } from "./format.ts";
+import { manifestSchema, shardSchema } from "./schema.ts";
 
 /** Shard files only; `build.files` also holds the manifest and the links files. */
 const shardsOf = (build: IndexBuild) =>

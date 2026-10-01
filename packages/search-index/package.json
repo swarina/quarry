@@ -8,7 +8,8 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
-    "./build": "./src/build.ts"
+    "./build": "./src/build.ts",
+    "./schema": "./src/schema.ts"
   },
   "dependencies": {
     "@quarry/domain": "workspace:*",

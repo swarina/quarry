@@ -1,14 +1,7 @@
 import type { Workplace } from "@quarry/domain";
 import type { EmploymentType } from "@quarry/facets";
-import {
-  EMPLOYMENT_CODES,
-  linksSchema,
-  type Manifest,
-  manifestSchema,
-  type Shard,
-  shardSchema,
-  WORKPLACE_CODES,
-} from "./format.ts";
+import { EMPLOYMENT_CODES, type Manifest, type Shard, WORKPLACE_CODES } from "./format.ts";
+import { parseLinks, parseManifest, parseShard } from "./parse.ts";
 
 /** A column of lists: row `i`'s values are `values[offsets[i]]` up to `values[offsets[i + 1]]`. */
 export interface ListColumn {
@@ -68,8 +61,8 @@ export function searchFold(text: string): string {
  * into one table. Throws when a file is not in this format.
  */
 export function openIndex(manifestJson: unknown, shardJsons: readonly unknown[]): IndexTable {
-  const manifest = manifestSchema.parse(manifestJson);
-  const shards = shardJsons.map((json) => checkShard(shardSchema.parse(json)));
+  const manifest = parseManifest(manifestJson);
+  const shards = shardJsons.map((json) => checkShard(parseShard(json)));
   const dictionaries = {
     company: coder<string>(),
     location: coder<string>(),
@@ -323,7 +316,7 @@ function compare(left: string, right: string): number {
  * since a silent misalignment would send people to the wrong job.
  */
 export function readLinks(ids: readonly string[], linksJson: unknown): Map<string, string> {
-  const links = linksSchema.parse(linksJson);
+  const links = parseLinks(linksJson);
   if (links.rows !== links.urls.length) {
     throw new Error(
       `${links.region}-${links.part} links: ${links.urls.length} urls, not ${links.rows}`,

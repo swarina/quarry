@@ -1,6 +1,12 @@
 import type { Workplace } from "@quarry/domain";
 import type { EmploymentType } from "@quarry/facets";
-import { z } from "zod";
+
+/**
+ * The shapes of the index files, as types and constants only. Nothing here imports a
+ * validation library, because the browser loads this module and pays for every byte of it;
+ * `schema.ts` holds zod schemas of the same shapes for the build and its tests, and
+ * `table.ts` checks what it reads by hand.
+ */
 
 /** Version of the file formats below; readers refuse others. */
 export const INDEX_FORMAT = 3;
@@ -56,104 +62,97 @@ export const REGIONS = [
 ] as const;
 export type RegionId = (typeof REGIONS)[number]["id"];
 
-const fileEntry = {
-  rows: z.int().nonnegative(),
-  bytes: z.int().positive(),
-  gzipBytes: z.int().positive(),
-  sha256: z.string().regex(/^[0-9a-f]{64}$/),
-};
+export const SHARD_PATH = /^[0-9a-f]{12}\/shards\/[a-z-]+-\d+\.json$/;
+export const LINKS_PATH = /^[0-9a-f]{12}\/links\/[a-z-]+-\d+\.json$/;
+export const BUILD_ID = /^[0-9a-f]{12}$/;
+export const SHA256 = /^[0-9a-f]{64}$/;
 
-const shardEntry = z.strictObject({
+interface FileEntry {
+  readonly rows: number;
+  readonly bytes: number;
+  readonly gzipBytes: number;
+  readonly sha256: string;
+}
+
+export interface ShardEntry extends FileEntry {
   /** Relative to the manifest. */
-  path: z.string().regex(/^[0-9a-f]{12}\/shards\/[a-z-]+-\d+\.json$/),
-  ...fileEntry,
+  readonly path: string;
   /** The apply links for these rows, in the same order; fetched only when one is needed. */
-  links: z.strictObject({
-    path: z.string().regex(/^[0-9a-f]{12}\/links\/[a-z-]+-\d+\.json$/),
-    ...fileEntry,
-  }),
-});
+  readonly links: FileEntry & { readonly path: string };
+}
 
-export const manifestSchema = z.strictObject({
-  format: z.literal(INDEX_FORMAT),
+export interface Manifest {
+  readonly format: number;
   /** Content hash of the build: its shards and the rules that made them. */
-  build: z.string().regex(/^[0-9a-f]{12}$/),
-  builtAt: z.iso.datetime(),
-  facetsVersion: z.int().positive(),
+  readonly build: string;
+  readonly builtAt: string;
+  readonly facetsVersion: number;
   /** Distinct postings in the build (a posting in two regions counts once). */
-  postings: z.int().nonnegative(),
+  readonly postings: number;
   /** Length of the posting id prefixes in the shards. */
-  idLength: z.int().min(MIN_ID_LENGTH).max(16),
-  regions: z.array(
-    z.strictObject({
-      id: z.enum(REGIONS.map((region) => region.id)),
-      name: z.string(),
-      rows: z.int().nonnegative(),
-      shards: z.array(shardEntry),
-    }),
-  ),
-});
-export type Manifest = z.infer<typeof manifestSchema>;
-export type ShardEntry = z.infer<typeof shardEntry>;
+  readonly idLength: number;
+  readonly regions: readonly {
+    readonly id: RegionId;
+    readonly name: string;
+    readonly rows: number;
+    readonly shards: readonly ShardEntry[];
+  }[];
+}
 
 /**
  * The apply links of one shard's rows, in the same order. They are kept out of the shard
  * because searching never needs them: only opening a posting does.
  */
-export const linksSchema = z.strictObject({
-  format: z.literal(INDEX_FORMAT),
-  region: z.enum(REGIONS.map((region) => region.id)),
-  part: z.int().nonnegative(),
-  rows: z.int().nonnegative(),
-  urls: z.array(z.string()),
-});
-export type Links = z.infer<typeof linksSchema>;
+export interface Links {
+  readonly format: number;
+  readonly region: RegionId;
+  readonly part: number;
+  readonly rows: number;
+  readonly urls: readonly string[];
+}
 
 /** A column of lists, as counts per row and the values in row order. */
-const listColumn = z.strictObject({
-  counts: z.array(z.int().nonnegative()),
-  values: z.array(z.int().nonnegative()),
-});
-const codes = z.array(z.int().min(-1));
-const numbers = z.array(z.number().nullable());
+export interface ListColumnFile {
+  readonly counts: readonly number[];
+  readonly values: readonly number[];
+}
 
-export const shardSchema = z.strictObject({
-  format: z.literal(INDEX_FORMAT),
-  region: z.enum(REGIONS.map((region) => region.id)),
-  part: z.int().nonnegative(),
-  rows: z.int().nonnegative(),
-  dictionaries: z.strictObject({
-    company: z.array(z.string()),
-    location: z.array(z.string()),
-    country: z.array(z.string().regex(/^[A-Z]{2}$/)),
+export interface Shard {
+  readonly format: number;
+  readonly region: RegionId;
+  readonly part: number;
+  readonly rows: number;
+  readonly dictionaries: {
+    readonly company: readonly string[];
+    readonly location: readonly string[];
+    readonly country: readonly string[];
     /** "US.CA" and its name. */
-    division: z.array(z.tuple([z.string(), z.string()])),
+    readonly division: readonly (readonly [string, string])[];
     /** GeoNames id, name, country. */
-    city: z.array(z.tuple([z.int(), z.string(), z.string()])),
-    department: z.array(z.string()),
-    currency: z.array(z.string()),
-  }),
-  columns: z.strictObject({
-    id: z.array(z.string()),
-    title: z.array(z.string()),
-    company: codes,
-    location: listColumn,
-    country: listColumn,
-    division: listColumn,
-    city: listColumn,
+    readonly city: readonly (readonly [number, string, string])[];
+    readonly department: readonly string[];
+    readonly currency: readonly string[];
+  };
+  readonly columns: {
+    readonly id: readonly string[];
+    readonly title: readonly string[];
+    readonly company: readonly number[];
+    readonly location: ListColumnFile;
+    readonly country: ListColumnFile;
+    readonly division: ListColumnFile;
+    readonly city: ListColumnFile;
     /** An index into WORKPLACE_CODES, or -1. */
-    workplace: codes,
-    anywhere: z.array(z.union([z.literal(0), z.literal(1)])),
+    readonly workplace: readonly number[];
+    readonly anywhere: readonly (0 | 1)[];
     /** 1 when the only place is the company's home country, inferred rather than stated. */
-    inferred: z.array(z.union([z.literal(0), z.literal(1)])),
+    readonly inferred: readonly (0 | 1)[];
     /** A bit per EMPLOYMENT_CODES entry. */
-    employment: z.array(z.int().nonnegative()),
-    department: codes,
-    payMin: numbers,
-    payMax: numbers,
-    currency: codes,
+    readonly employment: readonly number[];
+    readonly department: readonly number[];
+    readonly payMin: readonly (number | null)[];
+    readonly payMax: readonly (number | null)[];
+    readonly currency: readonly number[];
     /** Days since 1970-01-01 (UTC) when published, or first seen. */
-    posted: numbers,
-  }),
-});
-export type Shard = z.infer<typeof shardSchema>;
+    readonly posted: readonly (number | null)[];
+  };
+}

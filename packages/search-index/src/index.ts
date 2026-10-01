@@ -3,14 +3,12 @@ export {
   BUDGETS,
   EMPLOYMENT_CODES,
   INDEX_FORMAT,
-  linksSchema,
   MIN_ID_LENGTH,
-  manifestSchema,
   REGIONS,
   ROWS_PER_PART,
-  shardSchema,
   WORKPLACE_CODES,
 } from "./format.ts";
+export { IndexFormatError, parseLinks, parseManifest, parseShard } from "./parse.ts";
 export type { IndexQuery, QueryResult, ResultRow } from "./query.ts";
 export { queryIndex } from "./query.ts";
 export type { IndexTable, ListColumn } from "./table.ts";
