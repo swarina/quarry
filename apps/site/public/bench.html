@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quarry: how fast the index filters</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>How fast the index filters</h1>
+      <p class="tagline">
+        Every region at once, which is more than any visitor downloads, filtered by the queries
+        the search page sends. M2 asks for under 100 ms at the 95th percentile.
+      </p>
+    </header>
+    <p id="status" role="status">Starting</p>
+    <div id="results"></div>
+    <p><a href="./">Back to search</a></p>
+    <script type="module" src="bench.js"></script>
+  </body>
+</html>

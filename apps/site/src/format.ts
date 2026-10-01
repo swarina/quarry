@@ -1,0 +1,73 @@
+import type { Workplace } from "@quarry/domain";
+import type { EmploymentType } from "@quarry/facets";
+import type { ResultRow } from "@quarry/search-index";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export const WORKPLACE_NAMES: Readonly<Record<Workplace, string>> = {
+  remote: "Remote",
+  hybrid: "Hybrid",
+  onsite: "On site",
+};
+
+export const EMPLOYMENT_NAMES: Readonly<Record<EmploymentType, string>> = {
+  "full-time": "Full time",
+  "part-time": "Part time",
+  contract: "Contract",
+  internship: "Internship",
+  temporary: "Temporary",
+};
+
+/** A country code as its name in the reader's language, falling back to the code itself. */
+export function countryName(code: string, locale?: string): string {
+  try {
+    return new Intl.DisplayNames([locale ?? "en"], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+export function number(value: number, locale?: string): string {
+  return value.toLocaleString(locale ?? "en-US");
+}
+
+/** Pay as a range in its stated currency; currencies are never converted (ADR-0007). */
+export function pay(row: ResultRow, locale?: string): string | null {
+  if (row.pay === null) return null;
+  const money = (amount: number) =>
+    amount.toLocaleString(locale ?? "en-US", {
+      style: "currency",
+      currency: row.pay?.currency ?? "USD",
+      maximumFractionDigits: 0,
+    });
+  const { min, max } = row.pay;
+  if (min !== null && max !== null && min !== max) return `${money(min)} to ${money(max)}`;
+  const one = min ?? max;
+  return one === null ? null : `${money(one)} a year`;
+}
+
+/** How long ago a posting was published, or first seen when the board states no date. */
+export function posted(postedDay: number | null, now: number, locale?: string): string {
+  if (postedDay === null) return "date not stated";
+  const days = Math.max(0, Math.round(now / DAY_MS - postedDay));
+  try {
+    const relative = new Intl.RelativeTimeFormat(locale ?? "en", { numeric: "auto" });
+    if (days < 30) return relative.format(-days, "day");
+    if (days < 365) return relative.format(-Math.round(days / 30), "month");
+    return relative.format(-Math.round(days / 365), "year");
+  } catch {
+    return `${days} days ago`;
+  }
+}
+
+/** Where a posting is, as the places we read rather than the label the board wrote. */
+export function where(row: ResultRow, locale?: string): string {
+  if (row.anywhere) return "Anywhere";
+  const cities = [...new Set(row.cities)].filter((city) => city.length > 0);
+  const countries = [...new Set(row.countries)].map((code) => countryName(code, locale));
+  const parts = cities.length > 0 ? cities.slice(0, 3) : countries.slice(0, 3);
+  const rest = (cities.length > 0 ? cities.length : countries.length) - parts.length;
+  if (parts.length === 0) return "Location not stated";
+  const listed = parts.join(", ");
+  return rest > 0 ? `${listed} and ${rest} more` : listed;
+}

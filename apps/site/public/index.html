@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quarry: ask your own questions of every job posting</title>
+    <meta
+      name="description"
+      content="Search job postings from company job boards. Filtering runs in your browser; nothing about your search leaves it."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip" href="#results">Skip to results</a>
+    <header>
+      <h1>Quarry</h1>
+      <p class="tagline">
+        Jobs straight from company job boards. Filtering happens in your browser, so nothing
+        about your search leaves it.
+      </p>
+    </header>
+
+    <search>
+      <form id="controls" aria-label="Search jobs">
+      <p class="field grow">
+        <label for="text">Job title or company</label>
+        <input id="text" type="search" autocomplete="off" placeholder="platform engineer" />
+      </p>
+      <p class="field">
+        <label for="region">Where to search</label>
+        <select id="region"></select>
+      </p>
+      <p class="field">
+        <label for="sort">Order</label>
+        <select id="sort">
+          <option value="newest">Newest first</option>
+          <option value="pay">Highest pay first</option>
+        </select>
+      </p>
+      </form>
+    </search>
+
+    <p id="stale" class="stale" role="status"></p>
+    <div id="active"></div>
+
+    <main>
+      <aside aria-label="Filters">
+        <div id="facets"></div>
+      </aside>
+      <section aria-labelledby="count-heading">
+        <h2 id="count-heading" class="results-heading">
+          <span id="count">Loading</span>
+          <span id="timing" class="timing"></span>
+        </h2>
+        <p id="status" role="status">Loading postings</p>
+        <div id="results"></div>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Place names come from
+        <a href="https://www.geonames.org" rel="noopener">GeoNames</a>, licensed under
+        <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>.
+        Postings belong to the companies that published them; Quarry links to the source and
+        never copies a description.
+      </p>
+    </footer>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "@quarry/site",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The search site: filters the static index in the browser, with no server and no account.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.ts",
+    "serve": "node scripts/serve.ts"
+  },
+  "dependencies": {
+    "@quarry/domain": "workspace:*",
+    "@quarry/facets": "workspace:*",
+    "@quarry/search-index": "workspace:*"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
