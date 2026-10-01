@@ -79,6 +79,10 @@ export function fromUrl(url: URL, fallback: SearchState = EMPTY): SearchState {
 
 /**
  * The query string for a search, with defaults left out so a plain search has a clean URL.
+ * The region is always in it, even when it is the one this browser would have chosen: without
+ * it a shared link means "wherever you are", and a search for jobs in Germany opens almost
+ * empty for someone whose browser starts in another continent.
+ *
  * How many results are shown is deliberately not in it: it is where you are in the list, not
  * what you asked for, so sharing a link gives the other person the search, not your scrolling.
  */
@@ -87,7 +91,7 @@ export function toQueryString(state: SearchState): string {
   const set = (name: string, value: string) => {
     if (value.length > 0) parameters.set(name, value);
   };
-  set("region", state.region === EMPTY.region ? "" : state.region);
+  set("region", state.region);
   set("q", state.text.trim());
   set("country", state.countries.join(","));
   set("workplace", state.workplaces.join(","));

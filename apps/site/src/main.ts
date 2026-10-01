@@ -108,6 +108,12 @@ function wire(loaded: Manifest): void {
 async function start(): Promise<void> {
   manifest = await loadManifest(fetchJson);
   state = fromUrl(new URL(globalThis.location.href), { ...EMPTY, region: defaultRegion() });
+  // Write the region the page settled on into the URL, so the first link copied is shareable.
+  globalThis.history.replaceState(
+    null,
+    "",
+    `${globalThis.location.pathname}${toQueryString(state)}`,
+  );
   wire(manifest);
   const loaded = await loadRegion(manifest, state.region, fetchJson);
   catalog = loaded.catalog;

@@ -34,12 +34,19 @@ describe("a search in the URL", () => {
   });
 
   it("leaves defaults out, so a plain search has a clean URL", () => {
-    expect(toQueryString(EMPTY)).toBe("");
-    expect(toQueryString({ ...EMPTY, text: "  data  " })).toBe("?q=data");
+    expect(toQueryString(EMPTY)).toBe("?region=europe");
+    expect(toQueryString({ ...EMPTY, text: "  data  " })).toBe("?region=europe&q=data");
+  });
+
+  it("always names the region, so a shared link means the same place for everyone", () => {
+    const shared = toQueryString({ ...EMPTY, region: "europe", countries: ["DE"] });
+    expect(shared).toContain("region=europe");
+    // Whatever continent the other person's browser would have started in.
+    expect(fromUrl(url(shared), { ...EMPTY, region: "north-america" }).region).toBe("europe");
   });
 
   it("keeps how far you have scrolled out of the URL", () => {
-    expect(toQueryString({ ...EMPTY, shown: 500 })).toBe("");
+    expect(toQueryString({ ...EMPTY, shown: 500 })).toBe("?region=europe");
     expect(read("?q=a&shown=500").shown).toBe(PAGE);
   });
 
