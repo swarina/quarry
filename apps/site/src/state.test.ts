@@ -1,5 +1,7 @@
+import type { ResultRow } from "@quarry/search-index";
 import { describe, expect, it } from "vitest";
 import { regionOfZone } from "./catalog.ts";
+import { where } from "./format.ts";
 import { activeFilters, EMPTY, fromUrl, PAGE, toggle, toQuery, toQueryString } from "./state.ts";
 
 const url = (query: string) => new URL(`https://quarry.example${query}`);
@@ -127,5 +129,25 @@ describe("the region a browser starts in", () => {
     ["", "europe"],
   ])("puts %s in %s", (zone, region) => {
     expect(regionOfZone(zone)).toBe(region);
+  });
+});
+
+describe("where a posting is", () => {
+  const row = (fields: Partial<ResultRow>): ResultRow =>
+    ({ cities: [], countries: [], anywhere: false, ...fields }) as ResultRow;
+
+  it.each([
+    [row({ anywhere: true, countries: ["DE"] }), "Anywhere"],
+    [row({ cities: ["Berlin"], countries: ["DE"] }), "Berlin"],
+    [row({ cities: ["Berlin", "Berlin"] }), "Berlin"],
+    [row({ cities: ["Berlin", "Munich", "Paris", "Rome"] }), "Berlin, Munich, Paris and 1 more"],
+    [row({ countries: ["DE", "FR"] }), "Germany, France"],
+    // A posting open across a whole region names more countries than anyone reads.
+    [row({ countries: ["AD", "AL", "AT", "BE", "BG"] }), "5 countries"],
+    // Cities are what people want, however many countries the posting also names.
+    [row({ cities: ["Berlin"], countries: ["AD", "AL", "AT", "BE", "BG"] }), "Berlin"],
+    [row({}), "Location not stated"],
+  ])("reads as %j -> %s", (found, expected) => {
+    expect(where(found, "en")).toBe(expected);
   });
 });

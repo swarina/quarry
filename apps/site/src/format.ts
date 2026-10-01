@@ -60,14 +60,20 @@ export function posted(postedDay: number | null, now: number, locale?: string): 
   }
 }
 
+/** Naming more countries than this says less than counting them: "EMEA" reads as 53 of them. */
+const MANY = 4;
+
 /** Where a posting is, as the places we read rather than the label the board wrote. */
 export function where(row: ResultRow, locale?: string): string {
   if (row.anywhere) return "Anywhere";
   const cities = [...new Set(row.cities)].filter((city) => city.length > 0);
-  const countries = [...new Set(row.countries)].map((code) => countryName(code, locale));
-  const parts = cities.length > 0 ? cities.slice(0, 3) : countries.slice(0, 3);
-  const rest = (cities.length > 0 ? cities.length : countries.length) - parts.length;
-  if (parts.length === 0) return "Location not stated";
-  const listed = parts.join(", ");
-  return rest > 0 ? `${listed} and ${rest} more` : listed;
+  const countries = [...new Set(row.countries)];
+  if (cities.length === 0 && countries.length > MANY) {
+    return `${number(countries.length, locale)} countries`;
+  }
+  const places = cities.length > 0 ? cities : countries.map((code) => countryName(code, locale));
+  if (places.length === 0) return "Location not stated";
+  const shown = places.slice(0, 3);
+  const rest = places.length - shown.length;
+  return rest > 0 ? `${shown.join(", ")} and ${rest} more` : shown.join(", ");
 }
