@@ -127,6 +127,10 @@ export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
     employment: new Map<number, number>(),
     companies: new Map<number, number>(),
   };
+  // A posting open to anywhere matches every country, so it belongs in every country's count.
+  // Counting those rows apart keeps one that also names a country from being counted twice.
+  let anywhereCounted = 0;
+  const anywhereByCountry = new Map<number, number>();
   const matched: number[] = [];
   for (let row = 0; row < table.size; row += 1) {
     if (since !== undefined && (table.posted[row] ?? -1) < since) continue;
@@ -161,6 +165,10 @@ export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
     if (failures === 0) matched.push(row);
     if (failures === 0 || failed === PLACE) {
       forEachValue(table.country, row, (code) => increment(counts.countries, code));
+      if (includeAnywhere && table.anywhere[row] === 1) {
+        anywhereCounted += 1;
+        forEachValue(table.country, row, (code) => increment(anywhereByCountry, code));
+      }
     }
     if (failures === 0 || failed === WORKPLACE)
       increment(counts.workplaces, table.workplace[row] ?? -1);
@@ -189,6 +197,18 @@ export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
 
   const offset = query.offset ?? 0;
   const limit = query.limit ?? DEFAULT_LIMIT;
+  /**
+   * Every country's count plus the postings open to anywhere, which choosing that country
+   * would also show, less the ones already counted because they name it too.
+   */
+  const withAnywhere = (map: Map<number, number>) => {
+    if (anywhereCounted === 0) return map;
+    const all = new Map(map);
+    for (const code of new Set([...map.keys(), ...anywhereByCountry.keys()])) {
+      all.set(code, (map.get(code) ?? 0) + anywhereCounted - (anywhereByCountry.get(code) ?? 0));
+    }
+    return all;
+  };
   const ranked = <T>(map: Map<number, number>, name: (code: number) => T | undefined) =>
     [...map]
       .flatMap(([code, count]) => {
@@ -200,7 +220,7 @@ export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
     total: matched.length,
     rows: matched.slice(offset, offset + limit).map((row) => resultRow(table, row)),
     facets: {
-      countries: ranked(counts.countries, (code) => dictionaries.country[code]),
+      countries: ranked(withAnywhere(counts.countries), (code) => dictionaries.country[code]),
       workplaces: ranked(counts.workplaces, (code) => workplaceOf(code) ?? undefined),
       employment: ranked(counts.employment, (bit) => EMPLOYMENT_CODES[bit]),
       companies: ranked(counts.companies, (code) => dictionaries.company[code]),

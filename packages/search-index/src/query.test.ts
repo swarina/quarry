@@ -269,6 +269,22 @@ describe("queryIndex", () => {
     expect(result.facets.companies).toEqual([["Gamma", 1]]);
   });
 
+  it("counts a country facet as what choosing it would show, postings from anywhere included", () => {
+    // The promise a facet count makes is "this many if you pick me", so a posting open to
+    // anywhere, which matches every country, has to be in every country's count.
+    const counted = Object.fromEntries(run({}).facets.countries);
+    for (const [country, count] of Object.entries(counted)) {
+      expect(run({ places: { countries: [country] } }).total).toBe(count);
+    }
+    // Without them, the counts are of the postings that name each country.
+    const named = Object.fromEntries(run({ includeAnywhere: false }).facets.countries);
+    for (const [country, count] of Object.entries(named)) {
+      expect(run({ places: { countries: [country] }, includeAnywhere: false }).total).toBe(count);
+    }
+    // The fixture has one posting open to anywhere, and it names no country of its own.
+    expect(counted["DE"]).toBe((named["DE"] ?? 0) + 1);
+  });
+
   it("sorts by pay in a currency, then newest, and pages", () => {
     const byPay = run({ sort: { pay: "USD" } });
     expect(ids(byPay).slice(0, 3)).toEqual(["sf", "both", "london"]);
