@@ -1,5 +1,6 @@
 import type { NormalizedPosting, Workplace } from "@quarry/domain";
 import { type LabelReading, type Place, readLabel } from "./read-label.ts";
+import { foldName } from "./text.ts";
 
 /** Where a posting is, or who can do it from where, as its labels and structured fields say. */
 export interface PostingLocation {
@@ -20,6 +21,39 @@ export interface PostingLocation {
   readonly unplaced: readonly string[];
 }
 
+/**
+ * The places of the structured offices that say the label again with more around it, for a
+ * label that named no place of its own. A board that writes "Karkiv" and lists an office
+ * "Karkiv, Ukraine" has told us the country, even though the city is misspelt; without this,
+ * such a posting falls back to every office the company has, which is a much worse answer.
+ *
+ * The label must be a whole word in the office's text and long enough not to match by accident.
+ */
+interface Stated {
+  readonly label: string | null;
+  readonly text: string;
+  readonly reading: LabelReading;
+}
+
+const SHORTEST_NAMESAKE = 4;
+
+/** The words of a folded text, so a label matches a whole word rather than part of one. */
+function words(text: string): string {
+  return ` ${foldName(text)
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()} `;
+}
+
+function namesake(stated: readonly Stated[], label: string): Place[] | undefined {
+  const folded = foldName(label);
+  if (folded.length < SHORTEST_NAMESAKE) return undefined;
+  const wanted = words(label).trimEnd();
+  const found = stated.filter(
+    (place) => place.label === null && words(place.text).includes(wanted),
+  );
+  return found.length === 0 ? undefined : found.flatMap((place) => place.reading.places);
+}
+
 /** A label that means the company's headquarters and names nothing else ("HQ", "Head Office"). */
 const HEADQUARTERS =
   /^\W*(?:(?:company|corporate|global|main)\s+)?(?:headquarters|hq|head\s*office)\W*$/i;
@@ -37,8 +71,9 @@ export function locatePosting(
   posting: Pick<NormalizedPosting, "locations" | "places" | "country" | "workplace">,
   home: string | null,
 ): PostingLocation {
-  const stated = posting.places.map((place) => ({
+  const stated: Stated[] = posting.places.map((place) => ({
     label: place.label,
+    text: place.text,
     reading: readLabel(place.text, { home }),
   }));
   const hinted = [
@@ -53,7 +88,13 @@ export function locatePosting(
   for (const label of posting.locations) {
     const reading = readLabel(label, hints);
     readings.push(reading);
-    const paired = stated.find((place) => place.label === label)?.reading.places ?? [];
+    // A label the reader understood as an arrangement ("Remote") is not a place name, so it
+    // must not match an office by its words; only unreadable text looks for its namesake.
+    const unreadable = reading.workplace === null && !reading.anywhere;
+    const paired =
+      stated.find((place) => place.label === label)?.reading.places ??
+      (unreadable ? namesake(stated, label) : undefined) ??
+      [];
     const found = reading.places.length > 0 ? reading.places : paired;
     add(places, found);
     if (found.length === 0 && reading.workplace === null && !reading.anywhere) unplaced.push(label);
@@ -103,7 +144,7 @@ export function locatePosting(
 function atHome(
   posting: Pick<NormalizedPosting, "locations" | "places" | "workplace">,
   labels: readonly LabelReading[],
-  stated: readonly { readonly reading: LabelReading }[],
+  stated: readonly Stated[],
   workplace: Workplace | null,
 ): boolean {
   const arrangement = posting.workplace ?? workplace;

@@ -87,6 +87,38 @@ describe("locatePosting", () => {
     expect(locate({ locations: ["Jobs.cz", "Remote", "Prague"] }).unplaced).toEqual(["Jobs.cz"]);
   });
 
+  it("takes the office that says a label again when the label itself names no place", () => {
+    // A misspelt city the gazetteer cannot read, with the company's offices listed beside it.
+    const offices = ["Paris, France", "Lviv, Ukraine", "Karkiv, Ukraine", "Malta"].map((text) => ({
+      label: null,
+      text,
+    }));
+    const found = locate({ locations: ["Karkiv"], places: offices });
+    expect(where(found)).toEqual(["UA"]);
+    expect(found.basis).toBe("labels");
+  });
+
+  it("still falls back to every office when no office says the label", () => {
+    const offices = ["Paris, France", "Lviv, Ukraine"].map((text) => ({ label: null, text }));
+    const remote = locate({ locations: ["Remote"], places: offices });
+    expect(where(remote)).toEqual(["FR/11/Paris", "UA/15/Lviv"]);
+    expect(remote.basis).toBe("structured");
+    // Too short to match by accident: "US" must not pick the office that merely contains it.
+    const short = locate({ locations: ["USX"], places: [{ label: null, text: "Austin, US" }] });
+    expect(short.basis).toBe("structured");
+  });
+
+  it("does not match an arrangement word against the words of an office", () => {
+    // "Remote" is an arrangement, not a place, so it must not pick out the remote offices.
+    const offices = ["Remote - United States", "Berlin, Germany"].map((text) => ({
+      label: null,
+      text,
+    }));
+    const found = locate({ locations: ["Remote"], places: offices });
+    expect(where(found)).toEqual(["US", "DE/16/Berlin"]);
+    expect(found).toMatchObject({ basis: "structured", workplace: "remote" });
+  });
+
   it.each([
     [{ locations: ["Hybrid"], places: [{ label: null, text: "Hybrid" }] }, "JP"],
     [{ locations: ["In-Office"] }, "JP"],
