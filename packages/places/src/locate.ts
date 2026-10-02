@@ -21,14 +21,7 @@ export interface PostingLocation {
   readonly unplaced: readonly string[];
 }
 
-/**
- * The places of the structured offices that say the label again with more around it, for a
- * label that named no place of its own. A board that writes "Karkiv" and lists an office
- * "Karkiv, Ukraine" has told us the country, even though the city is misspelt; without this,
- * such a posting falls back to every office the company has, which is a much worse answer.
- *
- * The label must be a whole word in the office's text and long enough not to match by accident.
- */
+/** One of the posting's structured places: an office or address, as stated and as read. */
 interface Stated {
   readonly label: string | null;
   readonly text: string;
@@ -44,6 +37,14 @@ function words(text: string): string {
     .trim()} `;
 }
 
+/**
+ * The places of the structured offices that say the label again with more around it, for a
+ * label that named no place of its own. A board that writes "Karkiv" and lists an office
+ * "Karkiv, Ukraine" has told us the country, even though the city is misspelt; without this,
+ * such a posting falls back to every office the company has, which is a much worse answer.
+ *
+ * The label must be a whole word in the office's text and long enough not to match by accident.
+ */
 function namesake(stated: readonly Stated[], label: string): Place[] | undefined {
   const folded = foldName(label);
   if (folded.length < SHORTEST_NAMESAKE) return undefined;
