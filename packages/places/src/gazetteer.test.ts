@@ -32,12 +32,23 @@ describe("gazetteer", () => {
       divisions.map((division) => `${division.country}.${division.code}`),
     );
     expect(divisionIds.size).toBe(divisions.length);
-    for (const division of divisions) expect(countryCodes).toContain(division.country);
     expect(new Set(cities.map((city) => city.id)).size).toBe(cities.length);
-    for (const city of cities) {
-      expect(countryCodes).toContain(city.country);
-      if (city.division !== "") expect(divisionIds).toContain(`${city.country}.${city.division}`);
+    // Collected rather than asserted one by one: an assertion per city is tens of thousands of
+    // them, which took longer than the test timeout, and a list of what is wrong reads better
+    // than the first failure.
+    const dangling: string[] = [];
+    for (const division of divisions) {
+      if (!countryCodes.has(division.country)) {
+        dangling.push(`division ${division.country}.${division.code} has no country`);
+      }
     }
+    for (const city of cities) {
+      if (!countryCodes.has(city.country)) dangling.push(`city ${city.id} has no country`);
+      if (city.division !== "" && !divisionIds.has(`${city.country}.${city.division}`)) {
+        dangling.push(`city ${city.id} names division ${city.country}.${city.division}`);
+      }
+    }
+    expect(dangling).toEqual([]);
   });
 
   it("keeps the alternate names labels use, and none that belong elsewhere", () => {
