@@ -58,6 +58,7 @@ source comments still point at nothing.
 | 0023 | No server and no accounts, with the search in the URL | 2026-10-01 | #27, to be written |
 | 0024 | A wording is the question, and answers are keyed on content | 2026-10-04 | #30, to be written |
 | 0025 | One request per posting, and four named ways for a run to stop | 2026-10-04 | #30, to be written |
+| [0026](0026-jev-returns-no-evidence-spans.md) | Jev returns no evidence spans, so stop promising them | 2026-10-04 | this branch |
 
 ## Template
 

@@ -11,9 +11,12 @@ with calibrated probabilities instead of generated text.
 
 - **Your questions, not a fixed schema.** Yes-or-no, pick-one, or graded-scale criteria,
   stacked and weighted however you like.
-- **Honest uncertainty.** Results are grouped into likely, maybe, and unlikely, with
-  published accuracy for every standard question.
-- **Evidence, not generated claims.** Answers point back to the text of the posting.
+- **Honest uncertainty.** Results are grouped into likely, maybe, and unlikely, and an answer
+  nothing has been asked yet is never shown as a no. Accuracy per standard question is not
+  measured yet, and nothing here claims a number until it is.
+- **Typed answers, not generated prose.** An answer is a value with a probability, never a
+  sentence a model wrote, and the employer's own posting is one click away. Jev returns no
+  quotations or spans to point at (ADR-0026), so Quarry does not pretend to have them.
 - **Private by design.** No accounts, and resumes are processed in your browser.
 - **Respectful sourcing.** Only public job board APIs that employers publish for embedding,
   crawled politely, with the employer's own page as the place to apply.
