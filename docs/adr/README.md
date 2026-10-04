@@ -23,10 +23,8 @@ Those five keep the numbers the source already uses. The rest were numbered when
 were written, so **the sequence is not chronological** and the numbers carry no meaning beyond
 identity. Each record states the change it came from, which is the authoritative date.
 
-**This backfill is partial.** 0001 to 0007, 0016, 0018, 0019 and 0026 are written, so every
-citation above now resolves. The decisions listed as "to be written" below are recorded today
-only in their commit messages and pull request descriptions, which remain the authoritative
-source until a record exists.
+The backfill is complete: every decision below has a record, and every ADR cited from the source
+resolves.
 
 ## The records
 
@@ -39,24 +37,24 @@ source until a record exists.
 | [0005](0005-spend-limits-and-cost-accounting.md) | Reserve an upper bound before spending, and ledger every call | 2026-09-26 | `ddb1984`, `f71b47f` |
 | [0006](0006-encrypted-store-snapshots-in-releases.md) | Keep the store as encrypted snapshots on a GitHub release | 2026-09-27 | #7 |
 | [0007](0007-search-in-the-browser-over-a-static-index.md) | Filter a static columnar index in the browser | 2026-09-28 | #18, #26 |
-| 0008 | Record and replay API exchanges instead of mocking the SDK | 2026-09-26 | `8784a62`, to be written |
-| 0009 | Fail a board when its listing cannot be trusted, never a job | 2026-09-27 | #3, to be written |
-| 0010 | Plain SQL on `node:sqlite`, with forward-only migrations | 2026-09-27 | #5, to be written |
-| 0011 | Split the daily run into a read-only job and a writing job | 2026-09-27 | #8, to be written |
-| 0012 | Drill the oldest snapshot, and probe for a schedule that stopped | 2026-09-28 | #13, to be written |
-| 0013 | Measure freshness only where it means something | 2026-09-28 | #12, to be written |
-| 0014 | Build a gazetteer from GeoNames, filtered against real labels | 2026-09-28 | #15, #21, to be written |
-| 0015 | Score location readings together, not token by token | 2026-09-28 | #16, to be written |
+| [0008](0008-record-and-replay-jev-exchanges.md) | Record and replay API exchanges instead of mocking the SDK | 2026-09-26 | `8784a62` |
+| [0009](0009-ats-adapters-strict-where-trust-depends-on-it.md) | Fail a board when its listing cannot be trusted, never a job | 2026-09-27 | #3 |
+| [0010](0010-pipeline-store-on-node-sqlite.md) | Plain SQL on `node:sqlite`, with forward-only migrations | 2026-09-27 | #5 |
+| [0011](0011-daily-pipeline-on-github-actions.md) | Split the daily run into a read-only job and a writing job | 2026-09-27 | #8 |
+| [0012](0012-restore-drills-and-staleness-probes.md) | Drill the oldest snapshot, and probe for a schedule that stopped | 2026-09-28 | #13 |
+| [0013](0013-freshness-of-new-postings.md) | Measure freshness only where it means something | 2026-09-28 | #12 |
+| [0014](0014-a-gazetteer-built-from-geonames.md) | Build a gazetteer from GeoNames, filtered against real labels | 2026-09-28 | #15, #21 |
+| [0015](0015-reading-location-labels.md) | Score location readings together, not token by token | 2026-09-28 | #16 |
 | [0016](0016-crawls-recorded-as-observations.md) | Store what each crawl saw, and derive the lifecycle from it | 2026-09-27 | #5 |
-| 0017 | Derive the facets that need no model, and version the rules | 2026-09-28 | #17, to be written |
+| [0017](0017-structured-facets-versioned.md) | Derive the facets that need no model, and version the rules | 2026-09-28 | #17 |
 | [0018](0018-politeness-by-construction.md) | Make politeness impossible for a caller to forget | 2026-09-27 | #4 |
 | [0019](0019-declined-ny-as-a-city-alias.md) | Declined: do not read `NY` as New York City | 2026-10-02 | #28 |
-| 0020 | Leave templates and test postings out of the index | 2026-09-28 | #22, to be written |
-| 0021 | Place hybrid and headquarters postings in the company's country | 2026-09-28 | #23, to be written |
-| 0022 | Hold the reader to hand-labelled answers, with floors below today | 2026-10-04 | #29, to be written |
-| 0023 | No server and no accounts, with the search in the URL | 2026-10-01 | #27, to be written |
-| 0024 | A wording is the question, and answers are keyed on content | 2026-10-04 | #30, to be written |
-| 0025 | One request per posting, and four named ways for a run to stop | 2026-10-04 | #30, to be written |
+| [0020](0020-placeholder-postings-left-out-of-the-index.md) | Leave templates and test postings out of the index | 2026-09-28 | #22 |
+| [0021](0021-home-country-as-a-last-resort.md) | Place hybrid and headquarters postings in the company's country | 2026-09-28 | #23 |
+| [0022](0022-a-golden-set-for-the-location-reader.md) | Hold the reader to hand-labelled answers, with floors below today | 2026-10-04 | #29 |
+| [0023](0023-the-site-no-server-no-accounts.md) | No server and no accounts, with the search in the URL | 2026-10-01 | #27 |
+| [0024](0024-a-versioned-question-registry-keyed-on-content.md) | A wording is the question, and answers are keyed on content | 2026-10-04 | #30 |
+| [0025](0025-one-request-per-posting-and-how-a-run-stops.md) | One request per posting, and four named ways for a run to stop | 2026-10-04 | #30 |
 | [0026](0026-jev-returns-no-evidence-spans.md) | Jev returns no evidence spans, so stop promising them | 2026-10-04 | this branch |
 
 ## Template
