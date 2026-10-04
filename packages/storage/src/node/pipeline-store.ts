@@ -143,6 +143,13 @@ export interface CurrentPosting {
   readonly firstSeenAt: number;
   /** The posting as last read, without its description. */
   readonly posting: Omit<NormalizedPosting, "descriptionHtml">;
+  /**
+   * The answers held for this posting's current content, as the model gave them, keyed by
+   * `<question id>@<version>`. Empty when nothing has answered it yet, and answers under a
+   * wording that has since changed are still here under their own version, so the caller
+   * decides which wordings it wants rather than being handed whichever exist.
+   */
+  readonly answers: Readonly<Record<string, string>>;
 }
 
 /** A posting whose current content has no answer to some question, with the text to ask about. */
@@ -451,7 +458,11 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
     ),
     currentPostings: db.prepare(
       `SELECT p.id, p.first_seen_at, b.company, b.country,
-         json_remove(c.normalized_json, '$.descriptionHtml') AS posting
+         json_remove(c.normalized_json, '$.descriptionHtml') AS posting,
+         -- Answers travel with the posting so the index is built in one pass. Keyed on the
+         -- content hash, so an edited posting shows only the answers to the text it has now.
+         (SELECT json_group_object(a.question_id || '@' || a.question_version, a.answer_json)
+            FROM posting_answers a WHERE a.content_hash = p.content_hash) AS answers
        FROM boards b
        JOIN posting_presence pp ON pp.last_crawl_id = b.last_listed_crawl_id
        JOIN postings p ON p.id = pp.posting_id AND p.board_id = b.id
@@ -818,6 +829,7 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
           firstSeenAt: row["first_seen_at"] as number,
           // Content stored before places existed has none.
           posting: { ...posting, places: posting.places ?? [] },
+          answers: JSON.parse(row["answers"] as string) as Record<string, string>,
         };
       }
     },
