@@ -117,6 +117,107 @@ describe("buildSearchIndex", () => {
   });
 });
 
+describe("answers in the index", () => {
+  it("reads the store's answers into a queryable index, and reports the coverage", async () => {
+    const remote = posting("1", { locations: ["Remote"] });
+    const onsite = posting("2");
+    await list([remote, onsite]);
+    // Only the first posting is answered, as a partly enriched corpus looks.
+    store.saveAnswers([
+      {
+        contentHash: await postingContentHash(remote),
+        questionId: "arrangement",
+        questionVersion: 1,
+        model: "jev-1.13.0",
+        answeredAt: T0,
+        answerJson: JSON.stringify({
+          type: "choice",
+          choice: "remote",
+          confidence: 0.9,
+          probabilities: { remote: 0.9, hybrid: 0.05, onsite: 0.05, not_stated: 0 },
+        }),
+      },
+    ]);
+
+    const { build, report } = await buildSearchIndex(store, T0);
+    expect(report.answered["arrangement"]).toBe(1);
+    expect(report.unreadableAnswers).toBe(0);
+    expect(build.manifest.answersVersion).toBeGreaterThan(0);
+
+    const table = openIndex(
+      JSON.parse(build.files[0]?.content ?? ""),
+      build.files
+        .filter((file) => file.path.includes("/shards/"))
+        .map((file) => JSON.parse(file.content)),
+    );
+    const likelyRemote = queryIndex(table, {
+      answers: [{ question: "arrangement", options: ["remote"], atLeast: 80 }],
+    });
+    expect(likelyRemote.rows.map((row) => row.title)).toEqual(["Engineer 1"]);
+    expect(likelyRemote.rows[0]?.answers).toEqual([
+      {
+        question: "arrangement",
+        option: "remote",
+        probability: 90,
+        distribution: [90, 5, 5, 0],
+      },
+    ]);
+    // The unanswered posting is not a maybe: it never matches.
+    expect(
+      queryIndex(table, { answers: [{ question: "arrangement", options: ["onsite"] }] }).total,
+    ).toBe(0);
+  });
+
+  it("leaves out an answer stored under a wording that has since changed", async () => {
+    const value = posting("1");
+    await list([value]);
+    store.saveAnswers([
+      {
+        contentHash: await postingContentHash(value),
+        questionId: "arrangement",
+        // A wording the registry no longer asks.
+        questionVersion: 99,
+        model: "jev-1.13.0",
+        answeredAt: T0,
+        answerJson: JSON.stringify({
+          type: "choice",
+          choice: "remote",
+          confidence: 1,
+          probabilities: { remote: 1, hybrid: 0, onsite: 0, not_stated: 0 },
+        }),
+      },
+    ]);
+    const { report } = await buildSearchIndex(store, T0);
+    expect(report.answered["arrangement"]).toBe(0);
+    // Not readable-but-wrong: it was never asked for, so it is not counted as a failure.
+    expect(report.unreadableAnswers).toBe(0);
+  });
+
+  it("counts a stored answer it cannot read, rather than hiding it", async () => {
+    const value = posting("1");
+    await list([value]);
+    store.saveAnswers([
+      {
+        contentHash: await postingContentHash(value),
+        questionId: "arrangement",
+        questionVersion: 1,
+        model: "jev-1.13.0",
+        answeredAt: T0,
+        // An option the question no longer declares: realigning would mean a wrong answer.
+        answerJson: JSON.stringify({
+          type: "choice",
+          choice: "wfh",
+          confidence: 1,
+          probabilities: { wfh: 1, hybrid: 0, onsite: 0, not_stated: 0 },
+        }),
+      },
+    ]);
+    const { report } = await buildSearchIndex(store, T0);
+    expect(report.answered["arrangement"]).toBe(0);
+    expect(report.unreadableAnswers).toBe(1);
+  });
+});
+
 describe("renderSearchIndexSummary", () => {
   const report: SearchIndexReport = {
     build: "1b3543dd7069",
@@ -125,6 +226,8 @@ describe("renderSearchIndexSummary", () => {
     byBasis: { labels: 950, structured: 35, home: 5, none: 10 },
     withCity: 800,
     anywhere: 12,
+    answered: { arrangement: 500, seniority: 500, sponsorship: 500, onCall: 500 },
+    unreadableAnswers: 0,
     unplacedLabels: [
       ["Jobs.cz", 5],
       ["Office | Field", 2],

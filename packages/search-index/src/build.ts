@@ -71,6 +71,8 @@ export async function buildIndex(
   options: {
     readonly builtAt: number;
     readonly facetsVersion: number;
+    /** Version of the rules that read stored answers; 0 when the build holds none. */
+    readonly answersVersion?: number;
     /**
      * The questions whose answers the shards carry, in column order. A row's answer to a
      * question not named here is left out, so this list, not the rows, decides what a build
@@ -84,6 +86,7 @@ export async function buildIndex(
   const rowsPerPart = options.rowsPerPart ?? ROWS_PER_PART;
   const budgets = options.budgets ?? BUDGETS;
   const questions = options.questions ?? [];
+  const answersVersion = options.answersVersion ?? 0;
   const idLength = shortestUniquePrefix(rows.map((row) => row.id));
   const sorted = [...rows].sort(
     (left, right) =>
@@ -127,6 +130,7 @@ export async function buildIndex(
       [
         INDEX_FORMAT,
         options.facetsVersion,
+        answersVersion,
         idLength,
         // Named here as well as inside every shard, so rewording a question renames the build
         // even when no shard was written.
@@ -146,6 +150,7 @@ export async function buildIndex(
     build,
     builtAt: new Date(options.builtAt).toISOString(),
     facetsVersion: options.facetsVersion,
+    answersVersion,
     postings: rows.length,
     idLength,
     regions: REGIONS.map((region) => ({

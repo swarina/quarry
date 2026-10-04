@@ -149,6 +149,7 @@ export function parseManifest(value: unknown): Manifest {
     build: text(found["build"], "manifest.build", BUILD_ID),
     builtAt: text(found["builtAt"], "manifest.builtAt"),
     facetsVersion: whole(found["facetsVersion"], "manifest.facetsVersion", 1),
+    answersVersion: whole(found["answersVersion"], "manifest.answersVersion"),
     postings: whole(found["postings"], "manifest.postings"),
     idLength,
     regions: array(found["regions"], "manifest.regions").map((entry, index) => {

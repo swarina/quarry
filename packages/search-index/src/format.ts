@@ -87,6 +87,8 @@ export interface Manifest {
   readonly build: string;
   readonly builtAt: string;
   readonly facetsVersion: number;
+  /** Version of the rules that read stored answers into the probabilities below. */
+  readonly answersVersion: number;
   /** Distinct postings in the build (a posting in two regions counts once). */
   readonly postings: number;
   /** Length of the posting id prefixes in the shards. */

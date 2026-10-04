@@ -40,6 +40,7 @@ export const manifestSchema: z.ZodType<Manifest> = z.strictObject({
   build: z.string().regex(BUILD_ID),
   builtAt: z.iso.datetime(),
   facetsVersion: z.int().positive(),
+  answersVersion: z.int().nonnegative(),
   postings: z.int().nonnegative(),
   idLength: z.int().min(MIN_ID_LENGTH).max(16),
   regions: z.array(
