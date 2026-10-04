@@ -12,10 +12,23 @@ const DAY = 24 * 60 * 60 * 1000;
 const TODAY = 20_725;
 const ROWS = 100_000;
 /**
- * The target is 100 ms at p95 in a mid-range laptop browser (M2). CI runners vary, so this only
- * catches a slide into slow; the numbers it logs are the ones to watch.
+ * A slide guard, not the product's target. The target is 100 ms at p95 in a mid-range laptop
+ * browser, and `apps/site/public/bench.html` is what measures it: 8.9 ms over 34,831 real
+ * postings, with every region loaded at once. That is the number the product is held to, and it
+ * has not moved.
+ *
+ * This measures something much harsher and much noisier: 100,000 synthetic postings, every one
+ * of them answered, under V8 coverage instrumentation, on a shared CI runner. Coverage alone
+ * roughly triples it (65 ms without, 180 ms with, measured locally 2026-10-04), and CI runners
+ * are slower again, so the same commit has measured 288 ms there.
+ *
+ * The bound was 250 ms when the index held no answers. Counting four answer facets on every row
+ * made the unfiltered query legitimately heavier, so holding the old number would have compared
+ * two different workloads and failed on runner noise instead of on a regression. 400 ms sits
+ * roughly 60% above what CI now measures, which is wide enough not to fire on a slow runner and
+ * still catches any real slide. The logged numbers are what to watch; this only stops a cliff.
  */
-const P95_LIMIT_MS = 250;
+const P95_LIMIT_MS = 400;
 
 // Real places, weighted roughly like the corpus: mostly the US, then Europe and Asia.
 const PLACES = [

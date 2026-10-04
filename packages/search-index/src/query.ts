@@ -213,14 +213,19 @@ export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
     criteria.push({ at, width: question.options.length, options, atLeast });
   }
 
+  // Hoisted out of the row loop: one lookup per question rather than one per question per row.
+  const answerColumns = table.questions.map((_question, at) => table.answers[at]);
   const counts = {
     countries: new Map<number, number>(),
     workplaces: new Map<number, number>(),
     employment: new Map<number, number>(),
     companies: new Map<number, number>(),
-    // Per question: a count per option, plus how many rows held an answer at all.
-    answers: table.questions.map(() => ({
-      options: new Map<number, number>(),
+    // Per question: a count per option, plus how many rows held an answer at all. The option
+    // counters are a dense typed array rather than a map, because a question has a handful of
+    // options and an unfiltered query touches every one of them on every row: the map's
+    // get-and-set was over a million operations on a 100,000-posting index.
+    answers: table.questions.map((question) => ({
+      options: new Int32Array(question.options.length),
       answered: 0,
     })),
   };
@@ -292,12 +297,13 @@ export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
       // is read directly: going through answerProbability here allocated an array per option
       // per row, which doubled the cost of a query with no answer filter at all.
       const width = answerWidths[at] ?? 0;
-      const column = table.answers[at];
+      const column = answerColumns[at];
       if (column === undefined) continue;
       const atLeast = thresholds[at] ?? DEFAULT_ANSWER_THRESHOLD;
       const start = row * width;
+      const tallies = tally.options;
       for (let option = 0; option < width; option += 1) {
-        if ((column[start + option] ?? 0) >= atLeast) increment(tally.options, option);
+        if ((column[start + option] ?? 0) >= atLeast) tallies[option] = (tallies[option] ?? 0) + 1;
       }
     }
   }
@@ -347,14 +353,28 @@ export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
       companies: ranked(counts.companies, (code) => dictionaries.company[code]),
       answers: table.questions.map((question, at) => ({
         question: question.id,
-        options: ranked(
-          counts.answers[at]?.options ?? new Map(),
-          (option) => question.options[option],
-        ),
+        // An option nothing reached is left out, not reported as zero, so a count always
+        // answers "this many if you pick me" for an option worth picking.
+        options: rankedDense(counts.answers[at]?.options, question.options),
         answered: counts.answers[at]?.answered ?? 0,
       })),
     },
   };
+}
+
+/** Option counts, largest first then by name, leaving out the ones nothing reached. */
+function rankedDense(
+  counts: Int32Array | undefined,
+  options: readonly string[],
+): (readonly [string, number])[] {
+  if (counts === undefined) return [];
+  const pairs: (readonly [string, number])[] = [];
+  for (let option = 0; option < counts.length; option += 1) {
+    const count = counts[option] ?? 0;
+    const name = options[option];
+    if (count > 0 && name !== undefined) pairs.push([name, count] as const);
+  }
+  return pairs.sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]));
 }
 
 function resultRow(table: IndexTable, row: number): ResultRow {
