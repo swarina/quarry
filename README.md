@@ -21,10 +21,12 @@ with calibrated probabilities instead of generated text.
 - **Respectful sourcing.** Only public job board APIs that employers publish for embedding,
   crawled politely, with the employer's own page as the place to apply.
 
-> **Status:** early development. In place: the Jev client (model pinning, response
-> validation, spend limits, cost accounting) and a daily pipeline that crawls job boards
-> politely, records what every crawl saw, and keeps encrypted snapshots of its store.
-> Enrichment and the web application are next.
+> **Status:** early development, and **nothing is deployed yet**, so none of this is reachable
+> by a person. In place: the Jev client (model pinning, response validation, spend limits, cost
+> accounting); a daily pipeline that crawls job boards politely, records what every crawl saw,
+> and keeps encrypted snapshots of its store; enrichment, which answers the standard questions
+> about every posting; a static search index carrying those answers; and a browser search over
+> it. Next: deploying it, and answering your own questions, which needs the API.
 
 ## Design
 
@@ -43,14 +45,20 @@ Quarry is being built in four parts:
 
 | Path | Contents |
 | --- | --- |
-| [`apps/pipeline`](apps/pipeline) | The pipeline command line: crawls job boards into the pipeline store and reports on each run |
+| [`apps/pipeline`](apps/pipeline) | The pipeline command line: crawls job boards, enriches postings, builds the search index, and reports on each run |
 | [`packages/ats`](packages/ats) | Adapters for the Greenhouse, Lever, and Ashby job board APIs, with contract tests against recorded responses |
+| [`apps/site`](apps/site) | The search site: filters the static index in the browser, with no server and no account |
 | [`packages/crawl`](packages/crawl) | A polite HTTP client: robots.txt, per-host pacing, retries, circuit breaking, and conditional requests |
 | [`packages/domain`](packages/domain) | Pure logic shared by every runtime: deterministic JSON and hashing, board and posting identity, and posting text |
+| [`packages/facets`](packages/facets) | A posting's standard facets: the ones derived from stated fields, and the reading of stored answers |
 | [`packages/jev`](packages/jev) | The single entry point for Jev: pinned model, validated answers, spend limits, rate limiting, cost ledger, record and replay |
+| [`packages/places`](packages/places) | A gazetteer built from GeoNames, and the reader that turns location labels into places |
+| [`packages/questions`](packages/questions) | The standard questions, the versions their answers are stored under, and how accurate they are |
+| [`packages/search-index`](packages/search-index) | The static index the site filters: building it, and reading and querying it in the browser |
 | [`packages/storage`](packages/storage) | The pipeline's SQLite store: schema, migrations, and crawl observations |
 | [`seeds`](seeds) | The job boards to crawl, and the list of boards removed at their company's request |
 | [`scripts`](scripts) | Repository tooling |
+| [`docs/adr`](docs/adr) | Architecture decision records: what was decided, what else was on the table, and what it costs |
 
 ## Development
 
