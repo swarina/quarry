@@ -1,4 +1,8 @@
 import { choice, type EntryType, noul, type Questions, score } from "@quarry/jev";
+import { type AnswerShape, answerShape } from "./answers.ts";
+
+export type { AnswerKind, AnswerShape } from "./answers.ts";
+export { answerShape, NOUL_OPTIONS } from "./answers.ts";
 
 /**
  * The standard questions asked of every posting (product 9). A question's wording *is* the
@@ -106,6 +110,19 @@ export const STANDARD_QUESTIONS: readonly StandardQuestion[] = [
  */
 export function standardQuestions(): Questions {
   return Object.fromEntries(STANDARD_QUESTIONS.map((entry) => [entry.id, entry.question]));
+}
+
+/**
+ * Every standard question's answer shape, in registry order, which is also the order their
+ * columns appear in a search index shard.
+ */
+export function answerShapes(): readonly AnswerShape[] {
+  return STANDARD_QUESTIONS.map((entry) => ({
+    id: entry.id,
+    version: entry.version,
+    about: entry.about,
+    ...answerShape(entry.question),
+  }));
 }
 
 /**
