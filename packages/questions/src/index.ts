@@ -1,6 +1,17 @@
 import { choice, type EntryType, noul, type Questions, score } from "@quarry/jev";
 import { type AnswerShape, answerShape } from "./answers.ts";
 
+export type {
+  AnswerLabel,
+  AnswerPrediction,
+  CalibrationBucket,
+  Centi,
+  Disagreement,
+  QuestionOptions,
+  QuestionScore,
+  ThresholdPoint,
+} from "./accuracy.ts";
+export { renderScore, scoreAnswers, scoreQuestion } from "./accuracy.ts";
 export type { AnswerKind, AnswerShape } from "./answers.ts";
 export { answerShape, NOUL_OPTIONS } from "./answers.ts";
 
