@@ -1,6 +1,12 @@
 import type { Workplace } from "@quarry/domain";
 import type { EmploymentType } from "@quarry/facets";
-import { EMPLOYMENT_CODES, type Manifest, type Shard, WORKPLACE_CODES } from "./format.ts";
+import {
+  EMPLOYMENT_CODES,
+  type Manifest,
+  type Shard,
+  type ShardQuestion,
+  WORKPLACE_CODES,
+} from "./format.ts";
 import { parseLinks, parseManifest, parseShard } from "./parse.ts";
 
 /** A column of lists: row `i`'s values are `values[offsets[i]]` up to `values[offsets[i + 1]]`. */
@@ -40,6 +46,15 @@ export interface IndexTable {
   readonly currency: Int32Array;
   /** Days since 1970-01-01 (UTC), or -1. */
   readonly posted: Int32Array;
+  /** The questions the answer columns are for, in the same order. */
+  readonly questions: readonly ShardQuestion[];
+  /**
+   * Per question, in `questions` order: each row's probability for each option, in hundredths,
+   * flattened row by row. Row `r`'s option `o` is at `r * options.length + o`.
+   */
+  readonly answers: readonly Uint8Array[];
+  /** A bit per question, in `questions` order: 1 when this row holds that answer. */
+  readonly answered: Uint8Array;
   readonly dictionaries: {
     readonly company: readonly string[];
     readonly location: readonly string[];
@@ -63,6 +78,7 @@ export function searchFold(text: string): string {
 export function openIndex(manifestJson: unknown, shardJsons: readonly unknown[]): IndexTable {
   const manifest = parseManifest(manifestJson);
   const shards = shardJsons.map((json) => checkShard(parseShard(json)));
+  const questions = agreedQuestions(shards);
   const dictionaries = {
     company: coder<string>(),
     location: coder<string>(),
@@ -111,7 +127,9 @@ export function openIndex(manifestJson: unknown, shardJsons: readonly unknown[])
     payMax: new Float64Array(size),
     currency: new Int32Array(size),
     posted: new Int32Array(size),
+    answered: new Uint8Array(size),
   };
+  const answers = questions.map((question) => new Uint8Array(size * question.options.length));
   const lists = {
     location: listBuilder(),
     country: listBuilder(),
@@ -147,6 +165,16 @@ export function openIndex(manifestJson: unknown, shardJsons: readonly unknown[])
       columns.currency[row] ?? -1,
     );
     table.posted[index] = columns.posted[row] ?? -1;
+    table.answered[index] = columns.answered[row] ?? 0;
+    questions.forEach((question, at) => {
+      const width = question.options.length;
+      const source = columns.answers[at];
+      const target = answers[at];
+      if (source === undefined || target === undefined) return;
+      for (let option = 0; option < width; option += 1) {
+        target[index * width + option] = source[row * width + option] ?? 0;
+      }
+    });
     for (const name of LIST_NAMES) {
       const column = columns[name];
       const start = starts[name];
@@ -170,6 +198,8 @@ export function openIndex(manifestJson: unknown, shardJsons: readonly unknown[])
     manifest,
     size,
     ...table,
+    questions,
+    answers,
     location: lists.location.done(),
     country: lists.country.done(),
     division: lists.division.done(),
@@ -188,6 +218,28 @@ export function openIndex(manifestJson: unknown, shardJsons: readonly unknown[])
       currency: dictionaries.currency.values,
     },
   };
+}
+
+/**
+ * The questions every loaded shard agrees on. Shards of one build always carry the same list,
+ * so disagreement means shards from two builds were loaded together, and reading one shard's
+ * answers against another's options would quietly line probabilities up against the wrong
+ * option. Loading no shards at all leaves no questions, which is not an error.
+ */
+function agreedQuestions(shards: readonly Shard[]): readonly ShardQuestion[] {
+  const [first, ...rest] = shards;
+  if (first === undefined) return [];
+  const fingerprint = (questions: readonly ShardQuestion[]) =>
+    questions.map((question) => `${question.id}@${question.version}:${question.options.join("|")}`);
+  const expected = fingerprint(first.questions).join(",");
+  for (const shard of rest) {
+    if (fingerprint(shard.questions).join(",") !== expected) {
+      throw new Error(
+        `Shard ${shard.region}-${shard.part} asks different questions than ${first.region}-${first.part}: shards from one build only`,
+      );
+    }
+  }
+  return first.questions;
 }
 
 /** The workplace a coded value stands for. */
@@ -221,6 +273,7 @@ function checkShard(shard: Shard): Shard {
     payMax: columns.payMax,
     currency: columns.currency,
     posted: columns.posted,
+    answered: columns.answered,
   };
   for (const [name, values] of Object.entries(scalars)) {
     if (values.length !== rows) problems.push(`${name} has ${values.length} rows, not ${rows}`);
@@ -240,6 +293,25 @@ function checkShard(shard: Shard): Shard {
     const total = counts.reduce((sum, count) => sum + count, 0);
     if (values.length !== total) problems.push(`${name} has ${values.length} values, not ${total}`);
     within(name, values, dictionaries[name].length, false);
+  }
+  if (columns.answers.length !== shard.questions.length) {
+    problems.push(
+      `answers has ${columns.answers.length} columns for ${shard.questions.length} questions`,
+    );
+  }
+  shard.questions.forEach((question, index) => {
+    const column = columns.answers[index];
+    const expected = rows * question.options.length;
+    if (column !== undefined && column.length !== expected) {
+      problems.push(
+        `answers for ${question.id} has ${column.length} probabilities, not ${expected}`,
+      );
+    }
+  });
+  // A bit set naming a question the shard does not carry would read an answer that is not there.
+  const known = (1 << shard.questions.length) - 1;
+  if (columns.answered.some((bits) => (bits & ~known) !== 0)) {
+    problems.push(`answered names a question beyond the ${shard.questions.length} carried`);
   }
   if (problems.length > 0) {
     throw new Error(`Shard ${shard.region}-${shard.part} is inconsistent: ${problems.join("; ")}`);

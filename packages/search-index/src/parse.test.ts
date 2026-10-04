@@ -44,7 +44,11 @@ describe("the readers' own checks", () => {
   });
 
   it.each([
-    ["manifest", () => parseManifest({ ...manifest, format: INDEX_FORMAT + 1 }), /format 4/],
+    [
+      "manifest",
+      () => parseManifest({ ...manifest, format: INDEX_FORMAT + 1 }),
+      new RegExp(`format ${INDEX_FORMAT + 1}`),
+    ],
     ["manifest", () => parseManifest({ ...manifest, build: "nope" }), /manifest\.build/],
     ["manifest", () => parseManifest({ ...manifest, idLength: 4 }), /idLength/],
     ["manifest", () => parseManifest({ ...manifest, regions: {} }), /regions is not an array/],

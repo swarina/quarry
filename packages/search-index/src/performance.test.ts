@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildIndex, type IndexBuild, type IndexRow } from "./build.ts";
+import type { ShardQuestion } from "./format.ts";
 import { type IndexQuery, queryIndex } from "./query.ts";
 import { openIndex } from "./table.ts";
 
@@ -41,6 +42,62 @@ function random(seed: number) {
   };
 }
 
+/** The standard questions' shapes, which is what decides the width of the answer columns. */
+const QUESTIONS: readonly ShardQuestion[] = [
+  {
+    id: "arrangement",
+    version: 1,
+    about: "Where the work is done",
+    kind: "choice",
+    options: ["remote", "hybrid", "onsite", "not_stated"],
+    labels: ["Remote", "Hybrid", "On site", "Not stated"],
+  },
+  {
+    id: "seniority",
+    version: 1,
+    about: "How senior the role is",
+    kind: "score",
+    options: ["0", "1", "2", "3", "4"],
+    labels: ["Intern", "Entry", "Mid", "Senior", "Staff"],
+  },
+  {
+    id: "sponsorship",
+    version: 1,
+    about: "Whether sponsorship is offered",
+    kind: "choice",
+    options: ["offers", "does_not_offer", "not_mentioned"],
+    labels: ["Offers", "Does not offer", "Not mentioned"],
+  },
+  {
+    id: "onCall",
+    version: 1,
+    about: "Whether the role is on call",
+    kind: "noul",
+    options: ["no", "yes"],
+    labels: ["No", "Yes"],
+  },
+];
+
+/**
+ * A peaked distribution summing to 100, as a confident model gives: one option takes most of
+ * the mass. Peaked rather than uniform because that is what the columns really hold, and it is
+ * the shape gzip sees.
+ */
+function peaked(next: () => number, width: number): number[] {
+  const top = Math.floor(next() * width);
+  const mass = 60 + Math.floor(next() * 40);
+  const out = Array.from({ length: width }, () => 0);
+  let left = 100 - mass;
+  for (let option = 0; option < width; option += 1) {
+    if (option === top) continue;
+    const take = Math.floor(next() * (left + 1));
+    out[option] = take;
+    left -= take;
+  }
+  out[top] = mass + left;
+  return out;
+}
+
 function syntheticRows(): IndexRow[] {
   const next = random(42);
   const pick = <T>(values: readonly T[]): T => values[Math.floor(next() * values.length)] as T;
@@ -68,6 +125,10 @@ function syntheticRows(): IndexRow[] {
           }
         : null,
       postedAt: (TODAY - Math.floor(next() * 120)) * DAY,
+      // Every posting answered, which is the largest the columns ever get.
+      answers: Object.fromEntries(
+        QUESTIONS.map((question) => [question.id, peaked(next, question.options.length)]),
+      ),
     };
   });
 }
@@ -83,11 +144,28 @@ const QUERIES: readonly [string, IndexQuery][] = [
     "pay, sorted by pay",
     { minimumPay: { amount: 150_000, currency: "USD" }, sort: { pay: "USD" } },
   ],
+  ["likely remote", { answers: [{ question: "arrangement", options: ["remote"], atLeast: 70 }] }],
+  [
+    "likely remote, senior, no on-call, in a country",
+    {
+      places: { countries: ["US"] },
+      answers: [
+        { question: "arrangement", options: ["remote", "hybrid"], atLeast: 60 },
+        { question: "seniority", options: ["3", "4"], atLeast: 50 },
+        { question: "onCall", options: ["no"], atLeast: 60 },
+      ],
+    },
+  ],
 ];
 
 describe("query speed", () => {
   it(`filters ${ROWS.toLocaleString("en-US")} postings within budget`, async () => {
-    const build = await buildIndex(syntheticRows(), { builtAt: TODAY * DAY, facetsVersion: 1 });
+    const build = await buildIndex(syntheticRows(), {
+      builtAt: TODAY * DAY,
+      facetsVersion: 1,
+      questions: QUESTIONS,
+    });
+    // Answers must not cost the premise of ADR-0007: a shard still downloads on a phone.
     expect(build.overBudget).toEqual([]);
     const manifest = build.files[0];
     const shards = shardsOf(build);
