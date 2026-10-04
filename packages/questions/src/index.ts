@@ -1,4 +1,19 @@
 import { choice, type EntryType, noul, type Questions, score } from "@quarry/jev";
+import { type AnswerShape, answerShape } from "./answers.ts";
+
+export type {
+  AnswerLabel,
+  AnswerPrediction,
+  CalibrationBucket,
+  Centi,
+  Disagreement,
+  QuestionOptions,
+  QuestionScore,
+  ThresholdPoint,
+} from "./accuracy.ts";
+export { renderScore, scoreAnswers, scoreQuestion } from "./accuracy.ts";
+export type { AnswerKind, AnswerShape } from "./answers.ts";
+export { answerShape, NOUL_OPTIONS } from "./answers.ts";
 
 /**
  * The standard questions asked of every posting (product 9). A question's wording *is* the
@@ -6,7 +21,7 @@ import { choice, type EntryType, noul, type Questions, score } from "@quarry/jev
  * question therefore carries a version, answers are stored under it, and a wording change
  * means a new version and a fresh run rather than a silent shift in what we hold.
  *
- * Wordings follow the guidance in `notes/jev-notes.md`: ask exactly one thing, describe every
+ * Wordings follow one rule each: ask exactly one thing, describe every
  * option concretely, say what an option is not when two are confusable, always leave an escape
  * hatch such as "not stated", and name the state field the answer comes from.
  */
@@ -101,11 +116,24 @@ export const STANDARD_QUESTIONS: readonly StandardQuestion[] = [
 /**
  * The questions as one request. Every question about a posting goes in a single request: the
  * posting's text is the expensive part and is shared, so each extra question costs a few tokens
- * (measured 2026-10-01, `notes/jev-notes.md` section 14). Postings are never packed together,
+ * (measured 2026-10-01; ADR-0025 records the numbers). Postings are never packed together,
  * which that measurement showed changes the answers.
  */
 export function standardQuestions(): Questions {
   return Object.fromEntries(STANDARD_QUESTIONS.map((entry) => [entry.id, entry.question]));
+}
+
+/**
+ * Every standard question's answer shape, in registry order, which is also the order their
+ * columns appear in a search index shard.
+ */
+export function answerShapes(): readonly AnswerShape[] {
+  return STANDARD_QUESTIONS.map((entry) => ({
+    id: entry.id,
+    version: entry.version,
+    about: entry.about,
+    ...answerShape(entry.question),
+  }));
 }
 
 /**
@@ -127,7 +155,7 @@ export interface PostingFields {
 /**
  * The state one posting becomes. The full description is sent: trimming boilerplate saved 9% of
  * tokens and changed one answer in forty, because arrangement and sponsorship are often stated
- * exactly in the parts that look like boilerplate (`notes/jev-notes.md` section 14).
+ * exactly in the parts that look like boilerplate (ADR-0025).
  */
 export function postingState(posting: PostingFields): EntryType {
   return {

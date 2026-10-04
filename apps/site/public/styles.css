@@ -6,6 +6,9 @@
   --raised: #f6f7f9;
   --accent: #1c4fd8;
   --radius: 8px;
+  /* Answer bands. Hue carries no meaning on its own: every band is also named in the text. */
+  --likely: #1d6f42;
+  --maybe: #8a5a00;
   color-scheme: light dark;
 }
 
@@ -17,6 +20,8 @@
     --page: #14161b;
     --raised: #1c1f26;
     --accent: #8ab0ff;
+    --likely: #6fd29b;
+    --maybe: #e0b150;
   }
 }
 
@@ -248,6 +253,55 @@ button.link {
 
 .pay {
   font-variant-numeric: tabular-nums;
+}
+
+/*
+ * What a model said, not what the employer wrote. Marked apart from the facts around it with a
+ * dotted edge, and the band is spelled out in the text as well as coloured, so the distinction
+ * survives without colour.
+ */
+.answer {
+  border: 1px dotted var(--line);
+  border-radius: var(--radius);
+  padding: 0 0.375rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  cursor: help;
+}
+
+.answer-likely {
+  border-color: var(--likely);
+  color: var(--likely);
+}
+
+.answer-maybe {
+  border-color: var(--maybe);
+  color: var(--maybe);
+}
+
+.threshold-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.threshold {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--page);
+  color: inherit;
+  padding: 0.125rem 0.25rem;
+  font: inherit;
+  font-size: 0.8125rem;
+}
+
+.answered {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
 }
 
 .posted,

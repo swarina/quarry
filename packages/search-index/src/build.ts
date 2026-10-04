@@ -7,12 +7,14 @@ import {
   EMPLOYMENT_CODES,
   INDEX_FORMAT,
   type Links,
+  MAX_SHARD_QUESTIONS,
   type Manifest,
   MIN_ID_LENGTH,
   REGIONS,
   type RegionId,
   ROWS_PER_PART,
   type Shard,
+  type ShardQuestion,
   WORKPLACE_CODES,
 } from "./format.ts";
 
@@ -36,6 +38,12 @@ export interface IndexRow {
   readonly postedAt: number | null;
   /** Where to apply, which only opening a posting needs, so it is kept out of the shards. */
   readonly url: string;
+  /**
+   * The answers held for this posting, by question id: one probability per option, in
+   * hundredths, in the order the question declares its options. A question with no answer is
+   * absent rather than zeroed, so "unanswered" and "certainly not" stay different things.
+   */
+  readonly answers?: Readonly<Record<string, readonly number[]>>;
 }
 
 export interface IndexFile {
@@ -64,12 +72,27 @@ export async function buildIndex(
   options: {
     readonly builtAt: number;
     readonly facetsVersion: number;
+    /** Version of the rules that read stored answers; 0 when the build holds none. */
+    readonly answersVersion?: number;
+    /**
+     * The questions whose answers the shards carry, in column order. A row's answer to a
+     * question not named here is left out, so this list, not the rows, decides what a build
+     * holds. Default: none, which builds an index with no answers in it.
+     */
+    readonly questions?: readonly ShardQuestion[];
     readonly rowsPerPart?: number;
     readonly budgets?: Budgets;
   },
 ): Promise<IndexBuild> {
   const rowsPerPart = options.rowsPerPart ?? ROWS_PER_PART;
   const budgets = options.budgets ?? BUDGETS;
+  const questions = options.questions ?? [];
+  const answersVersion = options.answersVersion ?? 0;
+  if (questions.length > MAX_SHARD_QUESTIONS) {
+    throw new Error(
+      `${questions.length} questions exceeds the ${MAX_SHARD_QUESTIONS} a shard can carry, because "answered" is a bit per question`,
+    );
+  }
   const idLength = shortestUniquePrefix(rows.map((row) => row.id));
   const sorted = [...rows].sort(
     (left, right) =>
@@ -96,7 +119,7 @@ export async function buildIndex(
         region: region.id,
         part,
         rows: slice.length,
-        content: JSON.stringify(encodeShard(region.id, part, slice, idLength)),
+        content: JSON.stringify(encodeShard(region.id, part, slice, idLength, questions)),
         links: JSON.stringify(encodeLinks(region.id, part, slice)),
       });
     }
@@ -113,7 +136,11 @@ export async function buildIndex(
       [
         INDEX_FORMAT,
         options.facetsVersion,
+        answersVersion,
         idLength,
+        // Named here as well as inside every shard, so rewording a question renames the build
+        // even when no shard was written.
+        questions.map((question) => `${question.id}@${question.version}`).join(","),
         ...measured.flatMap((shard) => [shard.sha256, shard.linksFile.sha256]),
       ].join("\n"),
     )
@@ -129,6 +156,7 @@ export async function buildIndex(
     build,
     builtAt: new Date(options.builtAt).toISOString(),
     facetsVersion: options.facetsVersion,
+    answersVersion,
     postings: rows.length,
     idLength,
     regions: REGIONS.map((region) => ({
@@ -210,7 +238,13 @@ function encodeLinks(region: RegionId, part: number, rows: readonly IndexRow[]):
   };
 }
 
-function encodeShard(region: RegionId, part: number, rows: readonly IndexRow[], idLength: number) {
+function encodeShard(
+  region: RegionId,
+  part: number,
+  rows: readonly IndexRow[],
+  idLength: number,
+  questions: readonly ShardQuestion[],
+) {
   const { cities, divisions } = gazetteer();
   const dictionaries = {
     company: dictionary<string>(),
@@ -239,6 +273,10 @@ function encodeShard(region: RegionId, part: number, rows: readonly IndexRow[], 
     payMax: [] as (number | null)[],
     currency: [] as number[],
     posted: [] as (number | null)[],
+    // One flat run of probabilities per question, and a bit per question saying which rows hold
+    // an answer. An unanswered row keeps its zeros, which gzip costs almost nothing for.
+    answers: questions.map(() => [] as number[]),
+    answered: [] as number[],
   };
   const push = <T>(
     column: { counts: number[]; values: number[] },
@@ -285,6 +323,22 @@ function encodeShard(region: RegionId, part: number, rows: readonly IndexRow[], 
     columns.payMax.push(row.pay?.max ?? null);
     columns.currency.push(row.pay === null ? -1 : dictionaries.currency.code(row.pay.currency));
     columns.posted.push(row.postedAt === null ? null : Math.floor(row.postedAt / DAY_MS));
+
+    let answered = 0;
+    questions.forEach((question, index) => {
+      const column = columns.answers[index];
+      if (column === undefined) return;
+      const distribution = row.answers?.[question.id];
+      // Only a distribution of the right width is kept: a stored answer whose options no longer
+      // match the question's would otherwise line up against the wrong option.
+      if (distribution !== undefined && distribution.length === question.options.length) {
+        column.push(...distribution);
+        answered |= 1 << index;
+      } else {
+        for (let option = 0; option < question.options.length; option += 1) column.push(0);
+      }
+    });
+    columns.answered.push(answered);
   }
 
   const divisionNames = new Map(
@@ -296,6 +350,7 @@ function encodeShard(region: RegionId, part: number, rows: readonly IndexRow[], 
     region,
     part,
     rows: rows.length,
+    questions: [...questions],
     dictionaries: {
       company: dictionaries.company.values,
       location: dictionaries.location.values,

@@ -205,6 +205,8 @@ describe("queryIndex", () => {
       department: "Engineering",
       pay: { min: 180_000, max: 220_000, currency: "USD" },
       postedDay: TODAY - 1,
+      // This fixture asks no questions, so a row carries no answers.
+      answers: [],
     });
   });
 

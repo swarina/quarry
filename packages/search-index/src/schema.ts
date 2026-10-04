@@ -6,6 +6,7 @@ import {
   type Links,
   type Manifest,
   MIN_ID_LENGTH,
+  PROBABILITY_SCALE,
   REGIONS,
   SHA256,
   SHARD_PATH,
@@ -39,6 +40,7 @@ export const manifestSchema: z.ZodType<Manifest> = z.strictObject({
   build: z.string().regex(BUILD_ID),
   builtAt: z.iso.datetime(),
   facetsVersion: z.int().positive(),
+  answersVersion: z.int().nonnegative(),
   postings: z.int().nonnegative(),
   idLength: z.int().min(MIN_ID_LENGTH).max(16),
   regions: z.array(
@@ -67,11 +69,24 @@ const codes = z.array(z.int().min(-1));
 const numbers = z.array(z.number().nullable());
 const flags = z.array(z.union([z.literal(0), z.literal(1)]));
 
+const shardQuestion = z.strictObject({
+  id: z.string().min(1),
+  version: z.int().positive(),
+  about: z.string(),
+  kind: z.enum(["choice", "score", "noul"]),
+  options: z.array(z.string().min(1)).min(2),
+  labels: z.array(z.string()),
+});
+
+/** A probability in hundredths. */
+const centi = z.int().min(0).max(PROBABILITY_SCALE);
+
 export const shardSchema: z.ZodType<Shard> = z.strictObject({
   format: z.literal(INDEX_FORMAT),
   region,
   part: z.int().nonnegative(),
   rows: z.int().nonnegative(),
+  questions: z.array(shardQuestion),
   dictionaries: z.strictObject({
     company: z.array(z.string()),
     location: z.array(z.string()),
@@ -98,5 +113,7 @@ export const shardSchema: z.ZodType<Shard> = z.strictObject({
     payMax: numbers,
     currency: codes,
     posted: numbers,
+    answers: z.array(z.array(centi)),
+    answered: z.array(z.int().nonnegative()),
   }),
 });
