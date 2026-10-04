@@ -1,6 +1,8 @@
 import type { HostStats } from "@quarry/crawl";
+import { formatUsd } from "@quarry/jev";
 import type { CrawlOutcome, RunSummary, SnapshotManifest, StoreReport } from "@quarry/storage/node";
 import type { CrawlReport } from "./crawl.ts";
+import type { EnrichReport } from "./enrich.ts";
 import type { Freshness, FreshnessStats } from "./freshness.ts";
 
 export interface RunStats {
@@ -136,6 +138,47 @@ function renderFreshness(freshness: Freshness): string[] {
       row(`${window}, ${source}`, stats),
     ),
   ];
+}
+
+/**
+ * What the enrichment stage did, or would do when `report` is null (a dry run). The cost is
+ * always stated, because this is the only part of the pipeline that spends money.
+ */
+export function renderEnrichment(
+  report: EnrichReport | null,
+  estimate: {
+    readonly outstanding: number;
+    readonly perPostingNanoUsd: number;
+    readonly totalNanoUsd: number;
+  },
+  budgetUsd: number,
+): string {
+  const number = (value: number) => value.toLocaleString("en-US");
+  const lines = [
+    "### Answers to the standard questions",
+    "",
+    `- ${number(estimate.outstanding)} postings had no answers: about ${formatUsd(estimate.perPostingNanoUsd)} each, ${formatUsd(estimate.totalNanoUsd)} for all of them.`,
+  ];
+  if (report === null) {
+    lines.push(
+      `- Nothing was asked and nothing was spent; the budget would have been $${budgetUsd.toFixed(2)}.`,
+    );
+    return `${lines.join("\n")}\n\n`;
+  }
+  lines.push(
+    `- Asked about ${number(report.asked)}, answered ${number(report.answered)}, failed ${number(report.failed)}.`,
+    `- Spent ${formatUsd(report.costNanoUsd)} of $${budgetUsd.toFixed(2)}: ${number(report.inputTokens)} input and ${number(report.outputTokens)} output tokens.`,
+    `- Stopped because: ${report.stoppedBy}.`,
+  );
+  if (report.errors.length > 0) {
+    lines.push(
+      "",
+      "| Posting | Error |",
+      "| --- | --- |",
+      ...report.errors.map((error) => `| \`${error.postingId}\` | ${escapeCell(error.message)} |`),
+    );
+  }
+  return `${lines.join("\n")}\n\n`;
 }
 
 /** What `store pull` restored, as Markdown; `manifest` is null for a store started empty. */

@@ -85,6 +85,17 @@ export function storeSettings(): StoreSettings {
   return { repository, token, key };
 }
 
+/** The TypeSafe key for asking Jev questions; enrichment is the only thing that needs it. */
+export function jevKey(): string {
+  const key = present("TYPESAFE_API_KEY");
+  if (key === undefined) {
+    throw new ConfigError(
+      "Environment:\n- TYPESAFE_API_KEY must be set to ask questions of postings",
+    );
+  }
+  return key;
+}
+
 /** The snapshot encryption key alone, for packing. */
 export function storeKey(): string {
   const key = present("QUARRY_STORE_KEY");
