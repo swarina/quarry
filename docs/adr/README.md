@@ -15,19 +15,18 @@ were already cited by number from the source:
 | --- | --- |
 | [ADR-0006](0006-encrypted-store-snapshots-in-releases.md) | `packages/storage/src/node/snapshot.ts`, `packages/storage/src/node/database.ts`, `apps/pipeline/src/retention.ts`, `apps/pipeline/src/releases.ts` |
 | [ADR-0007](0007-search-in-the-browser-over-a-static-index.md) | `packages/search-index/src/format.ts`, `packages/search-index/src/build.ts`, `apps/site/src/catalog.ts`, `apps/site/src/format.ts` |
-| ADR-0016 | `packages/storage/src/node/migrations.ts`, `packages/domain/src/board.ts` |
-| ADR-0018 | `packages/crawl/src/fetcher.ts` |
-| ADR-0019 | the commit message of #28 |
+| [ADR-0016](0016-crawls-recorded-as-observations.md) | `packages/storage/src/node/migrations.ts`, `packages/domain/src/board.ts` |
+| [ADR-0018](0018-politeness-by-construction.md) | `packages/crawl/src/fetcher.ts` |
+| [ADR-0019](0019-declined-ny-as-a-city-alias.md) | the commit message of #28 |
 
 Those five keep the numbers the source already uses. The rest were numbered when the records
 were written, so **the sequence is not chronological** and the numbers carry no meaning beyond
 identity. Each record states the change it came from, which is the authoritative date.
 
-**This backfill is partial.** 0001 to 0007 are written. The decisions listed as "to be
-written" below are recorded today only in their commit messages and pull request
-descriptions, which remain the authoritative source until a record exists. Of the five
-citations above, ADR-0016, ADR-0018, and ADR-0019 are still outstanding, so those three
-source comments still point at nothing.
+**This backfill is partial.** 0001 to 0007, 0016, 0018, 0019 and 0026 are written, so every
+citation above now resolves. The decisions listed as "to be written" below are recorded today
+only in their commit messages and pull request descriptions, which remain the authoritative
+source until a record exists.
 
 ## The records
 
@@ -48,10 +47,10 @@ source comments still point at nothing.
 | 0013 | Measure freshness only where it means something | 2026-09-28 | #12, to be written |
 | 0014 | Build a gazetteer from GeoNames, filtered against real labels | 2026-09-28 | #15, #21, to be written |
 | 0015 | Score location readings together, not token by token | 2026-09-28 | #16, to be written |
-| 0016 | Store what each crawl saw, and derive the lifecycle from it | 2026-09-27 | #5, to be written |
+| [0016](0016-crawls-recorded-as-observations.md) | Store what each crawl saw, and derive the lifecycle from it | 2026-09-27 | #5 |
 | 0017 | Derive the facets that need no model, and version the rules | 2026-09-28 | #17, to be written |
-| 0018 | Make politeness impossible for a caller to forget | 2026-09-27 | #4, to be written |
-| 0019 | Declined: do not read `NY` as New York City | 2026-10-02 | #28, to be written |
+| [0018](0018-politeness-by-construction.md) | Make politeness impossible for a caller to forget | 2026-09-27 | #4 |
+| [0019](0019-declined-ny-as-a-city-alias.md) | Declined: do not read `NY` as New York City | 2026-10-02 | #28 |
 | 0020 | Leave templates and test postings out of the index | 2026-09-28 | #22, to be written |
 | 0021 | Place hybrid and headquarters postings in the company's country | 2026-09-28 | #23, to be written |
 | 0022 | Hold the reader to hand-labelled answers, with floors below today | 2026-10-04 | #29, to be written |
