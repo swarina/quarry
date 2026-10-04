@@ -11,6 +11,7 @@ export type {
   CrawlFailure,
   CrawlOutcome,
   CurrentPosting,
+  EnrichmentRun,
   FreshnessSample,
   ListingRecord,
   PipelineStore,
@@ -19,6 +20,8 @@ export type {
   RunSummary,
   RunTrigger,
   SeedBoard,
+  StoredAnswer,
+  UnansweredPosting,
 } from "./pipeline-store.ts";
 export { createPipelineStore, openPipelineStore } from "./pipeline-store.ts";
 export type { SnapshotManifest } from "./snapshot.ts";

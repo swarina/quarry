@@ -4,6 +4,7 @@ import {
   type BoardId,
   type BoardStatus,
   boardId,
+  htmlToText,
   isBoardGone,
   type NormalizedPosting,
   type PostingId,
@@ -144,6 +145,83 @@ export interface CurrentPosting {
   readonly posting: Omit<NormalizedPosting, "descriptionHtml">;
 }
 
+/** A posting whose current content has no answer to some question, with the text to ask about. */
+export interface UnansweredPosting {
+  readonly id: PostingId;
+  readonly contentHash: string;
+  readonly title: string;
+  readonly company: string;
+  readonly locations: readonly string[];
+  /** The description as plain text, which is what the model is given. */
+  readonly description: string;
+}
+
+/** One question's answer about one posting content, as the model gave it. */
+export interface StoredAnswer {
+  readonly contentHash: string;
+  readonly questionId: string;
+  readonly questionVersion: number;
+  readonly model: string;
+  readonly answeredAt: number;
+  readonly answerJson: string;
+}
+
+export interface EnrichmentRun {
+  readonly runId: string;
+  readonly startedAt: number;
+  readonly finishedAt: number;
+  readonly asked: number;
+  readonly failed: number;
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+  readonly costNanoUsd: number;
+}
+
+/**
+ * Postings a listed board currently shows whose content lacks an answer to any of the wanted
+ * questions. The wanted set is `id@version`, so a reworded question makes every posting
+ * unanswered again; the parameters are bound rather than inlined, and only the count of
+ * placeholders depends on the input.
+ */
+function unansweredWhere(wanted: readonly string[]): string {
+  const missing = wanted
+    .map(
+      () => `NOT EXISTS (
+           SELECT 1 FROM posting_answers a
+           WHERE a.content_hash = p.content_hash AND a.question_id = ? AND a.question_version = ?
+         )`,
+    )
+    .join("\n        OR ");
+  return `FROM boards b
+     JOIN posting_presence pp ON pp.last_crawl_id = b.last_listed_crawl_id
+     JOIN postings p ON p.id = pp.posting_id AND p.board_id = b.id
+     JOIN posting_contents c ON c.posting_id = p.id AND c.content_hash = p.content_hash
+     WHERE b.status = 'active'
+       AND (${missing})`;
+}
+
+function wantedParameters(wanted: readonly string[]): string[] {
+  return wanted.flatMap((entry) => {
+    const at = entry.lastIndexOf("@");
+    return [entry.slice(0, at), entry.slice(at + 1)];
+  });
+}
+
+function unansweredQuery(db: DatabaseSync, wanted: readonly string[]) {
+  const statement = db.prepare(
+    `SELECT p.id, p.content_hash, b.company, c.normalized_json AS posting
+     ${unansweredWhere(wanted)}
+     ORDER BY p.first_seen_at DESC, p.id
+     LIMIT ?`,
+  );
+  return { all: (limit: number) => statement.all(...wantedParameters(wanted), limit) };
+}
+
+function unansweredCountQuery(db: DatabaseSync, wanted: readonly string[]) {
+  const statement = db.prepare(`SELECT count(*) AS count ${unansweredWhere(wanted)}`);
+  return { get: () => statement.get(...wantedParameters(wanted)) };
+}
+
 export interface PipelineStore {
   readonly db: DatabaseSync;
   close(): void;
@@ -182,6 +260,16 @@ export interface PipelineStore {
    * (descriptions are left out, to keep memory small).
    */
   currentPostings(): Iterable<CurrentPosting>;
+  /**
+   * Postings a board currently lists whose content has no answer under every given question
+   * version yet, newest first so a run cut short has answered the postings people are most
+   * likely to be looking at. `wanted` is `id@version` for each question asked.
+   */
+  unanswered(wanted: readonly string[], limit: number): UnansweredPosting[];
+  /** How many of the listed postings still lack an answer, for reporting before asking. */
+  unansweredCount(wanted: readonly string[]): number;
+  saveAnswers(answers: readonly StoredAnswer[]): void;
+  recordEnrichment(run: EnrichmentRun): void;
 }
 
 type Row = Record<string, SQLInputValue>;
@@ -339,6 +427,27 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
              AND earlier.id < p.first_seen_crawl_id
          )
        ORDER BY p.first_seen_at, p.id`,
+    ),
+    saveAnswer: db.prepare(
+      `INSERT INTO posting_answers
+         (content_hash, question_id, question_version, model, answered_at, answer_json)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT (content_hash, question_id, question_version) DO UPDATE SET
+         model = excluded.model,
+         answered_at = excluded.answered_at,
+         answer_json = excluded.answer_json`,
+    ),
+    recordEnrichment: db.prepare(
+      `INSERT INTO enrichment_runs
+         (run_id, started_at, finished_at, asked, failed, input_tokens, output_tokens, cost_nano_usd)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (run_id) DO UPDATE SET
+         finished_at = excluded.finished_at,
+         asked = enrichment_runs.asked + excluded.asked,
+         failed = enrichment_runs.failed + excluded.failed,
+         input_tokens = enrichment_runs.input_tokens + excluded.input_tokens,
+         output_tokens = enrichment_runs.output_tokens + excluded.output_tokens,
+         cost_nano_usd = enrichment_runs.cost_nano_usd + excluded.cost_nano_usd`,
     ),
     currentPostings: db.prepare(
       `SELECT p.id, p.first_seen_at, b.company, b.country,
@@ -711,6 +820,55 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
           posting: { ...posting, places: posting.places ?? [] },
         };
       }
+    },
+
+    unanswered(wanted, limit) {
+      if (wanted.length === 0) return [];
+      return (unansweredQuery(db, wanted).all(limit) as Row[]).map((row) => {
+        const posting = JSON.parse(row["posting"] as string) as NormalizedPosting;
+        return {
+          id: row["id"] as PostingId,
+          contentHash: row["content_hash"] as string,
+          title: posting.title,
+          company: row["company"] as string,
+          locations: posting.locations,
+          description: htmlToText(posting.descriptionHtml ?? ""),
+        };
+      });
+    },
+
+    unansweredCount(wanted) {
+      if (wanted.length === 0) return 0;
+      const row = unansweredCountQuery(db, wanted).get() as Row | undefined;
+      return Number(row?.["count"] ?? 0);
+    },
+
+    saveAnswers(answers) {
+      transaction(db, () => {
+        for (const answer of answers) {
+          statements.saveAnswer.run(
+            answer.contentHash,
+            answer.questionId,
+            answer.questionVersion,
+            answer.model,
+            answer.answeredAt,
+            answer.answerJson,
+          );
+        }
+      });
+    },
+
+    recordEnrichment(run) {
+      statements.recordEnrichment.run(
+        run.runId,
+        run.startedAt,
+        run.finishedAt,
+        run.asked,
+        run.failed,
+        run.inputTokens,
+        run.outputTokens,
+        run.costNanoUsd,
+      );
     },
   };
 }

@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { PIPELINE_MIGRATIONS } from "./migrations.ts";
 import { openPipelineStore, type PipelineStore } from "./pipeline-store.ts";
 import {
   manifestName,
@@ -16,6 +17,9 @@ import {
   storeSeq,
   unpackSnapshot,
 } from "./snapshot.ts";
+
+/** The version a store is at once every migration has run. */
+const CURRENT_SCHEMA = PIPELINE_MIGRATIONS.length;
 
 const KEY = new Uint8Array(randomBytes(32));
 const NOW = Date.UTC(2026, 8, 27, 3, 40);
@@ -47,7 +51,7 @@ describe("packSnapshot and unpackSnapshot", () => {
       seq: 1,
       runId: "gh-1-1",
       createdAt: "2026-09-27T03:40:00.000Z",
-      schemaVersion: 1,
+      schemaVersion: CURRENT_SCHEMA,
       snapshot: { name: "store-00000001-gh-1-1.sqlite.br.enc" },
     });
     expect(snapshotManifestSchema.parse(JSON.parse(await readFile(manifestPath, "utf8")))).toEqual(
@@ -183,7 +187,7 @@ describe("inspectStore", () => {
     const { inspectStore } = await import("./inspect.ts");
     expect(inspectStore(join(dir, "live.sqlite"))).toEqual({
       integrity: ["ok"],
-      schemaVersion: 1,
+      schemaVersion: CURRENT_SCHEMA,
       snapshotSeq: 1,
       boards: { active: 1 },
       postings: 0,

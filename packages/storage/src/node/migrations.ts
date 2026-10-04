@@ -120,4 +120,37 @@ export const PIPELINE_MIGRATIONS: readonly Migration[] = [
       CREATE INDEX posting_presence_by_last_crawl ON posting_presence (last_crawl_id);
     `,
   },
+  {
+    version: 2,
+    name: "answers to the standard questions",
+    sql: `
+      -- One row per posting content and question wording. Keyed on the content hash, not the
+      -- posting, so an edited posting is asked again while an unchanged one is never paid for
+      -- twice; keyed on the question version because a reworded question is a new question.
+      CREATE TABLE posting_answers (
+        content_hash     TEXT NOT NULL,
+        question_id      TEXT NOT NULL,
+        question_version INTEGER NOT NULL,
+        model            TEXT NOT NULL,
+        answered_at      INTEGER NOT NULL,
+        -- The answer as the model gave it: its type, its choice or number, and its
+        -- probabilities. Read through the facets layer, never trusted as a bare value.
+        answer_json      TEXT NOT NULL,
+        PRIMARY KEY (content_hash, question_id, question_version)
+      ) STRICT, WITHOUT ROWID;
+
+      -- What each request cost, so spend is auditable against the ledger and the budget.
+      CREATE TABLE enrichment_runs (
+        run_id        TEXT NOT NULL REFERENCES runs (id),
+        started_at    INTEGER NOT NULL,
+        finished_at   INTEGER NOT NULL,
+        asked         INTEGER NOT NULL,
+        failed        INTEGER NOT NULL,
+        input_tokens  INTEGER NOT NULL,
+        output_tokens INTEGER NOT NULL,
+        cost_nano_usd INTEGER NOT NULL,
+        PRIMARY KEY (run_id)
+      ) STRICT, WITHOUT ROWID;
+    `,
+  },
 ];

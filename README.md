@@ -90,6 +90,9 @@ Setup, once:
 1. Create a 256-bit key, keep a copy in a password manager (snapshots can't be restored
    without it), and store it as the repository secret `QUARRY_STORE_KEY`:
    `openssl rand -base64 32`, then `gh secret set QUARRY_STORE_KEY`.
+   Answering questions about postings also needs `TYPESAFE_API_KEY`
+   ([console.typesafe.ai/keys](https://console.typesafe.ai/keys)), in `.env` locally and as a
+   repository secret once the pipeline asks them; crawling and indexing need neither.
 2. Run the Pipeline workflow manually with **bootstrap** checked. Scheduled runs take over
    from there.
 
