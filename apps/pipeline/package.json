@@ -10,6 +10,8 @@
     "@quarry/crawl": "workspace:*",
     "@quarry/domain": "workspace:*",
     "@quarry/facets": "workspace:*",
+    "@quarry/jev": "workspace:*",
+    "@quarry/questions": "workspace:*",
     "@quarry/search-index": "workspace:*",
     "@quarry/storage": "workspace:*",
     "yaml": "2.9.1",

@@ -1,0 +1,15 @@
+{
+  "name": "@quarry/questions",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The standard questions asked of every posting, with the versions their answers are stored under.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@quarry/jev": "workspace:*"
+  }
+}

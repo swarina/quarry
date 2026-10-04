@@ -27,6 +27,13 @@ export interface LogFields {
   readonly snapshot_seq?: number;
   readonly postings?: number;
   readonly shards?: number;
+  readonly posting_id?: string;
+  readonly outstanding?: number;
+  readonly asked?: number;
+  readonly answered?: number;
+  readonly failed?: number;
+  readonly cost_usd?: string;
+  readonly stopped_by?: string;
 }
 
 export type Logger = Record<LogLevel, (message: string, fields?: LogFields) => void>;

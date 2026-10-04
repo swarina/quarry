@@ -47,6 +47,12 @@ importers:
       '@quarry/facets':
         specifier: workspace:*
         version: link:../../packages/facets
+      '@quarry/jev':
+        specifier: workspace:*
+        version: link:../../packages/jev
+      '@quarry/questions':
+        specifier: workspace:*
+        version: link:../../packages/questions
       '@quarry/search-index':
         specifier: workspace:*
         version: link:../../packages/search-index
@@ -122,6 +128,12 @@ importers:
       '@quarry/domain':
         specifier: workspace:*
         version: link:../domain
+
+  packages/questions:
+    dependencies:
+      '@quarry/jev':
+        specifier: workspace:*
+        version: link:../jev
 
   packages/search-index:
     dependencies:
