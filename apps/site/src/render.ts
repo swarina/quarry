@@ -1,6 +1,7 @@
-import type { QueryResult, ResultRow } from "@quarry/search-index";
+import type { QueryResult, ResultRow, ShardQuestion } from "@quarry/search-index";
 import { el } from "./dom.ts";
 import {
+  confidenceBand,
   countryName,
   EMPLOYMENT_NAMES,
   number,
@@ -9,16 +10,28 @@ import {
   WORKPLACE_NAMES,
   where,
 } from "./format.ts";
-import { activeFilters, PAGE, type SearchState, toggle } from "./state.ts";
+import {
+  activeFilters,
+  answerFilter,
+  PAGE,
+  type SearchState,
+  setAnswerFilter,
+  toggle,
+} from "./state.ts";
 
 export interface View {
   readonly state: SearchState;
   readonly result: QueryResult;
   /** Apply links, once they have arrived; a posting without one yet is not a link. */
   readonly links: ReadonlyMap<string, string>;
+  /** The standard questions the loaded index carries, which is what names them. */
+  readonly questions: readonly ShardQuestion[];
   readonly now: number;
   readonly locale: string | undefined;
 }
+
+/** The thresholds offered, as the honest range: more likely than not, up to near certainty. */
+const THRESHOLDS = [50, 60, 70, 80, 90];
 
 type Go = (state: SearchState) => void;
 
@@ -45,6 +58,7 @@ function resultItem(row: ResultRow, view: View): HTMLElement {
   }
   const money = pay(row, view.locale);
   if (money !== null) facts.push(el("span", { class: "pay", text: money }));
+  for (const node of answerTags(row, view.questions)) facts.push(node);
 
   return el("li", { class: "result" }, [
     el("h3", {}, [
@@ -63,6 +77,35 @@ function resultItem(row: ResultRow, view: View): HTMLElement {
     el("p", { class: "facts" }, facts),
     el("p", { class: "posted", text: posted(row.postedDay, view.now, view.locale) }),
   ]);
+}
+
+/**
+ * What the model said about a posting: the likeliest option, with how sure it is as a band
+ * rather than a number. The exact probability is in the title text, so the claim is available
+ * without being the first thing read.
+ *
+ * An unlikely answer is left out. A band of "unlikely" on the model's own best guess means the
+ * answer is spread across the options, which is not a fact about the job, and showing it would
+ * read as one.
+ */
+function answerTags(row: ResultRow, questions: readonly ShardQuestion[]): HTMLElement[] {
+  const tags: HTMLElement[] = [];
+  for (const answer of row.answers) {
+    const question = questions.find((entry) => entry.id === answer.question);
+    if (question === undefined) continue;
+    const band = confidenceBand(answer.probability);
+    if (band.id === "unlikely") continue;
+    const at = question.options.indexOf(answer.option);
+    const label = at < 0 ? answer.option : (question.labels[at] ?? answer.option);
+    tags.push(
+      el("span", {
+        class: `answer answer-${band.id}`,
+        title: `${question.about}: ${label}, ${answer.probability}% likely. Answered by a model, not stated by the employer.`,
+        text: `${label} (${band.name})`,
+      }),
+    );
+  }
+  return tags;
 }
 
 /** The results list, with a button to show more when there are more. */
@@ -96,7 +139,7 @@ export function renderResults(view: View, go: Go): (Node | string)[] {
 
 /** Nothing matched: say which filter is doing the most damage and offer to drop it. */
 function emptyState(view: View, go: Go): HTMLElement {
-  const filters = activeFilters(view.state);
+  const filters = activeFilters(view.state, view.questions);
   const nodes: (Node | string)[] = [el("p", { text: "No jobs match every filter." })];
   if (filters.length > 0) {
     const drop = el("button", {
@@ -112,7 +155,7 @@ function emptyState(view: View, go: Go): HTMLElement {
 
 /** The filters in force, each removable, so it is always clear what is narrowing the list. */
 export function renderActive(view: View, go: Go): (Node | string)[] {
-  const filters = activeFilters(view.state);
+  const filters = activeFilters(view.state, view.questions);
   if (filters.length === 0) return [];
   return [
     el("h2", { class: "sr-only", text: "Filters in force" }),
@@ -169,6 +212,71 @@ function facetGroup<T extends string>(group: FacetGroup<T>, view: View, go: Go):
   ]);
 }
 
+/**
+ * One standard question as a filter: its options with counts, and the threshold they are
+ * counted at. The number of postings holding any answer is shown as well, because while the
+ * corpus is only partly enriched the counts are otherwise misleading: options adding up to far
+ * fewer than the results mean most postings have not been asked, not that an answer is rare.
+ */
+function answerGroup(question: ShardQuestion, view: View, go: Go): HTMLElement {
+  const { state } = view;
+  const facet = view.result.facets.answers.find((entry) => entry.question === question.id);
+  const chosen = answerFilter(state, question.id);
+  const options = chosen?.options ?? [];
+  const atLeast = chosen?.atLeast ?? THRESHOLDS[0] ?? 50;
+  const counts = new Map(facet?.options ?? []);
+
+  const items = question.options.map((option, at) => {
+    const input = el("input", {
+      type: "checkbox",
+      class: "facet-box",
+      checked: options.includes(option),
+    });
+    input.addEventListener("change", () =>
+      go(setAnswerFilter(state, question.id, toggle(options, option), atLeast)),
+    );
+    return el("li", {}, [
+      el("label", { class: "facet" }, [
+        input,
+        el("span", { class: "facet-name", text: question.labels[at] ?? option }),
+        el("span", { class: "facet-count", text: number(counts.get(option) ?? 0, view.locale) }),
+      ]),
+    ]);
+  });
+
+  const selectId = `threshold-${question.id}`;
+  const select = el(
+    "select",
+    { id: selectId, class: "threshold" },
+    THRESHOLDS.map((value) =>
+      el("option", { value: String(value), selected: value === atLeast, text: `${value}%` }),
+    ),
+  );
+  select.addEventListener("change", () => {
+    const value = Number((select as HTMLSelectElement).value);
+    go(setAnswerFilter(state, question.id, options, value));
+  });
+
+  const nodes: (Node | string)[] = [
+    el("h2", { text: question.about }),
+    el("ul", {}, items),
+    el("p", { class: "threshold-row" }, [
+      el("label", { for: selectId, text: "At least " }),
+      select,
+      el("span", { text: " likely" }),
+    ]),
+  ];
+  if (facet !== undefined) {
+    nodes.push(
+      el("p", {
+        class: "answered",
+        text: `${number(facet.answered, view.locale)} of these postings have been asked.`,
+      }),
+    );
+  }
+  return el("section", { class: "facet-group answers" }, nodes);
+}
+
 /** Every facet, counted over the postings the other filters let through. */
 export function renderFacets(view: View, go: Go): (Node | string)[] {
   const { facets } = view.result;
@@ -217,5 +325,6 @@ export function renderFacets(view: View, go: Go): (Node | string)[] {
       view,
       go,
     ),
+    ...view.questions.map((question) => answerGroup(question, view, go)),
   ];
 }

@@ -18,6 +18,34 @@ export const EMPLOYMENT_NAMES: Readonly<Record<EmploymentType, string>> = {
   temporary: "Temporary",
 };
 
+/**
+ * The bands the README promises results are grouped into: likely, maybe, unlikely. A band is
+ * shown instead of a bare percentage because a calibrated probability is easy to over-read: 71%
+ * and 69% are the same claim, and showing them as different numbers invites a precision the
+ * model does not have. The exact figure is still there, in the title text.
+ *
+ * Where the cuts sit is a product decision resting on measurement that does not exist yet. They
+ * are provisional until the questions' accuracy and calibration are measured, and that work
+ * should move them rather than leave them because they shipped once.
+ */
+const UNLIKELY = { id: "unlikely", name: "unlikely", least: 0 } as const;
+
+export const CONFIDENCE_BANDS = [
+  { id: "likely", name: "likely", least: 70 },
+  { id: "maybe", name: "maybe", least: 40 },
+  UNLIKELY,
+] as const;
+
+export type ConfidenceBand = (typeof CONFIDENCE_BANDS)[number];
+
+/** The band a probability in hundredths falls in; the lowest starts at 0, so there is always one. */
+export function confidenceBand(probability: number): ConfidenceBand {
+  for (const band of CONFIDENCE_BANDS) {
+    if (probability >= band.least) return band;
+  }
+  return UNLIKELY;
+}
+
 /** A country code as its name in the reader's language, falling back to the code itself. */
 export function countryName(code: string, locale?: string): string {
   try {
