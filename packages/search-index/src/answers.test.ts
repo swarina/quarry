@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildIndex, type IndexBuild, type IndexRow } from "./build.ts";
-import { DEFAULT_ANSWER_THRESHOLD, type ShardQuestion } from "./format.ts";
+import { DEFAULT_ANSWER_THRESHOLD, MAX_SHARD_QUESTIONS, type ShardQuestion } from "./format.ts";
 import { type IndexQuery, queryIndex } from "./query.ts";
 import { type IndexTable, openIndex } from "./table.ts";
 
@@ -301,6 +301,35 @@ describe("the build name", () => {
       buildIndex(ROWS, options),
     ]);
     expect(again.manifest.build).toBe(first.manifest.build);
+  });
+});
+
+describe("more questions than a shard can carry", () => {
+  it("fails the build rather than misfiling answers into the wrong question", async () => {
+    // `answered` is a bit per question in one number, and JavaScript's shift wraps at 32, so a
+    // 33rd question would set bit 0 and read as the first question being answered.
+    const many = Array.from({ length: MAX_SHARD_QUESTIONS + 1 }, (_, at) => ({
+      ...ON_CALL,
+      id: `q${at}`,
+    }));
+    await expect(
+      buildIndex(ROWS, { builtAt: TODAY * DAY, facetsVersion: 1, questions: many }),
+    ).rejects.toThrow(/exceeds the 31 a shard can carry/);
+  });
+
+  it("allows exactly the most it can carry", async () => {
+    const most = Array.from({ length: MAX_SHARD_QUESTIONS }, (_, at) => ({
+      ...ON_CALL,
+      id: `q${at}`,
+    }));
+    const build = await buildIndex(ROWS, {
+      builtAt: TODAY * DAY,
+      facetsVersion: 1,
+      questions: most,
+    });
+    // The top bit must stay positive, which the shard schema requires.
+    const shard = JSON.parse(shardsOf(build).at(0)?.content ?? "{}");
+    expect(Math.max(...shard.columns.answered)).toBeGreaterThanOrEqual(0);
   });
 });
 

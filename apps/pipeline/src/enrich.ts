@@ -42,7 +42,7 @@ export interface EnrichOptions {
  *
  * Every question about a posting goes in one request, because the posting's text is the
  * expensive part and is shared; postings are never packed together, which measurement showed
- * changes the answers (`notes/jev-notes.md` section 14). Answers are keyed on the content hash,
+ * changes the answers (ADR-0025). Answers are keyed on the content hash,
  * so an edited posting is asked again and an unchanged one is never paid for twice.
  */
 export async function enrichPostings(options: EnrichOptions): Promise<EnrichReport> {

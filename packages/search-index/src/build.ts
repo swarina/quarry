@@ -7,6 +7,7 @@ import {
   EMPLOYMENT_CODES,
   INDEX_FORMAT,
   type Links,
+  MAX_SHARD_QUESTIONS,
   type Manifest,
   MIN_ID_LENGTH,
   REGIONS,
@@ -87,6 +88,11 @@ export async function buildIndex(
   const budgets = options.budgets ?? BUDGETS;
   const questions = options.questions ?? [];
   const answersVersion = options.answersVersion ?? 0;
+  if (questions.length > MAX_SHARD_QUESTIONS) {
+    throw new Error(
+      `${questions.length} questions exceeds the ${MAX_SHARD_QUESTIONS} a shard can carry, because "answered" is a bit per question`,
+    );
+  }
   const idLength = shortestUniquePrefix(rows.map((row) => row.id));
   const sorted = [...rows].sort(
     (left, right) =>

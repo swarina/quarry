@@ -21,7 +21,7 @@ export { answerShape, NOUL_OPTIONS } from "./answers.ts";
  * question therefore carries a version, answers are stored under it, and a wording change
  * means a new version and a fresh run rather than a silent shift in what we hold.
  *
- * Wordings follow the guidance in `notes/jev-notes.md`: ask exactly one thing, describe every
+ * Wordings follow one rule each: ask exactly one thing, describe every
  * option concretely, say what an option is not when two are confusable, always leave an escape
  * hatch such as "not stated", and name the state field the answer comes from.
  */
@@ -116,7 +116,7 @@ export const STANDARD_QUESTIONS: readonly StandardQuestion[] = [
 /**
  * The questions as one request. Every question about a posting goes in a single request: the
  * posting's text is the expensive part and is shared, so each extra question costs a few tokens
- * (measured 2026-10-01, `notes/jev-notes.md` section 14). Postings are never packed together,
+ * (measured 2026-10-01; ADR-0025 records the numbers). Postings are never packed together,
  * which that measurement showed changes the answers.
  */
 export function standardQuestions(): Questions {
@@ -155,7 +155,7 @@ export interface PostingFields {
 /**
  * The state one posting becomes. The full description is sent: trimming boilerplate saved 9% of
  * tokens and changed one answer in forty, because arrangement and sponsorship are often stated
- * exactly in the parts that look like boilerplate (`notes/jev-notes.md` section 14).
+ * exactly in the parts that look like boilerplate (ADR-0025).
  */
 export function postingState(posting: PostingFields): EntryType {
   return {

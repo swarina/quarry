@@ -142,6 +142,17 @@ export interface ShardQuestion {
 export const PROBABILITY_SCALE = 100;
 
 /**
+ * Most questions a shard can carry, because `answered` is a bit per question in one number.
+ *
+ * JavaScript's `<<` works on 32 bits and wraps, so a 33rd question would set bit 0 and read as
+ * the first question being answered. 31 is the last bit that stays positive, which the format's
+ * schema requires. This is far more questions than the registry has, and the point of the
+ * constant is that going over fails the build with a reason rather than quietly misfiling
+ * answers.
+ */
+export const MAX_SHARD_QUESTIONS = 31;
+
+/**
  * The probability at which an answer is taken to be an option unless a search says otherwise:
  * more likely than not. Deliberately not a confident-sounding 0.9, since the honest default is
  * the point where an option becomes the likelier reading.
