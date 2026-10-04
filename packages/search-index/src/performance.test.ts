@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildIndex, type IndexBuild, type IndexRow } from "./build.ts";
+import type { ShardQuestion } from "./format.ts";
 import { type IndexQuery, queryIndex } from "./query.ts";
 import { openIndex } from "./table.ts";
 
@@ -11,10 +12,23 @@ const DAY = 24 * 60 * 60 * 1000;
 const TODAY = 20_725;
 const ROWS = 100_000;
 /**
- * The target is 100 ms at p95 in a mid-range laptop browser (M2). CI runners vary, so this only
- * catches a slide into slow; the numbers it logs are the ones to watch.
+ * A slide guard, not the product's target. The target is 100 ms at p95 in a mid-range laptop
+ * browser, and `apps/site/public/bench.html` is what measures it: 8.9 ms over 34,831 real
+ * postings, with every region loaded at once. That is the number the product is held to, and it
+ * has not moved.
+ *
+ * This measures something much harsher and much noisier: 100,000 synthetic postings, every one
+ * of them answered, under V8 coverage instrumentation, on a shared CI runner. Coverage alone
+ * roughly triples it (65 ms without, 180 ms with, measured locally 2026-10-04), and CI runners
+ * are slower again, so the same commit has measured 288 ms there.
+ *
+ * The bound was 250 ms when the index held no answers. Counting four answer facets on every row
+ * made the unfiltered query legitimately heavier, so holding the old number would have compared
+ * two different workloads and failed on runner noise instead of on a regression. 400 ms sits
+ * roughly 60% above what CI now measures, which is wide enough not to fire on a slow runner and
+ * still catches any real slide. The logged numbers are what to watch; this only stops a cliff.
  */
-const P95_LIMIT_MS = 250;
+const P95_LIMIT_MS = 400;
 
 // Real places, weighted roughly like the corpus: mostly the US, then Europe and Asia.
 const PLACES = [
@@ -39,6 +53,62 @@ function random(seed: number) {
     state = (state * 1_103_515_245 + 12_345) % 2 ** 31;
     return state / 2 ** 31;
   };
+}
+
+/** The standard questions' shapes, which is what decides the width of the answer columns. */
+const QUESTIONS: readonly ShardQuestion[] = [
+  {
+    id: "arrangement",
+    version: 1,
+    about: "Where the work is done",
+    kind: "choice",
+    options: ["remote", "hybrid", "onsite", "not_stated"],
+    labels: ["Remote", "Hybrid", "On site", "Not stated"],
+  },
+  {
+    id: "seniority",
+    version: 1,
+    about: "How senior the role is",
+    kind: "score",
+    options: ["0", "1", "2", "3", "4"],
+    labels: ["Intern", "Entry", "Mid", "Senior", "Staff"],
+  },
+  {
+    id: "sponsorship",
+    version: 1,
+    about: "Whether sponsorship is offered",
+    kind: "choice",
+    options: ["offers", "does_not_offer", "not_mentioned"],
+    labels: ["Offers", "Does not offer", "Not mentioned"],
+  },
+  {
+    id: "onCall",
+    version: 1,
+    about: "Whether the role is on call",
+    kind: "noul",
+    options: ["no", "yes"],
+    labels: ["No", "Yes"],
+  },
+];
+
+/**
+ * A peaked distribution summing to 100, as a confident model gives: one option takes most of
+ * the mass. Peaked rather than uniform because that is what the columns really hold, and it is
+ * the shape gzip sees.
+ */
+function peaked(next: () => number, width: number): number[] {
+  const top = Math.floor(next() * width);
+  const mass = 60 + Math.floor(next() * 40);
+  const out = Array.from({ length: width }, () => 0);
+  let left = 100 - mass;
+  for (let option = 0; option < width; option += 1) {
+    if (option === top) continue;
+    const take = Math.floor(next() * (left + 1));
+    out[option] = take;
+    left -= take;
+  }
+  out[top] = mass + left;
+  return out;
 }
 
 function syntheticRows(): IndexRow[] {
@@ -68,6 +138,10 @@ function syntheticRows(): IndexRow[] {
           }
         : null,
       postedAt: (TODAY - Math.floor(next() * 120)) * DAY,
+      // Every posting answered, which is the largest the columns ever get.
+      answers: Object.fromEntries(
+        QUESTIONS.map((question) => [question.id, peaked(next, question.options.length)]),
+      ),
     };
   });
 }
@@ -83,11 +157,28 @@ const QUERIES: readonly [string, IndexQuery][] = [
     "pay, sorted by pay",
     { minimumPay: { amount: 150_000, currency: "USD" }, sort: { pay: "USD" } },
   ],
+  ["likely remote", { answers: [{ question: "arrangement", options: ["remote"], atLeast: 70 }] }],
+  [
+    "likely remote, senior, no on-call, in a country",
+    {
+      places: { countries: ["US"] },
+      answers: [
+        { question: "arrangement", options: ["remote", "hybrid"], atLeast: 60 },
+        { question: "seniority", options: ["3", "4"], atLeast: 50 },
+        { question: "onCall", options: ["no"], atLeast: 60 },
+      ],
+    },
+  ],
 ];
 
 describe("query speed", () => {
   it(`filters ${ROWS.toLocaleString("en-US")} postings within budget`, async () => {
-    const build = await buildIndex(syntheticRows(), { builtAt: TODAY * DAY, facetsVersion: 1 });
+    const build = await buildIndex(syntheticRows(), {
+      builtAt: TODAY * DAY,
+      facetsVersion: 1,
+      questions: QUESTIONS,
+    });
+    // Answers must not cost the premise of ADR-0007: a shard still downloads on a phone.
     expect(build.overBudget).toEqual([]);
     const manifest = build.files[0];
     const shards = shardsOf(build);

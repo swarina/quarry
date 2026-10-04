@@ -6,12 +6,14 @@ import {
   type ListColumnFile,
   type Manifest,
   MIN_ID_LENGTH,
+  PROBABILITY_SCALE,
   REGIONS,
   type RegionId,
   SHA256,
   SHARD_PATH,
   type Shard,
   type ShardEntry,
+  type ShardQuestion,
 } from "./format.ts";
 
 /**
@@ -95,6 +97,30 @@ function strings(value: unknown, what: string, pattern?: RegExp): string[] {
   return array(value, what).map((entry, index) => text(entry, `${what}[${index}]`, pattern));
 }
 
+function questions(value: unknown, what: string): ShardQuestion[] {
+  return array(value, what).map((entry, index) => {
+    const where = `${what}[${index}]`;
+    const found = object(entry, where);
+    const kind = text(found["kind"], `${where}.kind`);
+    if (kind !== "choice" && kind !== "score" && kind !== "noul")
+      fail(`${where}.kind names no answer kind: ${kind}`);
+    const options = strings(found["options"], `${where}.options`);
+    if (options.length < 2) fail(`${where}.options has fewer than two options`);
+    if (new Set(options).size !== options.length) fail(`${where}.options repeats an option`);
+    const labels = strings(found["labels"], `${where}.labels`);
+    if (labels.length !== options.length)
+      fail(`${where}.labels has ${labels.length} labels for ${options.length} options`);
+    return {
+      id: text(found["id"], `${where}.id`),
+      version: whole(found["version"], `${where}.version`, 1),
+      about: text(found["about"], `${where}.about`),
+      kind,
+      options,
+      labels,
+    };
+  });
+}
+
 function listColumn(value: unknown, what: string): ListColumnFile {
   const found = object(value, what);
   return {
@@ -123,6 +149,7 @@ export function parseManifest(value: unknown): Manifest {
     build: text(found["build"], "manifest.build", BUILD_ID),
     builtAt: text(found["builtAt"], "manifest.builtAt"),
     facetsVersion: whole(found["facetsVersion"], "manifest.facetsVersion", 1),
+    answersVersion: whole(found["answersVersion"], "manifest.answersVersion"),
     postings: whole(found["postings"], "manifest.postings"),
     idLength,
     regions: array(found["regions"], "manifest.regions").map((entry, index) => {
@@ -176,6 +203,7 @@ export function parseShard(value: unknown): Shard {
     region: region(found["region"], "shard.region"),
     part: whole(found["part"], "shard.part"),
     rows: whole(found["rows"], "shard.rows"),
+    questions: questions(found["questions"], "shard.questions"),
     dictionaries: {
       company: strings(dictionaries["company"], "shard.dictionaries.company"),
       location: strings(dictionaries["location"], "shard.dictionaries.location"),
@@ -213,6 +241,14 @@ export function parseShard(value: unknown): Shard {
       payMax: nullableNumbers(columns["payMax"], "shard.columns.payMax"),
       currency: numbers(columns["currency"], "shard.columns.currency", -1),
       posted: nullableNumbers(columns["posted"], "shard.columns.posted"),
+      answers: array(columns["answers"], "shard.columns.answers").map((entry, index) => {
+        const what = `shard.columns.answers[${index}]`;
+        return numbers(entry, what).map((value, at) => {
+          if (value > PROBABILITY_SCALE) fail(`${what}[${at}] is a probability above 1`);
+          return value;
+        });
+      }),
+      answered: numbers(columns["answered"], "shard.columns.answered"),
     },
   };
 }

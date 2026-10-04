@@ -1,6 +1,6 @@
 import type { Workplace } from "@quarry/domain";
 import type { EmploymentType } from "@quarry/facets";
-import { EMPLOYMENT_CODES, WORKPLACE_CODES } from "./format.ts";
+import { DEFAULT_ANSWER_THRESHOLD, EMPLOYMENT_CODES, WORKPLACE_CODES } from "./format.ts";
 import {
   employmentOf,
   type IndexTable,
@@ -8,6 +8,27 @@ import {
   searchFold,
   workplaceOf,
 } from "./table.ts";
+
+/** One criterion on one standard question. */
+export interface AnswerCriterion {
+  /** The question id, as the shard's `questions` names it. */
+  readonly question: string;
+  /** The option ids that count as a match; unknown options are ignored. */
+  readonly options: readonly string[];
+  /** The least probability, in hundredths, that the answer is one of them. */
+  readonly atLeast?: number;
+}
+
+/** A posting's answer to one question, as a result carries it. */
+export interface RowAnswer {
+  readonly question: string;
+  /** The likeliest option's id, which is the answer the model would have picked. */
+  readonly option: string;
+  /** How likely that option is, in hundredths. */
+  readonly probability: number;
+  /** Every option's probability, in the question's option order, for showing the spread. */
+  readonly distribution: readonly number[];
+}
 
 export interface IndexQuery {
   /** Postings in any of these places. */
@@ -28,6 +49,16 @@ export interface IndexQuery {
   readonly minimumPay?: { readonly amount: number; readonly currency: string };
   /** Words that must all appear in the title or company. */
   readonly text?: string;
+  /**
+   * Criteria on the standard questions. A posting matches when the probability that its answer
+   * is one of `options` is at least `atLeast`, in hundredths (default 50, more likely than not).
+   *
+   * Asking about a set of options, rather than the one the model picked, is what makes a
+   * threshold mean something: "remote or hybrid, at least 70% likely" keeps a posting the model
+   * called hybrid at 40% with remote at 35%, which filtering on the picked option would drop.
+   * A posting with no answer to the question never matches.
+   */
+  readonly answers?: readonly AnswerCriterion[];
   /** Newest first (the default), or highest pay in a currency first. */
   readonly sort?: "newest" | { readonly pay: string };
   readonly offset?: number;
@@ -56,6 +87,8 @@ export interface ResultRow {
   } | null;
   /** Days since 1970-01-01 (UTC), or null. */
   readonly postedDay: number | null;
+  /** The answers held for this posting, for the questions it has been asked. */
+  readonly answers: readonly RowAnswer[];
 }
 
 export interface QueryResult {
@@ -70,6 +103,18 @@ export interface QueryResult {
     readonly workplaces: readonly (readonly [Workplace, number])[];
     readonly employment: readonly (readonly [EmploymentType, number])[];
     readonly companies: readonly (readonly [string, number])[];
+    /**
+     * Per question, what each option would give at that question's own threshold, and how many
+     * of the matching postings hold an answer to it at all. The answered count is what keeps the
+     * option counts honest while the corpus is only partly enriched: options that add up to far
+     * fewer than the result total mean most postings have not been asked yet, not that the
+     * answer is rare.
+     */
+    readonly answers: readonly {
+      readonly question: string;
+      readonly options: readonly (readonly [string, number])[];
+      readonly answered: number;
+    }[];
   };
 }
 
@@ -79,6 +124,37 @@ const PLACE = 0;
 const WORKPLACE = 1;
 const EMPLOYMENT = 2;
 const COMPANY = 3;
+/** Each question is its own facet group, so its counts are of the other filters only. */
+const ANSWER = 4;
+
+/** A question's filter, resolved against the table's own question list. */
+interface ResolvedCriterion {
+  /** Index into `table.questions`, and so into `table.answers`. */
+  readonly at: number;
+  readonly width: number;
+  /** Option indices that count as a match. */
+  readonly options: readonly number[];
+  readonly atLeast: number;
+}
+
+/** The probability, in hundredths, that row `row`'s answer to question `at` is one of `options`. */
+function answerProbability(
+  table: IndexTable,
+  row: number,
+  at: number,
+  width: number,
+  options: Iterable<number>,
+): number {
+  const column = table.answers[at];
+  if (column === undefined) return 0;
+  let total = 0;
+  for (const option of options) total += column[row * width + option] ?? 0;
+  return total;
+}
+
+function hasAnswer(table: IndexTable, row: number, at: number): boolean {
+  return (((table.answered[row] ?? 0) >> at) & 1) === 1;
+}
 
 /** Filters, counts, and sorts the table in one pass over its rows. */
 export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
@@ -120,12 +196,38 @@ export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
   const terms = searchFold(query.text ?? "")
     .split(/\s+/)
     .filter((term) => term.length > 0);
+  // Thresholds are per question, so a facet count can use the same one the filter used.
+  const thresholds = table.questions.map(() => DEFAULT_ANSWER_THRESHOLD);
+  const answerWidths = table.questions.map((question) => question.options.length);
+  const criteria: ResolvedCriterion[] = [];
+  for (const criterion of query.answers ?? []) {
+    const at = table.questions.findIndex((question) => question.id === criterion.question);
+    const question = table.questions[at];
+    if (question === undefined) continue;
+    const options = criterion.options
+      .map((option) => question.options.indexOf(option))
+      .filter((option) => option >= 0);
+    if (options.length === 0) continue;
+    const atLeast = criterion.atLeast ?? DEFAULT_ANSWER_THRESHOLD;
+    thresholds[at] = atLeast;
+    criteria.push({ at, width: question.options.length, options, atLeast });
+  }
 
+  // Hoisted out of the row loop: one lookup per question rather than one per question per row.
+  const answerColumns = table.questions.map((_question, at) => table.answers[at]);
   const counts = {
     countries: new Map<number, number>(),
     workplaces: new Map<number, number>(),
     employment: new Map<number, number>(),
     companies: new Map<number, number>(),
+    // Per question: a count per option, plus how many rows held an answer at all. The option
+    // counters are a dense typed array rather than a map, because a question has a handful of
+    // options and an unfiltered query touches every one of them on every row: the map's
+    // get-and-set was over a million operations on a 100,000-posting index.
+    answers: table.questions.map((question) => ({
+      options: new Int32Array(question.options.length),
+      answered: 0,
+    })),
   };
   // A posting open to anywhere matches every country, so it belongs in every country's count.
   // Counting those rows apart keeps one that also names a country from being counted twice.
@@ -160,6 +262,13 @@ export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
     if (employment !== undefined && ((table.employment[row] ?? 0) & employment) === 0)
       fail(EMPLOYMENT);
     if (companies !== undefined && !companies.has(table.company[row] ?? -1)) fail(COMPANY);
+    for (const criterion of criteria) {
+      const { at, width, options, atLeast } = criterion;
+      // No answer is never a match: the question has not been asked about this posting.
+      const matches =
+        hasAnswer(table, row, at) && answerProbability(table, row, at, width, options) >= atLeast;
+      if (!matches) fail(ANSWER + at);
+    }
     if (failures > 1) continue;
 
     if (failures === 0) matched.push(row);
@@ -179,6 +288,24 @@ export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
       });
     }
     if (failures === 0 || failed === COMPANY) increment(counts.companies, table.company[row] ?? -1);
+    for (let at = 0; at < answerWidths.length; at += 1) {
+      if (failures !== 0 && failed !== ANSWER + at) continue;
+      const tally = counts.answers[at];
+      if (tally === undefined || !hasAnswer(table, row, at)) continue;
+      tally.answered += 1;
+      // What picking each option on its own would give, at the threshold in force. The column
+      // is read directly: going through answerProbability here allocated an array per option
+      // per row, which doubled the cost of a query with no answer filter at all.
+      const width = answerWidths[at] ?? 0;
+      const column = answerColumns[at];
+      if (column === undefined) continue;
+      const atLeast = thresholds[at] ?? DEFAULT_ANSWER_THRESHOLD;
+      const start = row * width;
+      const tallies = tally.options;
+      for (let option = 0; option < width; option += 1) {
+        if ((column[start + option] ?? 0) >= atLeast) tallies[option] = (tallies[option] ?? 0) + 1;
+      }
+    }
   }
 
   const sort = query.sort ?? "newest";
@@ -224,8 +351,30 @@ export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
       workplaces: ranked(counts.workplaces, (code) => workplaceOf(code) ?? undefined),
       employment: ranked(counts.employment, (bit) => EMPLOYMENT_CODES[bit]),
       companies: ranked(counts.companies, (code) => dictionaries.company[code]),
+      answers: table.questions.map((question, at) => ({
+        question: question.id,
+        // An option nothing reached is left out, not reported as zero, so a count always
+        // answers "this many if you pick me" for an option worth picking.
+        options: rankedDense(counts.answers[at]?.options, question.options),
+        answered: counts.answers[at]?.answered ?? 0,
+      })),
     },
   };
+}
+
+/** Option counts, largest first then by name, leaving out the ones nothing reached. */
+function rankedDense(
+  counts: Int32Array | undefined,
+  options: readonly string[],
+): (readonly [string, number])[] {
+  if (counts === undefined) return [];
+  const pairs: (readonly [string, number])[] = [];
+  for (let option = 0; option < counts.length; option += 1) {
+    const count = counts[option] ?? 0;
+    const name = options[option];
+    if (count > 0 && name !== undefined) pairs.push([name, count] as const);
+  }
+  return pairs.sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]));
 }
 
 function resultRow(table: IndexTable, row: number): ResultRow {
@@ -257,7 +406,31 @@ function resultRow(table: IndexTable, row: number): ResultRow {
             currency: dictionaries.currency[currency] ?? "",
           },
     postedDay: posted < 0 ? null : posted,
+    answers: rowAnswers(table, row),
   };
+}
+
+/** A row's answers, leaving out the questions it has not been asked. */
+function rowAnswers(table: IndexTable, row: number): RowAnswer[] {
+  const answers: RowAnswer[] = [];
+  table.questions.forEach((question, at) => {
+    if (!hasAnswer(table, row, at)) return;
+    const width = question.options.length;
+    const column = table.answers[at];
+    if (column === undefined) return;
+    const distribution = Array.from(column.subarray(row * width, (row + 1) * width));
+    let best = 0;
+    for (let option = 1; option < width; option += 1) {
+      if ((distribution[option] ?? 0) > (distribution[best] ?? 0)) best = option;
+    }
+    answers.push({
+      question: question.id,
+      option: question.options[best] ?? "",
+      probability: distribution[best] ?? 0,
+      distribution,
+    });
+  });
+  return answers;
 }
 
 /** The most a row's stated pay reaches: its maximum, or its minimum when only that is stated. */

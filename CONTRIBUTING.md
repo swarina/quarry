@@ -11,7 +11,7 @@
 ```sh
 pnpm install
 cp .env.example .env   # only needed for live Jev calls
-pnpm check             # typography, lint, typecheck, and tests
+pnpm check             # typography, lint, typecheck, and tests with coverage
 ```
 
 ## Scripts

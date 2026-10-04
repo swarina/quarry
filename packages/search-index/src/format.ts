@@ -9,7 +9,7 @@ import type { EmploymentType } from "@quarry/facets";
  */
 
 /** Version of the file formats below; readers refuse others. */
-export const INDEX_FORMAT = 3;
+export const INDEX_FORMAT = 4;
 
 /**
  * Size budgets (ADR-0007): a shard downloads quickly on a phone, the manifest (fetched on every
@@ -87,6 +87,8 @@ export interface Manifest {
   readonly build: string;
   readonly builtAt: string;
   readonly facetsVersion: number;
+  /** Version of the rules that read stored answers into the probabilities below. */
+  readonly answersVersion: number;
   /** Distinct postings in the build (a posting in two regions counts once). */
   readonly postings: number;
   /** Length of the posting id prefixes in the shards. */
@@ -117,11 +119,53 @@ export interface ListColumnFile {
   readonly values: readonly number[];
 }
 
+/**
+ * A standard question a shard holds answers to. Carried inside the shard rather than looked up,
+ * so the browser reads answers without importing the question registry, and with it the SDK.
+ *
+ * The wording version matters to a reader: answers under an older wording mean something else,
+ * so a shard says which wording produced the ones it holds.
+ */
+export interface ShardQuestion {
+  readonly id: string;
+  readonly version: number;
+  /** What this question answers, for the site to label a filter with. */
+  readonly about: string;
+  readonly kind: "choice" | "score" | "noul";
+  /** Option ids, in the order probabilities are stored in. */
+  readonly options: readonly string[];
+  /** What each option means, in the same order. */
+  readonly labels: readonly string[];
+}
+
+/** Probabilities are stored in hundredths, which is the precision Jev publishes. */
+export const PROBABILITY_SCALE = 100;
+
+/**
+ * Most questions a shard can carry, because `answered` is a bit per question in one number.
+ *
+ * JavaScript's `<<` works on 32 bits and wraps, so a 33rd question would set bit 0 and read as
+ * the first question being answered. 31 is the last bit that stays positive, which the format's
+ * schema requires. This is far more questions than the registry has, and the point of the
+ * constant is that going over fails the build with a reason rather than quietly misfiling
+ * answers.
+ */
+export const MAX_SHARD_QUESTIONS = 31;
+
+/**
+ * The probability at which an answer is taken to be an option unless a search says otherwise:
+ * more likely than not. Deliberately not a confident-sounding 0.9, since the honest default is
+ * the point where an option becomes the likelier reading.
+ */
+export const DEFAULT_ANSWER_THRESHOLD = 50;
+
 export interface Shard {
   readonly format: number;
   readonly region: RegionId;
   readonly part: number;
   readonly rows: number;
+  /** The questions the answer columns below are for, in the same order. */
+  readonly questions: readonly ShardQuestion[];
   readonly dictionaries: {
     readonly company: readonly string[];
     readonly location: readonly string[];
@@ -154,5 +198,18 @@ export interface Shard {
     readonly currency: readonly number[];
     /** Days since 1970-01-01 (UTC) when published, or first seen. */
     readonly posted: readonly (number | null)[];
+    /**
+     * Per question, in `questions` order: every row's probability for every option, in
+     * hundredths, flattened row by row. So question `q`'s probability for row `r`'s option `o`
+     * is `answers[q][r * options.length + o]`.
+     *
+     * A row with no answer is left as zeros, which costs almost nothing once gzipped, and
+     * `answered` is what says whether to read them. Storing the whole distribution rather than
+     * only the likeliest option is what lets a search ask for the probability of a set of
+     * options ("remote or hybrid") instead of only the one the model happened to pick.
+     */
+    readonly answers: readonly (readonly number[])[];
+    /** A bit per question, in `questions` order: 1 when this row holds that answer. */
+    readonly answered: readonly number[];
   };
 }

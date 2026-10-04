@@ -32,7 +32,15 @@ let state: SearchState = EMPTY;
 const locale = typeof navigator === "undefined" ? undefined : navigator.language;
 
 function view(result: ReturnType<typeof queryIndex>): View {
-  return { state, result, links, now: Date.now(), locale };
+  return {
+    state,
+    result,
+    links,
+    // The loaded index is what knows the questions, their options, and what they are called.
+    questions: catalog?.table.questions ?? [],
+    now: Date.now(),
+    locale,
+  };
 }
 
 function draw(): void {

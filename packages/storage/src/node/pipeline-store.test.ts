@@ -9,10 +9,12 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   type BoardRecord,
   type CrawlAttempt,
+  type OpenPosting,
   openPipelineStore,
   type PipelineStore,
   type PreparedItem,
   type SeedBoard,
+  type StoredAnswer,
 } from "./pipeline-store.ts";
 
 const HOUR = 60 * 60 * 1000;
@@ -59,6 +61,22 @@ async function invalid(externalId: string): Promise<PreparedItem> {
   return { kind: "invalid", postingId: await postingId(ACME_ID, externalId), externalId };
 }
 
+function answer(
+  contentHash: string,
+  questionId: string,
+  questionVersion: number,
+  value: unknown,
+): StoredAnswer {
+  return {
+    contentHash,
+    questionId,
+    questionVersion,
+    model: "jev-1.13.0",
+    answeredAt: T0,
+    answerJson: JSON.stringify(value),
+  };
+}
+
 let store: PipelineStore;
 let run = 0;
 
@@ -90,6 +108,11 @@ function presence(externalId: string) {
        WHERE postings.external_id = ? ORDER BY first_crawl_id`,
     )
     .all(externalId);
+}
+
+/** The external ids of some open postings, sorted, which is what the lifecycle tests compare. */
+function ids(postings: readonly OpenPosting[]): string[] {
+  return postings.map((entry) => entry.posting.externalId).sort();
 }
 
 async function list(at: number, postings: NormalizedPosting[], etag: string | null = null) {
@@ -479,12 +502,11 @@ describe("freshnessSamples", () => {
   });
 });
 
-describe("currentPostings", () => {
-  it("reads what each board's latest listing includes, without descriptions", async () => {
+describe("openPostings", () => {
+  it("reads the postings a board lists, without descriptions", async () => {
     const berlin = { label: null, text: "Berlin, Germany" };
-    await list(T0, [posting("1"), posting("2", { places: [berlin] })]);
-    await list(T0 + HOUR, [posting("2", { places: [berlin] })]);
-    const current = [...store.currentPostings()];
+    await list(T0, [posting("2", { places: [berlin] })]);
+    const current = [...store.openPostings()];
     expect(current).toHaveLength(1);
     expect(current[0]).toMatchObject({
       company: "Acme",
@@ -495,16 +517,186 @@ describe("currentPostings", () => {
     expect(current[0]?.posting).not.toHaveProperty("descriptionHtml");
   });
 
+  it("keeps a posting that one listing missed, so a short listing does not hide a live job", async () => {
+    await list(T0, [posting("1"), posting("2")]);
+    await list(T0 + HOUR, [posting("2")]);
+    expect(ids([...store.openPostings()])).toEqual(["1", "2"]);
+  });
+
+  it("drops a posting two listings in a row have missed", async () => {
+    await list(T0, [posting("1"), posting("2")]);
+    await list(T0 + HOUR, [posting("2")]);
+    await list(T0 + 2 * HOUR, [posting("2")]);
+    expect(ids([...store.openPostings()])).toEqual(["2"]);
+  });
+
+  it("brings a posting back when it is listed again", async () => {
+    await list(T0, [posting("1"), posting("2")]);
+    await list(T0 + HOUR, [posting("2")]);
+    await list(T0 + 2 * HOUR, [posting("2")]);
+    expect(ids([...store.openPostings()])).toEqual(["2"]);
+    await list(T0 + 3 * HOUR, [posting("1"), posting("2")]);
+    expect(ids([...store.openPostings()])).toEqual(["1", "2"]);
+  });
+
+  it("does not let a 304 close a posting, since it says the listing is unchanged", async () => {
+    await list(T0, [posting("1"), posting("2")]);
+    await list(T0 + HOUR, [posting("2")]);
+    // Two revalidations: neither is evidence that posting 1 is gone.
+    store.recordNotModified(acme(), attempt(T0 + 2 * HOUR));
+    store.recordNotModified(acme(), attempt(T0 + 3 * HOUR));
+    expect(ids([...store.openPostings()])).toEqual(["1", "2"]);
+  });
+
+  it("does not let a failed crawl close a posting", async () => {
+    await list(T0, [posting("1"), posting("2")]);
+    await list(T0 + HOUR, [posting("2")]);
+    store.recordFailure(acme(), attempt(T0 + 2 * HOUR), {
+      kind: "failed",
+      code: "HTTP_500",
+      message: "oops",
+    });
+    expect(ids([...store.openPostings()])).toEqual(["1", "2"]);
+  });
+
+  it("takes only the latest listing when asked for one, which is what it used to mean", async () => {
+    await list(T0, [posting("1"), posting("2")]);
+    await list(T0 + HOUR, [posting("2")]);
+    expect(ids([...store.openPostings(1)])).toEqual(["2"]);
+  });
+
+  it("keeps everything a board has listed only once", async () => {
+    // With one listing there is nothing a posting could have been missing from.
+    await list(T0, [posting("1"), posting("2")]);
+    expect(ids([...store.openPostings()])).toEqual(["1", "2"]);
+  });
+
   it("gives content stored before places existed no places", async () => {
     const { places: _, ...older } = posting("1");
     await list(T0, [older as NormalizedPosting]);
-    expect([...store.currentPostings()][0]?.posting.places).toEqual([]);
+    expect([...store.openPostings()][0]?.posting.places).toEqual([]);
   });
 
   it("leaves out boards that are no longer active", async () => {
     await list(T0, [posting("1")]);
     store.syncBoards([], [], T0);
-    expect([...store.currentPostings()]).toEqual([]);
+    expect([...store.openPostings()]).toEqual([]);
+  });
+
+  it("gives a posting nothing has answered an empty set of answers", async () => {
+    await list(T0, [posting("1")]);
+    expect([...store.openPostings()][0]?.answers).toEqual({});
+  });
+
+  it("hands back answers keyed by question and wording version", async () => {
+    const value = posting("1");
+    await list(T0, [value]);
+    const hash = await postingContentHash(value);
+    store.saveAnswers([
+      answer(hash, "arrangement", 1, { type: "noul", noul: 0.5 }),
+      answer(hash, "seniority", 2, { type: "noul", noul: 0.25 }),
+    ]);
+    const answers = [...store.openPostings()][0]?.answers ?? {};
+    expect(Object.keys(answers).sort()).toEqual(["arrangement@1", "seniority@2"]);
+    // The value is the model's own JSON, for the facets layer to read.
+    expect(JSON.parse(answers["arrangement@1"] ?? "null")).toEqual({ type: "noul", noul: 0.5 });
+  });
+
+  it("gives an edited posting only the answers to the text it has now", async () => {
+    const before = posting("1");
+    const after = posting("1", { descriptionHtml: "<p>Rewritten</p>" });
+    await list(T0, [before]);
+    store.saveAnswers([
+      answer(await postingContentHash(before), "arrangement", 1, { type: "noul", noul: 0.9 }),
+    ]);
+    await list(T0 + HOUR, [after]);
+    // The old content's answer is still stored, but this posting no longer has that content.
+    expect([...store.openPostings()][0]?.answers).toEqual({});
+
+    store.saveAnswers([
+      answer(await postingContentHash(after), "arrangement", 1, { type: "noul", noul: 0.1 }),
+    ]);
+    const answers = [...store.openPostings()][0]?.answers ?? {};
+    expect(JSON.parse(answers["arrangement@1"] ?? "null")).toEqual({ type: "noul", noul: 0.1 });
+  });
+
+  it("shares an answer between two postings whose text is identical", async () => {
+    // A repost with the same text is the same content, so it is never paid for twice.
+    const first = posting("1");
+    // Same title and same text, a different job id and link: the link is not content (ADR-0003).
+    const second = posting("2", { title: "Engineer 1", descriptionHtml: "<p>Role 1</p>" });
+    await list(T0, [first, second]);
+    expect(await postingContentHash(first)).toBe(await postingContentHash(second));
+    store.saveAnswers([
+      answer(await postingContentHash(first), "arrangement", 1, { type: "noul", noul: 0.4 }),
+    ]);
+    const current = [...store.openPostings()];
+    expect(current).toHaveLength(2);
+    for (const entry of current) expect(Object.keys(entry.answers)).toEqual(["arrangement@1"]);
+  });
+});
+
+describe("answers", () => {
+  it("offers postings that have no answer to the wanted wordings, newest first", async () => {
+    await list(T0, [posting("1")]);
+    await list(T0 + HOUR, [posting("1"), posting("2")]);
+    const outstanding = store.unanswered(["arrangement@1"], 10);
+    expect(outstanding.map((entry) => entry.title)).toEqual(["Engineer 2", "Engineer 1"]);
+    expect(store.unansweredCount(["arrangement@1"])).toBe(2);
+    // The description reaches the model as text, which is what it is asked about.
+    expect(outstanding[0]?.description).toContain("Role 2");
+  });
+
+  it("stops offering a posting once every wanted wording is answered", async () => {
+    const value = posting("1");
+    await list(T0, [value]);
+    const hash = await postingContentHash(value);
+    store.saveAnswers([answer(hash, "arrangement", 1, { type: "noul", noul: 0.5 })]);
+    expect(store.unansweredCount(["arrangement@1"])).toBe(0);
+    // A second wording is a second question, so the posting is outstanding again.
+    expect(store.unansweredCount(["arrangement@1", "seniority@1"])).toBe(1);
+  });
+
+  it("treats a reworded question as unanswered rather than reusing the old answer", async () => {
+    const value = posting("1");
+    await list(T0, [value]);
+    store.saveAnswers([
+      answer(await postingContentHash(value), "arrangement", 1, { type: "noul", noul: 0.5 }),
+    ]);
+    expect(store.unansweredCount(["arrangement@2"])).toBe(1);
+  });
+
+  it("wants nothing when no wording is asked for", async () => {
+    await list(T0, [posting("1")]);
+    expect(store.unanswered([], 10)).toEqual([]);
+  });
+
+  it("replaces an answer asked again under the same wording", async () => {
+    const value = posting("1");
+    await list(T0, [value]);
+    const hash = await postingContentHash(value);
+    store.saveAnswers([answer(hash, "arrangement", 1, { type: "noul", noul: 0.5 })]);
+    store.saveAnswers([answer(hash, "arrangement", 1, { type: "noul", noul: 0.8 })]);
+    const answers = [...store.openPostings()][0]?.answers ?? {};
+    expect(JSON.parse(answers["arrangement@1"] ?? "null")).toEqual({ type: "noul", noul: 0.8 });
+  });
+
+  it("records what a run cost, so spend is auditable against the ledger", () => {
+    store.startRun({ id: "enrich-1", trigger: "local", codeVersion: "test", startedAt: T0 });
+    store.recordEnrichment({
+      runId: "enrich-1",
+      startedAt: T0,
+      finishedAt: T0 + 60_000,
+      asked: 30,
+      failed: 1,
+      inputTokens: 120_000,
+      outputTokens: 0,
+      costNanoUsd: 2_673_000,
+    });
+    const row = store.db
+      .prepare("SELECT asked, failed, cost_nano_usd FROM enrichment_runs WHERE run_id = ?")
+      .get("enrich-1");
+    expect(row).toMatchObject({ asked: 30, failed: 1, cost_nano_usd: 2_673_000 });
   });
 });
 
