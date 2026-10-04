@@ -23,3 +23,19 @@ export function isBoardGone(notFoundCount: number, firstNotFoundAt: number, now:
     notFoundCount >= BOARD_GONE_AFTER_NOT_FOUND && now - firstNotFoundAt >= BOARD_GONE_MIN_SPAN_MS
   );
 }
+
+/**
+ * How many of a board's most recent full listings a posting may be missing from and still count
+ * as open.
+ *
+ * Only a full listing is evidence of absence. A 304 says the listing is unchanged, and a failed
+ * or not-found crawl says nothing about any particular posting, so neither can close one.
+ *
+ * At 1 this is "in the latest listing", which is what the search index used to mean by current,
+ * and it makes one short or partial listing drop a live job out of search until the next run. At
+ * 2 a posting survives one such listing, and a job that really closed leaves search one crawl
+ * later than it could have. That is the trade: a day of a closed job showing, against a day of a
+ * live job hidden. Hiding live jobs is the worse failure for someone searching, and a wrongly
+ * shown job is visibly closed the moment they open it.
+ */
+export const POSTING_OPEN_WITHIN_LISTINGS = 2;

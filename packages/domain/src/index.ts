@@ -7,6 +7,7 @@ export {
   BOARD_GONE_MIN_SPAN_MS,
   BOARD_STATUSES,
   isBoardGone,
+  POSTING_OPEN_WITHIN_LISTINGS,
 } from "./board.ts";
 export type { Brand } from "./brand.ts";
 export { CanonicalJsonError, canonicalJson } from "./canonical-json.ts";

@@ -44,9 +44,13 @@ export interface SearchIndexReport {
 const UNPLACED_SHOWN = 15;
 
 /**
- * Builds the search index from the postings boards list now: structured facets for each
- * (locations read from labels, offices, and addresses), then the shards and manifest.
- * Placeholders (templates and tests an employer published by mistake) are left out.
+ * Builds the search index from the postings that are still open: structured facets for each
+ * (locations read from labels, offices, and addresses), the answers held for its current
+ * content, then the shards and manifest. Placeholders (templates and tests an employer
+ * published by mistake) are left out.
+ *
+ * Open is derived from the crawl observations, not from the latest listing alone, so one short
+ * listing does not drop a live job out of search for a day.
  */
 export async function buildSearchIndex(
   store: PipelineStore,
@@ -71,7 +75,7 @@ export async function buildSearchIndex(
   }));
   const answered: Record<string, number> = Object.fromEntries(shapes.map((shape) => [shape.id, 0]));
   let unreadableAnswers = 0;
-  for (const current of store.currentPostings()) {
+  for (const current of store.openPostings()) {
     const { posting } = current;
     if (isPlaceholder(posting)) {
       placeholders += 1;

@@ -7,6 +7,7 @@ import {
   htmlToText,
   isBoardGone,
   type NormalizedPosting,
+  POSTING_OPEN_WITHIN_LISTINGS,
   type PostingId,
 } from "@quarry/domain";
 import { migrate, openDatabase, transaction } from "./database.ts";
@@ -134,8 +135,8 @@ export interface FreshnessSample {
   readonly latencyMs: number | null;
 }
 
-/** A posting its board's latest listing includes, as the search index takes it. */
-export interface CurrentPosting {
+/** A posting that is still open on an active board, as the search index takes it. */
+export interface OpenPosting {
   readonly id: PostingId;
   readonly company: string;
   /** The company's home country, from the seed list. */
@@ -263,10 +264,15 @@ export interface PipelineStore {
    */
   freshnessSamples(since: number): FreshnessSample[];
   /**
-   * The postings each active board's latest successful listing includes, read one at a time
-   * (descriptions are left out, to keep memory small).
+   * The postings of active boards that are still open, read one at a time (descriptions are
+   * left out, to keep memory small).
+   *
+   * Open means seen in one of the board's last `withinListings` full listings, which is
+   * derived from the observations rather than stored (ADR-0016), so the rule can change and be
+   * replayed over the whole history. Taking only the latest listing, which is what this used
+   * to do, let one short or partial listing drop a live job out of search for a day.
    */
-  currentPostings(): Iterable<CurrentPosting>;
+  openPostings(withinListings?: number): Iterable<OpenPosting>;
   /**
    * Postings a board currently lists whose content has no answer under every given question
    * version yet, newest first so a run cut short has answered the postings people are most
@@ -456,18 +462,34 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
          output_tokens = enrichment_runs.output_tokens + excluded.output_tokens,
          cost_nano_usd = enrichment_runs.cost_nano_usd + excluded.cost_nano_usd`,
     ),
-    currentPostings: db.prepare(
-      `SELECT p.id, p.first_seen_at, b.company, b.country,
+    openPostings: db.prepare(
+      `WITH listings AS (
+         -- Only a full listing is evidence that a posting is gone: a 304 says the listing is
+         -- unchanged, and a failure says nothing about any one posting.
+         SELECT board_id, id,
+                row_number() OVER (PARTITION BY board_id ORDER BY id DESC) AS recency
+           FROM board_crawls WHERE outcome = 'listed'
+       ),
+       threshold AS (
+         -- The oldest of the board's last few listings. A posting last seen at or after it is
+         -- open; one seen only before it has been missing from all of them.
+         SELECT board_id, min(id) AS since FROM listings WHERE recency <= ? GROUP BY board_id
+       ),
+       seen AS (
+         SELECT posting_id, max(last_crawl_id) AS at FROM posting_presence GROUP BY posting_id
+       )
+       SELECT p.id, p.first_seen_at, b.company, b.country,
          json_remove(c.normalized_json, '$.descriptionHtml') AS posting,
          -- Answers travel with the posting so the index is built in one pass. Keyed on the
          -- content hash, so an edited posting shows only the answers to the text it has now.
          (SELECT json_group_object(a.question_id || '@' || a.question_version, a.answer_json)
             FROM posting_answers a WHERE a.content_hash = p.content_hash) AS answers
        FROM boards b
-       JOIN posting_presence pp ON pp.last_crawl_id = b.last_listed_crawl_id
-       JOIN postings p ON p.id = pp.posting_id AND p.board_id = b.id
+       JOIN threshold t ON t.board_id = b.id
+       JOIN postings p ON p.board_id = b.id
+       JOIN seen s ON s.posting_id = p.id
        JOIN posting_contents c ON c.posting_id = p.id AND c.content_hash = p.content_hash
-       WHERE b.status = 'active'
+       WHERE b.status = 'active' AND s.at >= t.since
        ORDER BY p.id`,
     ),
   };
@@ -816,8 +838,8 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
       }));
     },
 
-    *currentPostings() {
-      for (const row of statements.currentPostings.iterate() as Iterable<Row>) {
+    *openPostings(withinListings = POSTING_OPEN_WITHIN_LISTINGS) {
+      for (const row of statements.openPostings.iterate(withinListings) as Iterable<Row>) {
         const posting = JSON.parse(row["posting"] as string) as Omit<
           NormalizedPosting,
           "descriptionHtml"
