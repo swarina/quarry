@@ -58,6 +58,7 @@ resolves.
 | [0026](0026-jev-returns-no-evidence-spans.md) | Jev returns no evidence spans, so stop promising them | 2026-10-04 | this branch |
 | [0027](0027-ask-only-what-the-filters-leave.md) | Ask your own questions of the postings a search left | 2026-10-06 | this branch |
 | [0028](0028-the-secret-in-memory-and-one-origin.md) | Keep the secret in memory, and serve asking from one origin | 2026-10-06 | this branch |
+| [0029](0029-deploying-on-cloudflare-workers-with-d1.md) | Deploy on Cloudflare Workers, with D1 behind the criterion ports | 2026-10-06 | this branch |
 
 ## Template
 

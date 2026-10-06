@@ -5,11 +5,12 @@
  *
  * Usage: node apps/site/scripts/build.ts [--out <dir>] [--index <dir>] [--no-minify]
  */
-import { cp, mkdir, readdir, rm, stat } from "node:fs/promises";
+import { cp, mkdir, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { build } from "esbuild";
+import { renderHeadersFile } from "./static.ts";
 
 const SITE = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -41,6 +42,11 @@ const result = await build({
 if (values.index !== undefined) {
   await cp(values.index, join(values.out, "index"), { recursive: true });
 }
+
+// The security headers a deployment serves the site with (ADR-0028). A Cloudflare Workers
+// static-assets deployment reads this file; it is harmless anywhere else. The dev server does
+// not read it, applying the same headers in code from the same source, so the two cannot drift.
+await writeFile(join(values.out, "_headers"), renderHeadersFile());
 
 const bytes = async (path: string): Promise<number> => (await stat(path)).size;
 const scriptBytes = await bytes(join(values.out, "main.js"));

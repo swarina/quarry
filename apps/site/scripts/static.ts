@@ -39,6 +39,34 @@ export const POLICY = [
 ].join("; ");
 
 /**
+ * The headers every page and asset is served with. ADR-0028 rests on these, the content security
+ * policy above all, so they are defined once and used by the dev server here and by the deployed
+ * site, which applies them through a `_headers` file (`renderHeadersFile`). A second copy is a
+ * copy that drifts, and the one that drifts is the one on the page holding a secret.
+ */
+export const SECURITY_HEADERS: Readonly<Record<string, string>> = {
+  "content-security-policy": POLICY,
+  "referrer-policy": "no-referrer",
+  "x-content-type-options": "nosniff",
+};
+
+/**
+ * The `_headers` file a Cloudflare Workers static-assets deployment reads (verified against the
+ * docs on 2026-10-06). `/*` matches every path; the content-addressed index files are also
+ * marked immutable, except the manifest that names them, which must not be.
+ */
+export function renderHeadersFile(): string {
+  const block = (pattern: string, headers: Record<string, string>): string =>
+    [pattern, ...Object.entries(headers).map(([name, value]) => `  ${name}: ${value}`)].join("\n");
+  return `${[
+    block("/*", SECURITY_HEADERS),
+    // Shards and links are named by the build hash, so they never change under a given name.
+    block("/index/*/shards/*", { "cache-control": "public, max-age=31536000, immutable" }),
+    block("/index/*/links/*", { "cache-control": "public, max-age=31536000, immutable" }),
+  ].join("\n\n")}\n`;
+}
+
+/**
  * Answers one request from a directory of built files, or returns false if there is no such
  * file, leaving the caller to decide what that means.
  */
@@ -58,9 +86,7 @@ export async function serveStatic(
     const immutable = relative.startsWith("/index/") && !relative.endsWith("manifest.json");
     response.writeHead(200, {
       "content-type": TYPES[extname(file)] ?? "application/octet-stream",
-      "content-security-policy": POLICY,
-      "referrer-policy": "no-referrer",
-      "x-content-type-options": "nosniff",
+      ...SECURITY_HEADERS,
       "cache-control": immutable ? "public, max-age=31536000, immutable" : "no-cache",
     });
     createReadStream(file).pipe(response);
