@@ -50,13 +50,18 @@ export interface CriteriaHandlerOptions {
   readonly now?: () => number;
 }
 
-/** Criteria per request. More than a handful is a different product, not a bigger request. */
-const MAX_CRITERIA = 5;
+/**
+ * Criteria per request. More than a handful is a different product, not a bigger request.
+ *
+ * Exported because a caller has to know where the refusal starts in order to not walk into it:
+ * the site disables asking rather than sending something this would reject.
+ */
+export const MAX_CRITERIA = 5;
 /**
  * Postings per request. The point of asking only what the filters leave is that this is a page
  * of results, not the corpus; a request naming more than this has not filtered.
  */
-const MAX_POSTINGS = 500;
+export const MAX_POSTINGS = 500;
 const CONCURRENCY = 6;
 const TIMEOUT_MS = 20_000;
 

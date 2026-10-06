@@ -23,6 +23,6 @@ export {
   readCriterion,
 } from "./criterion.ts";
 export type { CriteriaHandlerOptions } from "./handler.ts";
-export { createCriteriaHandler } from "./handler.ts";
+export { createCriteriaHandler, MAX_CRITERIA, MAX_POSTINGS } from "./handler.ts";
 export type { AnswerCache, CachedAnswer, PostingSource, PostingText } from "./ports.ts";
 export { createMemoryAnswerCache, createMemoryPostingSource } from "./ports.ts";

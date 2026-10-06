@@ -1,4 +1,5 @@
 import type { QueryResult, ResultRow, ShardQuestion } from "@quarry/search-index";
+import { type CriterionEstimate, draftOptions, MAX_POSTINGS, usd } from "./criteria.ts";
 import { el } from "./dom.ts";
 import {
   confidenceBand,
@@ -10,12 +11,15 @@ import {
   WORKPLACE_NAMES,
   where,
 } from "./format.ts";
+import { answeredAmong, type Held, readingOf } from "./held.ts";
 import {
   activeFilters,
   answerFilter,
+  askable,
   PAGE,
   type SearchState,
   setAnswerFilter,
+  setCriterionFilter,
   toggle,
 } from "./state.ts";
 
@@ -26,6 +30,8 @@ export interface View {
   readonly links: ReadonlyMap<string, string>;
   /** The standard questions the loaded index carries, which is what names them. */
   readonly questions: readonly ShardQuestion[];
+  /** What the criterion has answered in this session, if it has been asked. */
+  readonly held: Held | undefined;
   readonly now: number;
   readonly locale: string | undefined;
 }
@@ -59,6 +65,8 @@ function resultItem(row: ResultRow, view: View): HTMLElement {
   const money = pay(row, view.locale);
   if (money !== null) facts.push(el("span", { class: "pay", text: money }));
   for (const node of answerTags(row, view.questions)) facts.push(node);
+  const mine = criterionTag(row, view);
+  if (mine !== undefined) facts.push(mine);
 
   return el("li", { class: "result" }, [
     el("h3", {}, [
@@ -106,6 +114,32 @@ function answerTags(row: ResultRow, questions: readonly ShardQuestion[]): HTMLEl
     );
   }
   return tags;
+}
+
+/**
+ * What your own question answered about a posting, shown the same way a standard answer is: the
+ * likeliest option as a band, with the figure in the title text.
+ *
+ * Unlike a standard answer, an unlikely one is still shown. There the model is one of several
+ * speaking about a posting and a spread answer is noise; here it is the only answer to the thing
+ * that was just asked, and silently omitting it would read as "not asked" when the truth is "the
+ * model does not know". The tag says so instead.
+ */
+function criterionTag(row: ResultRow, view: View): HTMLElement | undefined {
+  const held = view.held;
+  if (held === undefined) return undefined;
+  const reading = readingOf(held, row.id);
+  if (reading === undefined) return undefined;
+  const band = confidenceBand(reading.probability);
+  const unsure = band.id === "unlikely";
+  return el("span", {
+    class: `answer answer-mine answer-${band.id}`,
+    title:
+      `${held.description.options.length > 2 ? "Your question" : "You asked"}: ` +
+      `${reading.label}, ${reading.probability}% likely. Answered by a model just now, not ` +
+      "stated by the employer.",
+    text: unsure ? `${reading.label}? (unsure)` : `${reading.label} (${band.name})`,
+  });
 }
 
 /** The results list, with a button to show more when there are more. */
@@ -277,10 +311,82 @@ function answerGroup(question: ShardQuestion, view: View, go: Go): HTMLElement {
   return el("section", { class: "facet-group answers" }, nodes);
 }
 
+/**
+ * The criterion as a filter: its options with counts, and the threshold they are counted at.
+ *
+ * The counts here are over the postings actually answered, not over the whole result, and the
+ * line beneath says how many that is. While a run can stop early on its budget or its deadline
+ * (ADR-0025) the two differ, and a count that quietly meant "of the ones we got to" would read
+ * as a fact about the market.
+ */
+function criterionGroup(view: View, held: Held, go: Go): HTMLElement {
+  const { state } = view;
+  const filter = state.criterionFilter;
+  const options = filter?.options ?? [];
+  const atLeast = filter?.atLeast ?? THRESHOLDS[0] ?? 50;
+  const criterion = state.criterion;
+  if (criterion === null) return el("section");
+
+  const ids = view.result.rows.map((row) => row.id);
+  const counts = new Map<string, number>();
+  for (const id of ids) {
+    const reading = readingOf(held, id);
+    if (reading !== undefined) counts.set(reading.label, (counts.get(reading.label) ?? 0) + 1);
+  }
+
+  const items = draftOptions(criterion).map((option) => {
+    const input = el("input", {
+      type: "checkbox",
+      class: "facet-box",
+      checked: options.includes(option.id),
+    });
+    input.addEventListener("change", () =>
+      go(setCriterionFilter(state, toggle(options, option.id), atLeast)),
+    );
+    return el("li", {}, [
+      el("label", { class: "facet" }, [
+        input,
+        el("span", { class: "facet-name", text: option.label }),
+        el("span", {
+          class: "facet-count",
+          text: number(counts.get(option.label) ?? 0, view.locale),
+        }),
+      ]),
+    ]);
+  });
+
+  const select = el(
+    "select",
+    { id: "threshold-criterion", class: "threshold" },
+    THRESHOLDS.map((value) =>
+      el("option", { value: String(value), selected: value === atLeast, text: `${value}%` }),
+    ),
+  );
+  select.addEventListener("change", () =>
+    go(setCriterionFilter(state, options, Number((select as HTMLSelectElement).value))),
+  );
+
+  return el("section", { class: "facet-group answers answers-mine" }, [
+    el("h2", { text: "Your question" }),
+    el("p", { class: "criterion-wording", text: criterion.question }),
+    el("ul", {}, items),
+    el("p", { class: "threshold-row" }, [
+      el("label", { for: "threshold-criterion", text: "At least " }),
+      select,
+      el("span", { text: " likely" }),
+    ]),
+    el("p", {
+      class: "answered",
+      text: `${number(answeredAmong(held, ids), view.locale)} of these postings have been answered.`,
+    }),
+  ]);
+}
+
 /** Every facet, counted over the postings the other filters let through. */
 export function renderFacets(view: View, go: Go): (Node | string)[] {
   const { facets } = view.result;
   return [
+    ...(view.held === undefined ? [] : [criterionGroup(view, view.held, go)]),
     facetGroup(
       {
         title: "Country",
@@ -327,4 +433,69 @@ export function renderFacets(view: View, go: Go): (Node | string)[] {
     ),
     ...view.questions.map((question) => answerGroup(question, view, go)),
   ];
+}
+
+/** Everything the ask panel needs to say that is not in the search itself. */
+export interface AskState {
+  /** Whether a secret has been given. Nothing can be asked without one. */
+  readonly unlocked: boolean;
+  /** How many postings the other filters leave, which is what would be asked about. */
+  readonly total: number;
+  /** What asking would cost, once the question is complete enough to price. */
+  readonly estimate: CriterionEstimate | undefined;
+  /** Set while a request is in flight, so the button cannot be pressed twice. */
+  readonly busy: boolean;
+  /** What is wrong with the question as written, if anything. */
+  readonly problem: string | undefined;
+  /** What happened last: a refusal, a failure, or a run that stopped early. */
+  readonly message: string | undefined;
+}
+
+/**
+ * The line under the question: what asking would cost, or why it cannot be asked yet.
+ *
+ * The estimate is shown as soon as the question is complete, because estimating spends nothing
+ * and a cost that appears only after a confirmation step is a cost that surprises someone. There
+ * is deliberately no confirmation dialogue: a page of results is cents (ADR-0027), and the whole
+ * point of asking only what the filters leave is that it can feel like search rather than like
+ * submitting a job.
+ */
+export function renderAskStatus(ask: AskState, view: View): (Node | string)[] {
+  const nodes: (Node | string)[] = [];
+  const say = (text: string, kind = "ask-note") => nodes.push(el("p", { class: kind, text }));
+
+  if (!askable(ask.total)) {
+    say(
+      ask.total === 0
+        ? "No postings match, so there is nothing to ask about."
+        : `${number(ask.total, view.locale)} postings match. Narrow the search to ${number(MAX_POSTINGS, view.locale)} or fewer, then ask.`,
+      "ask-blocked",
+    );
+  } else if (ask.problem !== undefined) {
+    say(ask.problem, "ask-blocked");
+  } else if (!ask.unlocked) {
+    say("Asking spends money, so it needs the shared secret.", "ask-blocked");
+  } else if (ask.busy) {
+    say("Asking. This takes a few seconds.");
+  } else if (ask.estimate !== undefined) {
+    const { estimate } = ask;
+    const already =
+      estimate.cached === 0
+        ? ""
+        : ` ${number(estimate.cached, view.locale)} of ${number(estimate.wanted, view.locale)} are already answered, and cost nothing.`;
+    say(
+      estimate.toAsk === 0
+        ? `All ${number(estimate.wanted, view.locale)} are already answered. Asking costs nothing.`
+        : `Asking ${number(estimate.postings, view.locale)} postings costs about ${usd(estimate.nanoUsd)}.${already}`,
+      "ask-cost",
+    );
+  }
+
+  if (ask.message !== undefined) say(ask.message, "ask-problem");
+  if (view.held !== undefined && !ask.busy) {
+    say(
+      "These answers are held for this page only. Reloading loses them, and asking again is free.",
+    );
+  }
+  return nodes;
 }

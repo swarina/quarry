@@ -57,6 +57,7 @@ resolves.
 | [0025](0025-one-request-per-posting-and-how-a-run-stops.md) | One request per posting, and four named ways for a run to stop | 2026-10-04 | #30 |
 | [0026](0026-jev-returns-no-evidence-spans.md) | Jev returns no evidence spans, so stop promising them | 2026-10-04 | this branch |
 | [0027](0027-ask-only-what-the-filters-leave.md) | Ask your own questions of the postings a search left | 2026-10-06 | this branch |
+| [0028](0028-the-secret-in-memory-and-one-origin.md) | Keep the secret in memory, and serve asking from one origin | 2026-10-06 | this branch |
 
 ## Template
 

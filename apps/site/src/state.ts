@@ -8,6 +8,7 @@ import {
   type ShardQuestion,
   WORKPLACE_CODES,
 } from "@quarry/search-index";
+import { type CriterionDraft, draftOptions, MAX_POSTINGS } from "./criteria.ts";
 
 /**
  * A criterion on one standard question: the answer must be one of these options, with at least
@@ -41,6 +42,24 @@ export interface SearchState {
   readonly sort: "newest" | "pay";
   /** Criteria on the standard questions, at most one per question. */
   readonly answers: readonly AnswerFilter[];
+  /**
+   * The question this search is asking of its own results, if any.
+   *
+   * The wording is in the URL with the rest of the search, so a question can be shared, kept and
+   * come back through the back button like every other filter. The answers are not: they are
+   * large, and the server already keys them on the wording (ADR-0024), so whoever opens the link
+   * and has the secret re-asks for nothing.
+   */
+  readonly criterion: CriterionDraft | null;
+  /**
+   * Narrowing by what the criterion answered: the answer must be one of these options, with at
+   * least this probability. Held apart from `answers` because the index knows nothing about it,
+   * so it is applied over the rows rather than inside the query.
+   */
+  readonly criterionFilter: {
+    readonly options: readonly string[];
+    readonly atLeast: number;
+  } | null;
   /** How many results are shown; growing it is what "show more" does. */
   readonly shown: number;
 }
@@ -59,6 +78,8 @@ export const EMPTY: SearchState = {
   includeAnywhere: true,
   sort: "newest",
   answers: [],
+  criterion: null,
+  criterionFilter: null,
   shown: PAGE,
 };
 
@@ -102,6 +123,56 @@ function writeAnswerFilters(filters: readonly AnswerFilter[]): string {
     .join(",");
 }
 
+/**
+ * The criterion in a URL: its kind in `ck`, its wording in `cq`, and its options or levels in
+ * `cc` separated by `|`. The wording is free text a person wrote, so it is carried as an ordinary
+ * parameter value and escaped by `URLSearchParams` like any other.
+ *
+ * Anything malformed reads as no criterion rather than as a partial one. A half-read question
+ * would be a different question, and the whole point of keying on the wording is that a different
+ * wording is a different thing (ADR-0024).
+ */
+const CRITERION_KINDS: readonly CriterionDraft["kind"][] = ["yes-no", "choice", "scale"];
+
+function readCriterionDraft(url: URL): CriterionDraft | null {
+  const kind = url.searchParams.get("ck") ?? "";
+  const question = (url.searchParams.get("cq") ?? "").trim();
+  if (!CRITERION_KINDS.includes(kind as CriterionDraft["kind"])) return null;
+  if (question === "") return null;
+  const choices = (url.searchParams.get("cc") ?? "")
+    .split("|")
+    .map((choice) => choice.trim())
+    .filter((choice) => choice.length > 0);
+  if (kind !== "yes-no" && choices.length < 2) return null;
+  return {
+    kind: kind as CriterionDraft["kind"],
+    question,
+    choices: kind === "yes-no" ? [] : choices,
+  };
+}
+
+/**
+ * The criterion filter in a URL: `option|option@threshold` in `cf`, the same shape the standard
+ * answer filters use. It is dropped unless the criterion it belongs to is there too, and unless
+ * its options are that criterion's: a filter naming options of a question that is no longer in
+ * the URL would hide everything for no visible reason.
+ */
+function readCriterionFilter(
+  url: URL,
+  criterion: CriterionDraft | null,
+): SearchState["criterionFilter"] {
+  if (criterion === null) return null;
+  const found = /^([^@]+)(?:@(\d{1,3}))?$/.exec((url.searchParams.get("cf") ?? "").trim());
+  if (found === null) return null;
+  const [, joined = "", threshold] = found;
+  const known = new Set(draftOptions(criterion).map((option) => option.id));
+  const options = [...new Set(joined.split("|").filter((option) => known.has(option)))];
+  if (options.length === 0) return null;
+  const atLeast = threshold === undefined ? DEFAULT_ANSWER_THRESHOLD : Number(threshold);
+  if (!(atLeast >= 1 && atLeast <= PROBABILITY_SCALE)) return null;
+  return { options, atLeast };
+}
+
 /** Reads a search from a URL's query string, ignoring anything it doesn't recognize. */
 export function fromUrl(url: URL, fallback: SearchState = EMPTY): SearchState {
   const parameters = url.searchParams;
@@ -119,6 +190,7 @@ export function fromUrl(url: URL, fallback: SearchState = EMPTY): SearchState {
   const days = Number(parameters.get("within"));
   const pay = Number(parameters.get("pay"));
   const currency = (parameters.get("currency") ?? "").toUpperCase();
+  const criterion = readCriterionDraft(url);
   return {
     region: parameters.get("region") ?? fallback.region,
     text: parameters.get("q") ?? "",
@@ -134,6 +206,8 @@ export function fromUrl(url: URL, fallback: SearchState = EMPTY): SearchState {
     includeAnywhere: parameters.get("anywhere") !== "0",
     sort: parameters.get("sort") === "pay" ? "pay" : "newest",
     answers: readAnswerFilters(parameters.get("a") ?? ""),
+    criterion,
+    criterionFilter: readCriterionFilter(url, criterion),
     shown: PAGE,
   };
 }
@@ -166,6 +240,16 @@ export function toQueryString(state: SearchState): string {
   if (!state.includeAnywhere) set("anywhere", "0");
   set("sort", state.sort === "newest" ? "" : state.sort);
   set("a", writeAnswerFilters(state.answers));
+  if (state.criterion !== null) {
+    set("ck", state.criterion.kind);
+    set("cq", state.criterion.question);
+    set("cc", state.criterion.choices.join("|"));
+    if (state.criterionFilter !== null) {
+      const { options, atLeast } = state.criterionFilter;
+      const threshold = atLeast === DEFAULT_ANSWER_THRESHOLD ? "" : `@${String(atLeast)}`;
+      set("cf", `${options.join("|")}${threshold}`);
+    }
+  }
   const query = parameters.toString();
   return query.length === 0 ? "" : `?${query}`;
 }
@@ -212,6 +296,42 @@ export function setAnswerFilter(
   const answers =
     options.length === 0 ? others : [...others, { question, options: [...options], atLeast }];
   return { ...state, answers, shown: PAGE };
+}
+
+/**
+ * Replaces the criterion, dropping any filter that was narrowing by its answers.
+ *
+ * Changing a word makes a different question whose old answers are answers to something else
+ * (ADR-0024), so a filter written against the previous wording has to go rather than be carried
+ * across and silently mean something new.
+ */
+export function setCriterion(state: SearchState, criterion: CriterionDraft | null): SearchState {
+  return { ...state, criterion, criterionFilter: null, shown: PAGE };
+}
+
+/** Sets or clears the filter on the criterion's own answers. No options means no filter. */
+export function setCriterionFilter(
+  state: SearchState,
+  options: readonly string[],
+  atLeast: number,
+): SearchState {
+  if (state.criterion === null || options.length === 0) {
+    return { ...state, criterionFilter: null, shown: PAGE };
+  }
+  return { ...state, criterionFilter: { options: [...options], atLeast }, shown: PAGE };
+}
+
+/** How a criterion and the options it is filtered to read in a chip. */
+function describeCriterion(state: SearchState): string {
+  const criterion = state.criterion;
+  if (criterion === null) return "";
+  const filter = state.criterionFilter;
+  if (filter === null) return `asking: ${criterion.question}`;
+  const labels = draftOptions(criterion)
+    .filter((option) => filter.options.includes(option.id))
+    .map((option) => option.label)
+    .join(" or ");
+  return `${criterion.question} ${labels} (${filter.atLeast}%+)`;
 }
 
 /** How a question and its options read in a filter chip, given what the index calls them. */
@@ -262,5 +382,23 @@ export function activeFilters(
       answers: state.answers.filter((other) => other.question !== filter.question),
     });
   }
+  // Removing the criterion's chip removes the whole question, not only the narrowing: a question
+  // with nothing narrowing by it is still shown beside every result, so clearing it has to be
+  // one action rather than two that look the same.
+  if (state.criterion !== null) {
+    add(describeCriterion(state), { criterion: null, criterionFilter: null });
+  }
   return filters;
+}
+
+/**
+ * Whether the postings a search leaves can be asked about: the server refuses more than
+ * `MAX_POSTINGS` and says to filter further (ADR-0027), so the page does not offer it either.
+ *
+ * It is also what makes narrowing by a criterion answer exact. Below the cap, one query returns
+ * every matching row, so filtering them by their answers is filtering the whole result and not
+ * just the page being looked at.
+ */
+export function askable(total: number): boolean {
+  return total > 0 && total <= MAX_POSTINGS;
 }
