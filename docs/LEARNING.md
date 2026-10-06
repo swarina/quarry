@@ -5,6 +5,68 @@ What each session taught, what was surprising, and what is still open. Newest fi
 The entries are deliberately about the things that were not obvious beforehand. Anything that
 went as expected belongs in a commit message, not here.
 
+## 2026-10-06
+
+### The criterion path
+
+**A Cloudflare Worker's entry point is the Web-standard `fetch` handler, which made the
+deployment blocker much smaller than it looked.** The whole request path is a plain
+`(Request) => Response` function, testable in Node with no Cloudflare anything. Only two things
+are genuinely Cloudflare-shaped: the deploy configuration, and the storage bindings, which went
+behind three ports (posting text, the answer cache, the daily budget). That turned "blocked on
+network access to the docs" into "one adapter left to write".
+
+**Putting it in a package rather than an app was the load-bearing choice.** `packages/*/src/**`
+is where Biome forbids `node:*` imports (ADR-0001), and `apps/**` is not. A Worker needs exactly
+that guarantee, so the lint rule enforces portability instead of me remembering it. The Node-only
+adapters sit under `src/node/`, where the rule exempts them by design.
+
+**Asking only what the filters leave is what makes the wedge affordable.** A page of 500 real
+postings is about $0.04 against $3.03 for the whole corpus. That is the difference between a
+feature that needs a confirmation dialogue and one that feels like search. It also matches how
+people actually search: narrow, then ask.
+
+### Surprises
+
+**Two postings with the same text were being asked twice.** The first version queued work per
+posting; a repost with identical content hash therefore paid twice, and the estimate priced it
+twice. ADR-0024 already said a repost is free, so the test was right and the code was wrong.
+Keying the work on text rather than on postings fixed both.
+
+**A refused spend looked like a broken source.** `BUDGET_EXCEEDED` was counted as a consecutive
+posting failure, so five of them made a run report `stoppedBy: "errors"`. That is exactly the
+confusion the stop reason exists to prevent (ADR-0025), and it would have sent a reader hunting
+for a fault that was not there. A refusal is now neither counted nor allowed to trip the failure
+stop. The underlying cause was `stoppedBy` being last-writer-wins across concurrent workers; it
+resolves by precedence now, with the budget winning because it is the constraint a reader can
+act on.
+
+**The ask loop cannot be the budget cap, and saying so in the type was the fix.** It decides how
+many requests to start from an estimate, but learns a request's cost only when it returns. The
+exact cap has to be the client's spend limit, reserved and settled (ADR-0005). A test that
+asserted the loop itself never overshoots was asserting something false; it now pins the real
+bound (the requests in flight) and a separate test drives a real spend limit against a transport
+that would happily charge far more.
+
+**`openPostings` could not serve the criterion path**, because it omits descriptions on purpose
+to keep memory small. Loading all 35,000 descriptions to answer about fifty would have been the
+wrong fix; resolving each id prefix as an indexed range scan on the primary key was the right
+one.
+
+**`pkill -f serve-criteria` killed my own shell**, because the pattern matched the command line
+running it. Worth remembering when backgrounding a dev server by name.
+
+### Open questions
+
+- **Whether a page of results is the unit people want to ask about.** 500 postings and 5 criteria
+  per request are judgements, not measurements, and the first real use should check them.
+- **What the public version looks like.** The path is closed behind a secret, so the feature is
+  not shareable. Opening it needs per-IP quotas, a global cap and a visible cost estimate, and
+  that is a product to design once the cost model has been seen in real use.
+- **Whether the criterion id should include the model.** It does not; the cache key does. That
+  keeps a criterion's identity stable across a model upgrade while correctly invalidating its
+  answers, but it means two different things are called "the criterion" in different places.
+
 ## 2026-10-04
 
 ### Jev and System One models
