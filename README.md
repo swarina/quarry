@@ -21,14 +21,15 @@ with calibrated probabilities instead of generated text.
 - **Respectful sourcing.** Only public job board APIs that employers publish for embedding,
   crawled politely, with the employer's own page as the place to apply.
 
-> **Status:** early development, and **nothing is deployed yet**, so none of this is reachable
-> by a person. In place: the Jev client (model pinning, response validation, spend limits, cost
-> accounting); a daily pipeline that crawls job boards politely, records what every crawl saw,
-> and keeps encrypted snapshots of its store; enrichment, which answers the standard questions
-> about every posting; a static search index carrying those answers; a browser search over it;
-> and the criterion path, which answers questions you write about the postings a search left,
-> behind a per-request and a daily budget, with the box on the site for writing one. Next:
-> deploying it, and measuring how accurate the answers are.
+> **Status:** feature-complete, not yet deployed, so it is not reachable by a person yet. In
+> place: the Jev client (model pinning, response validation, spend limits, cost accounting); a
+> daily pipeline that crawls job boards politely, records what every crawl saw, and keeps
+> encrypted snapshots of its store; enrichment, which answers the standard questions about every
+> posting; a static search index carrying those answers; a browser search over it; and the
+> criterion path, with the box on the site for writing your own question, behind a per-request
+> and a daily budget. What is left is yours: deploying it, which runs on Cloudflare's free tier
+> at no cost beyond the Jev API (see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)), and measuring
+> per-question accuracy against a hand-labelled set.
 
 ## Design
 
@@ -62,6 +63,7 @@ Quarry is being built in four parts:
 | [`seeds`](seeds) | The job boards to crawl, and the list of boards removed at their company's request |
 | [`scripts`](scripts) | Repository tooling |
 | [`docs/adr`](docs/adr) | Architecture decision records: what was decided, what else was on the table, and what it costs |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | How to deploy on Cloudflare's free tier, and what needs your account |
 
 ## Development
 
@@ -101,6 +103,16 @@ Asking spends money, so the page asks for that secret before it will send anythi
 in memory for as long as the tab is open and written nowhere, so a reload asks for it again.
 Each request is capped (`--per-request-usd`, default $0.10) and so is each UTC day
 (`--per-day-usd`, default $2.00).
+
+## Deployment
+
+Search is static files; the criterion path is a Cloudflare Worker with a D1 database behind its
+three ports, served from the same origin so there is no CORS on an endpoint that spends money
+(ADR-0028, ADR-0029). It runs on Cloudflare's **free** plan, which costs nothing and needs no
+card: Workers Free gives 100,000 requests a day, and D1 Free a 500 MB database, which the corpus
+of posting text fits. The only cost is the Jev API when someone asks a genuinely new question,
+and that is capped per request and per day. The runnable steps, and what still needs an account,
+are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). (Cloudflare limits checked 2026-10-06.)
 
 ## Operations
 
