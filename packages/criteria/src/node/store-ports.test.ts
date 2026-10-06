@@ -236,6 +236,7 @@ describe("the whole path against a real store", () => {
     const client = stubClient();
     const handler = createCriteriaHandler({
       secret: SECRET,
+      model: MODEL,
       postings: createStorePostingSource(store),
       cache: createStoreAnswerCache(store, () => T0),
       budget: createStoreBudgetStore(store),
@@ -277,6 +278,7 @@ describe("the whole path against a real store", () => {
     const id = await postingId(ACME_ID, "1");
     const handler = createCriteriaHandler({
       secret: SECRET,
+      model: MODEL,
       postings: createStorePostingSource(store),
       cache: createStoreAnswerCache(store, () => T0),
       budget: createStoreBudgetStore(store),
@@ -304,6 +306,7 @@ describe("the whole path against a real store", () => {
     const id = await postingId(ACME_ID, "1");
     const handler = createCriteriaHandler({
       secret: SECRET,
+      model: MODEL,
       postings: createStorePostingSource(store),
       cache: createStoreAnswerCache(store, () => T0),
       budget: createMemoryBudgetStore(),
@@ -329,6 +332,7 @@ describe("the whole path against a real store", () => {
     const client = stubClient();
     const handler = createCriteriaHandler({
       secret: SECRET,
+      model: MODEL,
       postings: createStorePostingSource(store),
       cache: createStoreAnswerCache(store, () => T0),
       budget: createStoreBudgetStore(store),

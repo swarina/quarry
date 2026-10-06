@@ -35,6 +35,13 @@ export interface CriteriaHandlerOptions {
    * only decides how many requests to start.
    */
   readonly client: (allowanceNanoUsd: number) => JevClient;
+  /**
+   * The model answers are cached under, which is pinned (ADR-0004). Given rather than read off a
+   * client, so estimating does not have to build one: a factory is called with an allowance, and
+   * calling it with nothing just to learn a string would be a trap for whoever makes the factory
+   * do real work.
+   */
+  readonly model: string;
   readonly maxCriteria?: number;
   readonly maxPostings?: number;
   readonly concurrency?: number;
@@ -183,7 +190,7 @@ export function createCriteriaHandler(
         idPrefixes: body.idPrefixes,
         postings: options.postings,
         cache: options.cache,
-        model: options.client(0).model,
+        model: options.model,
       });
       return json({
         criteria: body.criteria.map(describe),

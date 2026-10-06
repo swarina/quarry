@@ -46,6 +46,7 @@ function handlerFor(
 ) {
   return createCriteriaHandler({
     secret: SECRET,
+    model: MODEL,
     postings: createMemoryPostingSource(postings),
     cache: createMemoryAnswerCache(),
     budget: createMemoryBudgetStore(),
@@ -198,6 +199,39 @@ describe("the estimate", () => {
     expect(body.limits.committedTodayNanoUsd).toBe(0);
   });
 
+  it("builds no client at all, since it has nothing to ask", async () => {
+    // The factory takes an allowance. Calling it just to read the model name would mean
+    // estimating depends on a client built with no budget, which is a trap for whoever later
+    // makes the factory do real work.
+    let built = 0;
+    await handlerFor({
+      client: () => {
+        built += 1;
+        return stubClient();
+      },
+    })(ask({ criteria: [CRITERION], postings: ["aaa"] }, { path: "/criteria/estimate" }));
+    expect(built).toBe(0);
+  });
+
+  it("looks in the cache under the model answers are pinned to", async () => {
+    // An estimate that looked under the wrong model would report everything as uncached, and
+    // quote a price for work already paid for.
+    const cache = createMemoryAnswerCache();
+    const shared = { cache, budget: createMemoryBudgetStore() };
+    await handlerFor(shared)(ask({ criteria: [CRITERION], postings: ["aaa"] }));
+    const wrongModel = await handlerFor({ ...shared, model: "jev-9.9.9" })(
+      ask({ criteria: [CRITERION], postings: ["aaa"] }, { path: "/criteria/estimate" }),
+    );
+    const other = (await wrongModel.json()) as { estimate: { cached: number; toAsk: number } };
+    expect(other).toMatchObject({ estimate: { cached: 0, toAsk: 1 } });
+
+    const rightModel = await handlerFor(shared)(
+      ask({ criteria: [CRITERION], postings: ["aaa"] }, { path: "/criteria/estimate" }),
+    );
+    const same = (await rightModel.json()) as { estimate: { cached: number; toAsk: number } };
+    expect(same).toMatchObject({ estimate: { cached: 1, toAsk: 0 } });
+  });
+
   it("asks nothing, so it cannot cost anything", async () => {
     const client = stubClient();
     await handlerFor({ client: () => client })(
@@ -269,6 +303,7 @@ describe("the daily budget", () => {
     // A failure inside the ask loop is counted, not thrown, so this one comes from the source.
     const broken = createCriteriaHandler({
       secret: SECRET,
+      model: MODEL,
       postings: {
         read: () => Promise.reject(new Error("the source fell over")),
       },

@@ -7,7 +7,13 @@ import {
   createStoreBudgetStore,
   createStorePostingSource,
 } from "@quarry/criteria/node";
-import { createJevClient, createRateLimiter, createSpendLimit, formatUsd } from "@quarry/jev";
+import {
+  createJevClient,
+  createRateLimiter,
+  createSpendLimit,
+  formatUsd,
+  JEV_MODEL,
+} from "@quarry/jev";
 import { createJsonlLedger } from "@quarry/jev/node";
 import { openPipelineStore } from "@quarry/storage/node";
 import { positiveNumber, requireOption, writeOut } from "../cli.ts";
@@ -72,6 +78,7 @@ export async function serveCriteriaCommand(args: readonly string[]): Promise<num
 
   const handler = createCriteriaHandler({
     secret,
+    model: JEV_MODEL,
     postings: createStorePostingSource(store),
     cache: createStoreAnswerCache(store),
     budget: createStoreBudgetStore(store),
