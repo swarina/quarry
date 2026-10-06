@@ -96,6 +96,18 @@ importers:
 
   packages/crawl: {}
 
+  packages/criteria:
+    dependencies:
+      '@quarry/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@quarry/facets':
+        specifier: workspace:*
+        version: link:../facets
+      '@quarry/jev':
+        specifier: workspace:*
+        version: link:../jev
+
   packages/domain:
     dependencies:
       entities:
