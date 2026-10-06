@@ -59,6 +59,9 @@ importers:
       '@quarry/search-index':
         specifier: workspace:*
         version: link:../../packages/search-index
+      '@quarry/site':
+        specifier: workspace:*
+        version: link:../site
       '@quarry/storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -81,6 +84,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/search-index
     devDependencies:
+      '@quarry/criteria':
+        specifier: workspace:*
+        version: link:../../packages/criteria
       esbuild:
         specifier: 0.28.2
         version: 0.28.2

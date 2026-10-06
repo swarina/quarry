@@ -1,14 +1,19 @@
 import { DEFAULT_ANSWER_THRESHOLD, type ResultRow, type ShardQuestion } from "@quarry/search-index";
 import { describe, expect, it } from "vitest";
 import { regionOfZone } from "./catalog.ts";
+import { type CriterionDraft, MAX_POSTINGS } from "./criteria.ts";
 import { confidenceBand, where } from "./format.ts";
 import {
   activeFilters,
   answerFilter,
+  askable,
   EMPTY,
   fromUrl,
   PAGE,
+  type SearchState,
   setAnswerFilter,
+  setCriterion,
+  setCriterionFilter,
   toggle,
   toQuery,
   toQueryString,
@@ -40,6 +45,8 @@ describe("a search in the URL", () => {
         // No threshold in the URL means the default, more likely than not.
         { question: "onCall", options: ["no"], atLeast: DEFAULT_ANSWER_THRESHOLD },
       ],
+      criterion: null,
+      criterionFilter: null,
       shown: PAGE,
     });
   });
@@ -279,5 +286,127 @@ describe("confidence bands", () => {
     [0, "unlikely"],
   ])("reads %i%% as %s", (probability, expected) => {
     expect(confidenceBand(probability).id).toBe(expected);
+  });
+});
+
+describe("a criterion in the URL", () => {
+  const YES_NO: CriterionDraft = {
+    kind: "yes-no",
+    question: "Is there an on-call rota?",
+    choices: [],
+  };
+  const CHOICE: CriterionDraft = {
+    kind: "choice",
+    question: "Which language is this mostly in?",
+    choices: ["Go", "Rust", "TypeScript"],
+  };
+
+  function roundTrip(state: SearchState): SearchState {
+    return fromUrl(new URL(`https://quarry.test/${toQueryString(state)}`));
+  }
+
+  it("survives a round trip through the query string", () => {
+    const state = setCriterion(EMPTY, CHOICE);
+    expect(roundTrip(state).criterion).toEqual(CHOICE);
+  });
+
+  it("carries a question whose wording needs escaping", () => {
+    // A question is free text somebody typed, so it arrives with the characters a sentence has.
+    const awkward: CriterionDraft = {
+      kind: "yes-no",
+      question: "Does this role pay in €, & is it 100% remote?",
+      choices: [],
+    };
+    expect(roundTrip(setCriterion(EMPTY, awkward)).criterion).toEqual(awkward);
+  });
+
+  it("survives a round trip with a filter on its answers", () => {
+    const state = setCriterionFilter(setCriterion(EMPTY, CHOICE), ["Go", "Rust"], 70);
+    const read = roundTrip(state);
+    expect(read.criterionFilter).toEqual({ options: ["Go", "Rust"], atLeast: 70 });
+  });
+
+  it("leaves the threshold out of the URL when it is the default", () => {
+    const state = setCriterionFilter(
+      setCriterion(EMPTY, YES_NO),
+      ["yes"],
+      DEFAULT_ANSWER_THRESHOLD,
+    );
+    expect(toQueryString(state)).toContain("cf=yes");
+    expect(toQueryString(state)).not.toContain("%40");
+    expect(roundTrip(state).criterionFilter?.atLeast).toBe(DEFAULT_ANSWER_THRESHOLD);
+  });
+
+  it("is absent from a plain search, so an ordinary URL stays clean", () => {
+    expect(toQueryString(EMPTY)).not.toContain("cq=");
+    expect(toQueryString(EMPTY)).not.toContain("ck=");
+  });
+
+  it("reads a half-written question as no question at all", () => {
+    // A partly read question would be a different question, and a different wording means
+    // something else entirely (ADR-0024). Better none than nearly.
+    const noKind = fromUrl(new URL("https://quarry.test/?cq=Is+this+remote"));
+    expect(noKind.criterion).toBeNull();
+    const noWording = fromUrl(new URL("https://quarry.test/?ck=yes-no"));
+    expect(noWording.criterion).toBeNull();
+    const tooFewOptions = fromUrl(new URL("https://quarry.test/?ck=choice&cq=Which&cc=only"));
+    expect(tooFewOptions.criterion).toBeNull();
+  });
+
+  it("ignores a filter naming options the criterion does not have", () => {
+    const url = new URL("https://quarry.test/?ck=yes-no&cq=On+call&cf=maybe");
+    expect(fromUrl(url).criterionFilter).toBeNull();
+  });
+
+  it("drops a filter whose criterion is not there", () => {
+    expect(fromUrl(new URL("https://quarry.test/?cf=yes@70")).criterionFilter).toBeNull();
+  });
+
+  it("drops a threshold outside the scale", () => {
+    expect(
+      fromUrl(new URL("https://quarry.test/?ck=yes-no&cq=On+call&cf=yes@0")).criterionFilter,
+    ).toBeNull();
+    expect(
+      fromUrl(new URL("https://quarry.test/?ck=yes-no&cq=On+call&cf=yes@101")).criterionFilter,
+    ).toBeNull();
+  });
+
+  it("is not part of the index query, because the index knows nothing of it", () => {
+    const state = setCriterionFilter(setCriterion(EMPTY, YES_NO), ["yes"], 70);
+    expect(Object.keys(toQuery(state, Date.now()))).not.toContain("criterion");
+    expect(toQuery(state, Date.now()).answers).toBeUndefined();
+  });
+
+  it("drops its filter when the wording changes", () => {
+    // The old filter was written against options of a question nobody is asking any more.
+    const filtered = setCriterionFilter(setCriterion(EMPTY, CHOICE), ["Go"], 70);
+    const reworded = setCriterion(filtered, { ...CHOICE, question: "Which language is it in?" });
+    expect(reworded.criterionFilter).toBeNull();
+  });
+
+  it("is one chip that removes the whole question", () => {
+    const state = setCriterionFilter(setCriterion(EMPTY, YES_NO), ["yes"], 70);
+    const chip = activeFilters(state).at(-1);
+    expect(chip?.label).toBe("Is there an on-call rota? Yes (70%+)");
+    expect(chip?.without.criterion).toBeNull();
+    expect(chip?.without.criterionFilter).toBeNull();
+  });
+
+  it("reads as the question alone before anything narrows by it", () => {
+    const chip = activeFilters(setCriterion(EMPTY, YES_NO)).at(-1);
+    expect(chip?.label).toBe("asking: Is there an on-call rota?");
+  });
+});
+
+describe("askable", () => {
+  it("is false above the cap the server refuses at", () => {
+    // The page does not offer what the server would refuse, and below the cap one query returns
+    // every matching row, which is what makes narrowing by an answer exact.
+    expect(askable(MAX_POSTINGS)).toBe(true);
+    expect(askable(MAX_POSTINGS + 1)).toBe(false);
+  });
+
+  it("is false when nothing matches, because there is nothing to ask about", () => {
+    expect(askable(0)).toBe(false);
   });
 });

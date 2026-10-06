@@ -15,6 +15,7 @@ import {
   JEV_MODEL,
 } from "@quarry/jev";
 import { createJsonlLedger } from "@quarry/jev/node";
+import { serveStatic } from "@quarry/site/static";
 import { openPipelineStore } from "@quarry/storage/node";
 import { positiveNumber, requireOption, writeOut } from "../cli.ts";
 import { criteriaSecret, jevKey } from "../config.ts";
@@ -22,6 +23,7 @@ import { createLogger } from "../log.ts";
 
 export const SERVE_CRITERIA_HELP = `  serve-criteria           Serve the criterion path locally, for asking your own questions.
     --store <path>           Store to read postings and keep answers in (required)
+    --site <dir>             Also serve a built site from here, on the same origin
     --port <n>               Port to listen on (default: 8788)
     --per-request-usd <n>    Most one request may spend (default: 0.10)
     --per-day-usd <n>        Most all requests may spend in a UTC day (default: 2.00)
@@ -41,12 +43,17 @@ const CONCURRENCY = 6;
  * the same `(Request) => Response` handler this calls. It exists so the path can be exercised
  * end to end against real postings, which is the only way to find out whether asking your own
  * question is actually pleasant to use.
+ *
+ * With `--site` it also serves the built site, which is how the browser is meant to reach this:
+ * the page and the criterion path on one origin, so there is no CORS policy to get wrong on an
+ * endpoint that spends money, and the page's own `connect-src 'self'` is enough (ADR-0028).
  */
 export async function serveCriteriaCommand(args: readonly string[]): Promise<number> {
   const { values } = parseArgs({
     args: [...args],
     options: {
       store: { type: "string" },
+      site: { type: "string" },
       port: { type: "string" },
       "per-request-usd": { type: "string" },
       "per-day-usd": { type: "string" },
@@ -98,13 +105,24 @@ export async function serveCriteriaCommand(args: readonly string[]): Promise<num
     concurrency: CONCURRENCY,
   });
 
+  const site = values.site;
+
   const server = createServer((incoming, outgoing) => {
     const chunks: Buffer[] = [];
     incoming.on("data", (chunk: Buffer) => chunks.push(chunk));
     incoming.on("end", () => {
       void (async () => {
         const method = incoming.method ?? "GET";
-        const request = new Request(`http://localhost:${port}${incoming.url ?? "/"}`, {
+        const path = incoming.url ?? "/";
+        // The site is served only off the criterion path's own routes, so a file can never
+        // shadow one of them: `/criteria/ask` is answered by the handler whatever is on disk.
+        if (site !== undefined && !path.startsWith("/criteria/")) {
+          if (await serveStatic(site, path, outgoing)) return;
+          outgoing.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+          outgoing.end("Not found\n");
+          return;
+        }
+        const request = new Request(`http://localhost:${port}${path}`, {
           method,
           headers: Object.entries(incoming.headers).flatMap(([name, value]) =>
             value === undefined ? [] : [[name, Array.isArray(value) ? value.join(", ") : value]],
@@ -136,6 +154,7 @@ export async function serveCriteriaCommand(args: readonly string[]): Promise<num
   await new Promise<void>((resolve) => server.listen(port, "127.0.0.1", resolve));
   writeOut(
     `Serving the criterion path on http://127.0.0.1:${port}\n` +
+      (site === undefined ? "" : `  the site from ${site}, on this same origin\n`) +
       `  POST /criteria/estimate   what asking would cost, spending nothing\n` +
       `  POST /criteria/ask        answer, up to ${formatUsd(Math.round(perRequestUsd * 1e9))} per request\n` +
       `  a day's spending is capped at ${formatUsd(Math.round(perDayUsd * 1e9))}\n` +
