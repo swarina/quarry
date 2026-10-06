@@ -25,8 +25,10 @@ with calibrated probabilities instead of generated text.
 > by a person. In place: the Jev client (model pinning, response validation, spend limits, cost
 > accounting); a daily pipeline that crawls job boards politely, records what every crawl saw,
 > and keeps encrypted snapshots of its store; enrichment, which answers the standard questions
-> about every posting; a static search index carrying those answers; and a browser search over
-> it. Next: deploying it, and answering your own questions, which needs the API.
+> about every posting; a static search index carrying those answers; a browser search over it;
+> and the criterion path, which answers questions you write about the postings a search left,
+> behind a per-request and a daily budget. Next: deploying it, and the part of the site that
+> writes a criterion.
 
 ## Design
 
@@ -49,6 +51,7 @@ Quarry is being built in four parts:
 | [`packages/ats`](packages/ats) | Adapters for the Greenhouse, Lever, and Ashby job board APIs, with contract tests against recorded responses |
 | [`apps/site`](apps/site) | The search site: filters the static index in the browser, with no server and no account |
 | [`packages/crawl`](packages/crawl) | A polite HTTP client: robots.txt, per-host pacing, retries, circuit breaking, and conditional requests |
+| [`packages/criteria`](packages/criteria) | Asking your own questions: a criterion and its cache key, the budget it runs under, and the request handler |
 | [`packages/domain`](packages/domain) | Pure logic shared by every runtime: deterministic JSON and hashing, board and posting identity, and posting text |
 | [`packages/facets`](packages/facets) | A posting's standard facets: the ones derived from stated fields, and the reading of stored answers |
 | [`packages/jev`](packages/jev) | The single entry point for Jev: pinned model, validated answers, spend limits, rate limiting, cost ledger, record and replay |

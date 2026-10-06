@@ -153,4 +153,35 @@ export const PIPELINE_MIGRATIONS: readonly Migration[] = [
       ) STRICT, WITHOUT ROWID;
     `,
   },
+  {
+    version: 3,
+    name: "answers to criteria people wrote, and what they cost",
+    sql: `
+      -- Answers to a criterion someone wrote, as opposed to the standard questions. Keyed on
+      -- the criterion (a hash of its exact wording and options), the model, and the content
+      -- hash, so the same question about the same text is answered once for everybody and an
+      -- edited posting is asked again.
+      --
+      -- Separate from posting_answers because the two are keyed differently and mean different
+      -- things: a standard question is reviewed and versioned, a criterion is whatever someone
+      -- typed. Mixing them would make "which questions do we hold answers to" unanswerable.
+      CREATE TABLE criterion_answers (
+        criterion_id TEXT NOT NULL,
+        model        TEXT NOT NULL,
+        content_hash TEXT NOT NULL,
+        answered_at  INTEGER NOT NULL,
+        answer_json  TEXT NOT NULL,
+        PRIMARY KEY (criterion_id, model, content_hash)
+      ) STRICT, WITHOUT ROWID;
+
+      -- What the criterion path has committed per UTC day, so the daily cap survives a restart.
+      -- One row per day, updated in place: the cap is a backstop against this code being wrong,
+      -- so it has to hold across processes rather than only within one.
+      CREATE TABLE criterion_spend (
+        day           TEXT NOT NULL,
+        committed_nano_usd INTEGER NOT NULL,
+        PRIMARY KEY (day)
+      ) STRICT, WITHOUT ROWID;
+    `,
+  },
 ];
