@@ -8,6 +8,7 @@
   "dependencies": {
     "@quarry/ats": "workspace:*",
     "@quarry/crawl": "workspace:*",
+    "@quarry/criteria": "workspace:*",
     "@quarry/domain": "workspace:*",
     "@quarry/facets": "workspace:*",
     "@quarry/jev": "workspace:*",

@@ -96,6 +96,24 @@ export function jevKey(): string {
   return key;
 }
 
+/**
+ * The secret a criterion request must present. Asking spends money, so the path is closed even
+ * though search itself is public static files.
+ */
+export function criteriaSecret(): string {
+  const secret = present("QUARRY_CRITERIA_SECRET");
+  if (secret === undefined) {
+    throw new ConfigError(
+      "Environment:\n- QUARRY_CRITERIA_SECRET must be set to serve the criteria path",
+    );
+  }
+  // Short enough to guess is the same as open, and this guards real spending.
+  if (secret.length < 24) {
+    throw new ConfigError("Environment:\n- QUARRY_CRITERIA_SECRET must be at least 24 characters");
+  }
+  return secret;
+}
+
 /** The snapshot encryption key alone, for packing. */
 export function storeKey(): string {
   const key = present("QUARRY_STORE_KEY");

@@ -153,6 +153,17 @@ export interface OpenPosting {
   readonly answers: Readonly<Record<string, string>>;
 }
 
+/** A posting and the text a criterion is asked about, resolved from an id prefix. */
+export interface PostingTextRow {
+  readonly id: PostingId;
+  readonly contentHash: string;
+  readonly company: string;
+  readonly title: string;
+  readonly locations: readonly string[];
+  /** The description as plain text, which is what a model is given. */
+  readonly description: string;
+}
+
 /** A posting whose current content has no answer to some question, with the text to ask about. */
 export interface UnansweredPosting {
   readonly id: PostingId;
@@ -283,6 +294,40 @@ export interface PipelineStore {
   unansweredCount(wanted: readonly string[]): number;
   saveAnswers(answers: readonly StoredAnswer[]): void;
   recordEnrichment(run: EnrichmentRun): void;
+
+  /**
+   * Postings named by id prefix, with the text a model is asked about.
+   *
+   * One indexed range scan per prefix, because a criterion request asks about a page of results
+   * and holding every description in memory would be both wasteful and unnecessary. A prefix
+   * matching more than one posting resolves to none: answering about the wrong job is worse
+   * than answering about fewer.
+   */
+  postingTexts(idPrefixes: readonly string[]): PostingTextRow[];
+
+  /** Answers held for a criterion someone wrote, for the given contents. */
+  criterionAnswers(
+    criterionId: string,
+    model: string,
+    contentHashes: readonly string[],
+  ): { readonly contentHash: string; readonly answerJson: string }[];
+  saveCriterionAnswers(
+    criterionId: string,
+    model: string,
+    answeredAt: number,
+    answers: readonly { readonly contentHash: string; readonly answerJson: string }[],
+  ): void;
+  /**
+   * Takes up to `wanted` of the day's remaining allowance and returns what it got.
+   *
+   * One statement, so two callers cannot both pass the same check: between a read and a write
+   * other requests are in flight, and the daily cap is the backstop that must not be
+   * oversubscribed.
+   */
+  reserveCriterionSpend(day: string, wanted: number, perDayNanoUsd: number): number;
+  /** Returns part of a reservation that was not spent. */
+  releaseCriterionSpend(day: string, unspent: number): void;
+  committedCriterionSpend(day: string): number;
 }
 
 type Row = Record<string, SQLInputValue>;
@@ -461,6 +506,32 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
          input_tokens = enrichment_runs.input_tokens + excluded.input_tokens,
          output_tokens = enrichment_runs.output_tokens + excluded.output_tokens,
          cost_nano_usd = enrichment_runs.cost_nano_usd + excluded.cost_nano_usd`,
+    ),
+    postingTextsByPrefix: db.prepare(
+      `SELECT p.id, p.content_hash, b.company, c.normalized_json
+         FROM postings p
+         JOIN boards b ON b.id = p.board_id
+         JOIN posting_contents c ON c.posting_id = p.id AND c.content_hash = p.content_hash
+        WHERE b.status = 'active' AND p.id >= ? AND p.id < ?
+        LIMIT 2`,
+    ),
+    criterionAnswers: db.prepare(
+      `SELECT content_hash, answer_json FROM criterion_answers
+         WHERE criterion_id = ? AND model = ?`,
+    ),
+    saveCriterionAnswer: db.prepare(
+      `INSERT INTO criterion_answers (criterion_id, model, content_hash, answered_at, answer_json)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT (criterion_id, model, content_hash) DO UPDATE SET
+         answered_at = excluded.answered_at,
+         answer_json = excluded.answer_json`,
+    ),
+    criterionSpend: db.prepare(
+      "SELECT committed_nano_usd AS committed FROM criterion_spend WHERE day = ?",
+    ),
+    setCriterionSpend: db.prepare(
+      `INSERT INTO criterion_spend (day, committed_nano_usd) VALUES (?, ?)
+       ON CONFLICT (day) DO UPDATE SET committed_nano_usd = excluded.committed_nano_usd`,
     ),
     openPostings: db.prepare(
       `WITH listings AS (
@@ -903,6 +974,82 @@ export function createPipelineStore(db: DatabaseSync): PipelineStore {
         run.outputTokens,
         run.costNanoUsd,
       );
+    },
+
+    postingTexts(idPrefixes) {
+      const found: PostingTextRow[] = [];
+      for (const prefix of new Set(idPrefixes)) {
+        if (prefix === "") continue;
+        // A range on the primary key, so each prefix is an index scan rather than a table scan.
+        // Any id starting with the prefix sorts before the prefix followed by the highest code
+        // point, which makes that an exclusive upper bound.
+        const rows = statements.postingTextsByPrefix.all(prefix, `${prefix}\u{10FFFF}`) as Row[];
+        const only = rows.length === 1 ? rows[0] : undefined;
+        if (only === undefined) continue;
+        const posting = JSON.parse(only["normalized_json"] as string) as NormalizedPosting;
+        found.push({
+          id: only["id"] as PostingId,
+          contentHash: only["content_hash"] as string,
+          company: only["company"] as string,
+          title: posting.title,
+          locations: posting.locations,
+          description: htmlToText(posting.descriptionHtml ?? ""),
+        });
+      }
+      return found;
+    },
+
+    criterionAnswers(criterionId, model, contentHashes) {
+      const wanted = new Set(contentHashes);
+      if (wanted.size === 0) return [];
+      // Filtered here rather than with a bound IN list, which would need a statement per size.
+      return (statements.criterionAnswers.all(criterionId, model) as Row[])
+        .filter((row) => wanted.has(row["content_hash"] as string))
+        .map((row) => ({
+          contentHash: row["content_hash"] as string,
+          answerJson: row["answer_json"] as string,
+        }));
+    },
+
+    saveCriterionAnswers(criterionId, model, answeredAt, answers) {
+      if (answers.length === 0) return;
+      transaction(db, () => {
+        for (const answer of answers) {
+          statements.saveCriterionAnswer.run(
+            criterionId,
+            model,
+            answer.contentHash,
+            answeredAt,
+            answer.answerJson,
+          );
+        }
+      });
+    },
+
+    reserveCriterionSpend(day, wanted, perDayNanoUsd) {
+      // BEGIN IMMEDIATE takes the write lock before the read, so the amount granted is decided
+      // against a total no other writer can be changing, in this process or another.
+      return transaction(db, () => {
+        const row = statements.criterionSpend.get(day) as Row | undefined;
+        const already = (row?.["committed"] as number | undefined) ?? 0;
+        const granted = Math.max(0, Math.min(wanted, perDayNanoUsd - already));
+        if (granted > 0) statements.setCriterionSpend.run(day, already + granted);
+        return granted;
+      });
+    },
+
+    releaseCriterionSpend(day, unspent) {
+      if (unspent <= 0) return;
+      transaction(db, () => {
+        const row = statements.criterionSpend.get(day) as Row | undefined;
+        const already = (row?.["committed"] as number | undefined) ?? 0;
+        statements.setCriterionSpend.run(day, Math.max(0, already - unspent));
+      });
+    },
+
+    committedCriterionSpend(day) {
+      const row = statements.criterionSpend.get(day) as Row | undefined;
+      return (row?.["committed"] as number | undefined) ?? 0;
     },
   };
 }
