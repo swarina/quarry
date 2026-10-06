@@ -3,7 +3,7 @@ import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { POLICY, serveStatic } from "./static.ts";
+import { POLICY, renderHeadersFile, SECURITY_HEADERS, serveStatic } from "./static.ts";
 
 let directory: string;
 let server: Server;
@@ -60,5 +60,26 @@ describe("serving the built site", () => {
 
   it("says plainly when there is no such file", async () => {
     expect((await fetch(`${origin}/nothing-here`)).status).toBe(404);
+  });
+});
+
+describe("the _headers file for a deployment", () => {
+  it("carries the same security headers the dev server sends", () => {
+    // The whole point of one source is that production and development cannot disagree about the
+    // policy that keeps the page same-origin (ADR-0028).
+    const rendered = renderHeadersFile();
+    expect(rendered).toContain("/*");
+    for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+      expect(rendered).toContain(`${name}: ${value}`);
+    }
+    expect(rendered).toContain(`content-security-policy: ${POLICY}`);
+  });
+
+  it("marks the content-addressed index files immutable, and nothing else", () => {
+    const rendered = renderHeadersFile();
+    expect(rendered).toContain("/index/*/shards/*");
+    expect(rendered).toMatch(/max-age=31536000, immutable/);
+    // The manifest names the build, so it must stay revalidated; it gets no immutable rule.
+    expect(rendered).not.toContain("/index/manifest.json");
   });
 });

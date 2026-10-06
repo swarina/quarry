@@ -5,6 +5,42 @@ What each session taught, what was surprising, and what is still open. Newest fi
 The entries are deliberately about the things that were not obvious beforehand. Anything that
 went as expected belongs in a commit message, not here.
 
+## 2026-10-06 (later still)
+
+### Reading the deployment constraints rather than assuming them
+
+With the Cloudflare docs finally reachable, the limits that actually shape the Worker turned out
+to be ones memory would have got wrong. Two decide the posting-text adapter:
+
+- **The 100-bound-parameter limit per query**, and
+- **the 50-subrequest limit per Worker invocation on the Free plan**, where the per-statement
+  limits apply to **each statement inside a `db.batch()`**, not the batch as a whole.
+
+The obvious adapter, one id-prefix range scan per posting, is up to 500 statements for a full
+page. That is fine on `node:sqlite` and fine on Workers Paid (1000), but it blows the Free plan's
+50-subrequest limit. So the adapter has to resolve prefixes in chunked `substr(id, 1, n) IN (...)`
+queries of at most 100 parameters, about five statements for 500 postings. The nice outcome is
+that writing to the tightest limit makes the code identical on both plans; only the data ceiling
+(500 MB Free) differs, and that is an ops and cost decision, not a code fork. This is exactly the
+class of thing the "do not guess API shapes or limits" rule exists for: the design that memory
+suggests is the one that fails silently on the plan a first deploy is most likely to use.
+
+### The policy had to become a file, not just code
+
+ADR-0028's security headers lived in the dev server as code. A Workers static-assets deployment
+serves files, not code, for the static paths, so the policy has to exist as a `_headers` file too.
+Rather than write it twice, the build now renders it from the same `SECURITY_HEADERS` the dev
+server uses, which keeps the anti-drift reasoning intact across the dev/prod boundary. The file is
+inert anywhere that does not read it, so it costs nothing to emit unconditionally.
+
+### Open questions
+
+- **Whether the full corpus fits Free.** 35,000 postings with descriptions against 500 MB is
+  close enough that it needs measuring, not guessing, before deciding the plan.
+- **Whether the SDK runs under workerd.** The client is portable by construction, but "imports no
+  node built-ins" is not the same as "runs on the edge runtime"; the first `wrangler dev` against
+  the ask route is what will actually say.
+
 ## 2026-10-06 (later)
 
 ### Putting the question box on the site
