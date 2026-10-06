@@ -7,11 +7,13 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./node": "./src/node/index.ts"
   },
   "dependencies": {
     "@quarry/domain": "workspace:*",
     "@quarry/facets": "workspace:*",
-    "@quarry/jev": "workspace:*"
+    "@quarry/jev": "workspace:*",
+    "@quarry/storage": "workspace:*"
   }
 }

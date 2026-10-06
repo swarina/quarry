@@ -4,6 +4,7 @@ import { CRAWL_HELP, crawlCommand } from "./commands/crawl.ts";
 import { ENRICH_HELP, enrichCommand } from "./commands/enrich.ts";
 import { SAMPLE_ANSWERS_HELP, sampleAnswersCommand } from "./commands/sample-answers.ts";
 import { INDEX_HELP, indexCommand } from "./commands/search-index.ts";
+import { SERVE_CRITERIA_HELP, serveCriteriaCommand } from "./commands/serve-criteria.ts";
 import { STORE_HELP, storeCommand } from "./commands/store.ts";
 import { ConfigError } from "./config.ts";
 import { SeedsError } from "./seeds.ts";
@@ -11,7 +12,7 @@ import { SeedsError } from "./seeds.ts";
 const HELP = `Usage: pipeline <command> [options]
 
 Commands:
-${CRAWL_HELP}${ENRICH_HELP}${INDEX_HELP}${SAMPLE_ANSWERS_HELP}${STORE_HELP}  help                     Show this help.
+${CRAWL_HELP}${ENRICH_HELP}${INDEX_HELP}${SAMPLE_ANSWERS_HELP}${SERVE_CRITERIA_HELP}${STORE_HELP}  help                     Show this help.
 `;
 
 /** Runs one command and returns the process exit code: 0 success, 1 failure, 2 bad usage. */
@@ -27,6 +28,8 @@ export async function main(argv: readonly string[]): Promise<number> {
         return await indexCommand(args);
       case "sample-answers":
         return await sampleAnswersCommand(args);
+      case "serve-criteria":
+        return await serveCriteriaCommand(args);
       case "store":
         return await storeCommand(args);
       case "help":

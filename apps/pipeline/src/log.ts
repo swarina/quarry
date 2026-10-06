@@ -34,6 +34,13 @@ export interface LogFields {
   readonly failed?: number;
   readonly cost_usd?: string;
   readonly stopped_by?: string;
+  /**
+   * The criterion path. Deliberately the shape of a request and not its content: a criterion is
+   * text someone wrote and a posting id names a job, so neither belongs in a log line.
+   */
+  readonly method?: string;
+  readonly path?: string;
+  readonly status?: number;
 }
 
 export type Logger = Record<LogLevel, (message: string, fields?: LogFields) => void>;

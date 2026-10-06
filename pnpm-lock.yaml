@@ -41,6 +41,9 @@ importers:
       '@quarry/crawl':
         specifier: workspace:*
         version: link:../../packages/crawl
+      '@quarry/criteria':
+        specifier: workspace:*
+        version: link:../../packages/criteria
       '@quarry/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -107,6 +110,9 @@ importers:
       '@quarry/jev':
         specifier: workspace:*
         version: link:../jev
+      '@quarry/storage':
+        specifier: workspace:*
+        version: link:../storage
 
   packages/domain:
     dependencies:
