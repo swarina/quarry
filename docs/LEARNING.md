@@ -5,6 +5,56 @@ What each session taught, what was surprising, and what is still open. Newest fi
 The entries are deliberately about the things that were not obvious beforehand. Anything that
 went as expected belongs in a commit message, not here.
 
+## 2026-10-06 (later)
+
+### Putting the question box on the site
+
+**The content security policy had already made the decision.** The site has sent
+`connect-src 'self'` since it was built, which means the page can call back to the host it came
+from and nowhere else. So "same origin or a CORS policy?" was not really open: a cross-origin
+criterion path could not have been reached from the page without weakening a header that is
+correct. The choice had been made months earlier by someone writing a sensible default, and the
+work was to notice rather than to decide (ADR-0028).
+
+**Not importing the package was the load-bearing choice again.** The obvious move is for the site
+to import `@quarry/criteria` for its types. That package reaches `@quarry/jev` and through it the
+SDK, and the site pays for every byte. So the wire shapes are declared a second time in
+`criteria.ts`, which is a real cost: two declarations can drift, and the drift would appear as
+somebody's first click failing. The test file closes it by driving the page's own requests into a
+real handler, which is a better guard than the import would have been, because it checks the
+behaviour rather than the shape. The same reasoning produced INDEX_FORMAT 4 carrying its own
+questions; it is becoming the house pattern for anything the browser needs to know about the
+model layer.
+
+**The posting cap turned out to do two jobs.** It exists because the server refuses more than 500
+(ADR-0027). It also happens to be what makes narrowing by a criterion answer exact: below the cap
+one query returns every matching row, so filtering those rows is filtering the whole result and
+not just the page on screen. Above it the feature would have had to either lie about its counts
+or paginate answers it does not hold. The constraint that looked like a limitation is what made
+the filter honest.
+
+### Surprises
+
+**A criterion answer should be shown even when the model is unsure, unlike a standard one.** The
+site hides a standard answer whose own best guess lands in the "unlikely" band, because a spread
+distribution is not a fact about the job and there are three other questions speaking. For a
+question somebody just typed and paid for, silence reads as "not asked" when the truth is "the
+model does not know", and those are the two things the whole design keeps apart. So the tag stays
+and says "unsure" instead.
+
+**`pkill -f` caught my own shell for the second time in two sessions.** Same pattern, same exit
+144, same cause: the pattern matches the command line running it. Killing by pid from `pgrep`
+does not help either, because the substitution is still in the shell's own command line. The
+lesson that actually works is to match on something only the server has, like its arguments.
+
+### Open questions
+
+- **Whether the question box belongs beside the filters at all.** It sits above the results as
+  another control, which makes it look like a filter, and it is the only thing on the page that
+  spends money. Nobody has used it yet.
+- **Whether a reload losing the answers is annoying in practice.** It is cheap to recover, since
+  the server caches on the wording, but cheap is not the same as unnoticed.
+
 ## 2026-10-06
 
 ### The criterion path

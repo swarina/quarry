@@ -27,8 +27,8 @@ with calibrated probabilities instead of generated text.
 > and keeps encrypted snapshots of its store; enrichment, which answers the standard questions
 > about every posting; a static search index carrying those answers; a browser search over it;
 > and the criterion path, which answers questions you write about the postings a search left,
-> behind a per-request and a daily budget. Next: deploying it, and the part of the site that
-> writes a criterion.
+> behind a per-request and a daily budget, with the box on the site for writing one. Next:
+> deploying it, and measuring how accurate the answers are.
 
 ## Design
 
@@ -80,6 +80,27 @@ pnpm pipeline crawl --store data/pipeline.sqlite --max-boards 5
 
 Run it again and unchanged boards answer `304 Not Modified`, so a repeat crawl costs almost
 nothing.
+
+To run the site, build it and serve it:
+
+```sh
+pnpm --filter @quarry/site build --index <dir>
+pnpm --filter @quarry/site serve
+```
+
+That serves search alone, which needs no credentials and spends nothing. To also ask your own
+questions, serve the same directory beside the criterion path instead, which puts both on one
+origin (ADR-0028):
+
+```sh
+QUARRY_CRITERIA_SECRET=$(openssl rand -base64 24) TYPESAFE_API_KEY=... \
+  pnpm pipeline serve-criteria --store data/pipeline.sqlite --site apps/site/dist
+```
+
+Asking spends money, so the page asks for that secret before it will send anything. It is kept
+in memory for as long as the tab is open and written nowhere, so a reload asks for it again.
+Each request is capped (`--per-request-usd`, default $0.10) and so is each UTC day
+(`--per-day-usd`, default $2.00).
 
 ## Operations
 

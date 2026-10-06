@@ -5,6 +5,9 @@
   "description": "The search site: filters the static index in the browser, with no server and no account.",
   "license": "MIT",
   "type": "module",
+  "exports": {
+    "./static": "./scripts/static.ts"
+  },
   "scripts": {
     "build": "node scripts/build.ts",
     "serve": "node scripts/serve.ts"
@@ -15,6 +18,7 @@
     "@quarry/search-index": "workspace:*"
   },
   "devDependencies": {
+    "@quarry/criteria": "workspace:*",
     "esbuild": "0.28.2"
   }
 }

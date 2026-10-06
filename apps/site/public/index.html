@@ -40,6 +40,59 @@
       </form>
     </search>
 
+    <section id="ask" aria-labelledby="ask-heading">
+      <h2 id="ask-heading">Ask your own question</h2>
+      <p class="ask-intro">
+        Ask anything of the postings this search leaves, and a model answers each one. Answers
+        are held for this page only; the question stays in the link.
+      </p>
+
+      <p class="field grow">
+        <label for="criterion-question">Your question</label>
+        <textarea
+          id="criterion-question"
+          rows="2"
+          autocomplete="off"
+          placeholder="Does this role involve being on call outside working hours?"
+        ></textarea>
+      </p>
+
+      <p class="field">
+        <label for="criterion-kind">Answer shape</label>
+        <select id="criterion-kind">
+          <option value="yes-no">Yes or no</option>
+          <option value="choice">Pick one of</option>
+          <option value="scale">A scale from</option>
+        </select>
+      </p>
+
+      <div id="criterion-choices"></div>
+
+      <p class="ask-actions">
+        <button type="button" id="criterion-ask">Ask</button>
+        <button type="button" id="criterion-clear" class="link">Clear the question</button>
+        <button type="button" id="criterion-lock" class="link" hidden>Forget the secret</button>
+      </p>
+
+      <form id="unlock" class="unlock" aria-label="Unlock asking">
+        <p class="field grow">
+          <label for="criterion-secret">Shared secret</label>
+          <input
+            id="criterion-secret"
+            type="password"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Needed only to ask; kept in memory, never stored"
+          />
+        </p>
+        <p class="ask-actions">
+          <button type="submit" id="criterion-unlock">Unlock</button>
+        </p>
+      </form>
+
+      <div id="ask-status" role="status"></div>
+    </section>
+
     <p id="stale" class="stale" role="status"></p>
     <div id="active"></div>
 
