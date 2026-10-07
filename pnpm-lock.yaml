@@ -91,6 +91,15 @@ importers:
         specifier: 0.28.2
         version: 0.28.2
 
+  apps/worker:
+    dependencies:
+      '@quarry/criteria':
+        specifier: workspace:*
+        version: link:../../packages/criteria
+      '@quarry/jev':
+        specifier: workspace:*
+        version: link:../../packages/jev
+
   packages/ats:
     dependencies:
       '@quarry/domain':
