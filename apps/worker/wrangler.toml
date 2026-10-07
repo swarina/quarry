@@ -1,0 +1,37 @@
+# Cloudflare Worker for Quarry: serves the static site and the criterion path from one origin
+# (ADR-0028, ADR-0029). Runs on the free plan (Workers Free + D1 Free); the only cost is the Jev
+# API, capped per request and per day.
+#
+# Before the first deploy:
+#   1. Create the database:  npx wrangler d1 create quarry-criteria
+#   2. Paste the database_id it prints into `database_id` below.
+#   3. Build the site:       pnpm --filter @quarry/site build --index <index dir>
+#   4. Load posting text:    npx wrangler d1 execute quarry-criteria --remote --file=../../data/criterion-postings.sql
+#   5. Set the secrets:      npx wrangler secret put QUARRY_CRITERIA_SECRET
+#                            npx wrangler secret put TYPESAFE_API_KEY
+#   6. Deploy:               npx wrangler deploy        (run from this directory)
+
+name = "quarry-criteria"
+main = "src/index.ts"
+compatibility_date = "2026-10-07"
+# The Jev client runs on the global fetch, but the TypeSafe SDK may reach for a Node built-in;
+# this flag gives workerd the Node compatibility shims so the import resolves at the edge.
+compatibility_flags = ["nodejs_compat"]
+
+# The built site. Only /criteria/ask and /criteria/estimate run the Worker; every other path is
+# served as a static file, with the security headers from the site's own _headers file.
+[assets]
+directory = "../site/dist"
+binding = "ASSETS"
+run_worker_first = ["/criteria/ask", "/criteria/estimate"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "quarry-criteria"
+database_id = "REPLACE_WITH_YOUR_DATABASE_ID"
+
+# Non-secret spend caps, in nano-dollars. The secrets (QUARRY_CRITERIA_SECRET, TYPESAFE_API_KEY)
+# are set with `wrangler secret put`, never written here.
+[vars]
+QUARRY_CRITERIA_PER_REQUEST_NANO_USD = "100000000"
+QUARRY_CRITERIA_PER_DAY_NANO_USD = "2000000000"
