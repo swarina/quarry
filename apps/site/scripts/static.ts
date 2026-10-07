@@ -58,11 +58,14 @@ export const SECURITY_HEADERS: Readonly<Record<string, string>> = {
 export function renderHeadersFile(): string {
   const block = (pattern: string, headers: Record<string, string>): string =>
     [pattern, ...Object.entries(headers).map(([name, value]) => `  ${name}: ${value}`)].join("\n");
+  const immutable = { "cache-control": "public, max-age=31536000, immutable" };
   return `${[
     block("/*", SECURITY_HEADERS),
-    // Shards and links are named by the build hash, so they never change under a given name.
-    block("/index/*/shards/*", { "cache-control": "public, max-age=31536000, immutable" }),
-    block("/index/*/links/*", { "cache-control": "public, max-age=31536000, immutable" }),
+    // Shards and links are named by the build hash, so they never change under a given name. A
+    // `_headers` rule allows only one `*`, so the build segment is a named placeholder, not a
+    // second wildcard (which Cloudflare rejects).
+    block("/index/:build/shards/*", immutable),
+    block("/index/:build/links/*", immutable),
   ].join("\n\n")}\n`;
 }
 

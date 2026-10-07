@@ -77,9 +77,17 @@ describe("the _headers file for a deployment", () => {
 
   it("marks the content-addressed index files immutable, and nothing else", () => {
     const rendered = renderHeadersFile();
-    expect(rendered).toContain("/index/*/shards/*");
+    expect(rendered).toContain("/index/:build/shards/*");
     expect(rendered).toMatch(/max-age=31536000, immutable/);
     // The manifest names the build, so it must stay revalidated; it gets no immutable rule.
     expect(rendered).not.toContain("/index/manifest.json");
+  });
+
+  it("uses at most one wildcard per rule, which is all Cloudflare _headers allows", () => {
+    // wrangler rejects a rule with two `*` and skips it, so a two-wildcard cache rule would
+    // silently not apply. The build segment is a named placeholder instead.
+    for (const line of renderHeadersFile().split("\n")) {
+      if (line.startsWith("/")) expect((line.match(/\*/g) ?? []).length).toBeLessThanOrEqual(1);
+    }
   });
 });
