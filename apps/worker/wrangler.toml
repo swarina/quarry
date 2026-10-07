@@ -28,7 +28,7 @@ run_worker_first = ["/criteria/ask", "/criteria/estimate"]
 [[d1_databases]]
 binding = "DB"
 database_name = "quarry-criteria"
-database_id = "REPLACE_WITH_YOUR_DATABASE_ID"
+database_id = "7135776e-9d40-4d67-b473-ba980d0b45a0"
 
 # Non-secret spend caps, in nano-dollars. The secrets (QUARRY_CRITERIA_SECRET, TYPESAFE_API_KEY)
 # are set with `wrangler secret put`, never written here.
