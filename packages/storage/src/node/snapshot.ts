@@ -1,8 +1,8 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
-import { mkdtemp, open, rename, rm, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, open, rename, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { pipeline } from "node:stream/promises";
 import { constants, createBrotliCompress, createBrotliDecompress } from "node:zlib";
@@ -206,6 +206,9 @@ export async function unpackSnapshot(
   const decipher = createDecipheriv("aes-256-gcm", key, header.subarray(MAGIC.length + 1));
   decipher.setAAD(header);
   decipher.setAuthTag(tag);
+  // Create the destination's directory if it is not there, so restoring to a fresh path like
+  // `data/pipeline.sqlite` works without the caller making `data/` first.
+  await mkdir(dirname(destination), { recursive: true });
   const partial = `${destination}.${randomBytes(6).toString("hex")}.partial`;
   try {
     await pipeline(

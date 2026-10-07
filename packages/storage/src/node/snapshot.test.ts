@@ -69,6 +69,15 @@ describe("packSnapshot and unpackSnapshot", () => {
     expect((await pack("gh-2-1")).manifest.seq).toBe(2);
   });
 
+  it("creates the destination directory if it does not exist", async () => {
+    // Restoring to a fresh path like data/pipeline.sqlite should not need the caller to make the
+    // directory first.
+    const { manifest, snapshotPath } = await pack();
+    const nested = join(dir, "does", "not", "exist", "restored.sqlite");
+    await unpackSnapshot(snapshotPath, manifest, KEY, nested);
+    expect((await stat(nested)).isFile()).toBe(true);
+  });
+
   it("writes only the encrypted snapshot and its manifest to the output directory", async () => {
     const out = join(dir, "out");
     const { mkdir, readdir } = await import("node:fs/promises");
