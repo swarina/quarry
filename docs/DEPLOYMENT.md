@@ -36,22 +36,35 @@ npx wrangler d1 create quarry-criteria
 Paste the `database_id` it prints into `apps/worker/wrangler.toml`, replacing
 `REPLACE_WITH_YOUR_DATABASE_ID`.
 
-## 2. Create the tables and load the posting text
+## 2. Get posting data, and build the index and the dump
 
-The posting text lives in the private pipeline store. Restore it if you do not have it locally
-(needs `QUARRY_STORE_KEY` and a token that can read the repo):
+The posting text lives in the private pipeline store. Restore the production snapshot if you have
+the key (`QUARRY_STORE_KEY`, 32 bytes base64, and a token that can read the repo); each environment
+variable and the command go on one line:
 
 ```sh
-GH_TOKEN=$(gh auth token) GITHUB_REPOSITORY=swarina/quarry QUARRY_STORE_KEY=... \
-  pnpm pipeline store pull --store data/pipeline.sqlite
+GH_TOKEN=$(gh auth token) GITHUB_REPOSITORY=swarina/quarry QUARRY_STORE_KEY='your-base64-key==' pnpm pipeline store pull --store data/pipeline.sqlite
 ```
 
-Dump the columns the Worker reads (id, content hash, title, company, locations, and the
-description as plain text) to SQL, create the tables, then load the dump:
+No key, or you have never run the daily pipeline? Crawl a fresh store instead; crawling needs no
+key and no secret:
 
 ```sh
-pnpm pipeline export-criterion-data --store data/pipeline.sqlite --out data/criterion-postings.sql
+pnpm pipeline crawl --store data/pipeline.sqlite --max-boards 20
+```
 
+Either way, your local checkout must be at least as new as the store's schema, so pull `main`
+first if the store was made by the deployed pipeline (`git pull origin main && pnpm install`).
+Then build the browser index and the D1 dump from the store:
+
+```sh
+pnpm pipeline index --store data/pipeline.sqlite --out data/index
+pnpm pipeline export-criterion-data --store data/pipeline.sqlite --out data/criterion-postings.sql
+```
+
+Create the tables and load the dump into D1:
+
+```sh
 cd apps/worker
 npx wrangler d1 execute quarry-criteria --remote --file=schema.sql
 npx wrangler d1 execute quarry-criteria --remote --file=../../data/criterion-postings.sql
@@ -64,8 +77,9 @@ the daily budget are written at runtime and need no loading.
 ## 3. Build the site, set the secrets, and deploy
 
 ```sh
-# From the repo root: build the site the Worker serves (emits dist/ and dist/_headers).
-pnpm --filter @quarry/site build --index <index dir>
+# From the repo root: build the site the Worker serves (emits dist/ and dist/_headers). The
+# --index path is resolved from where you run this, so data/index (built in step 2) is correct.
+pnpm --filter @quarry/site build --index data/index
 
 cd apps/worker
 npx wrangler secret put QUARRY_CRITERIA_SECRET   # any string of at least 24 characters, you pick it
