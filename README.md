@@ -44,13 +44,22 @@ Quarry is being built in four parts:
    question pays nothing.
 4. Search runs in your browser over a static index. Only genuinely new questions reach the API.
 
+In deployment, the static site and the custom-question path are one Cloudflare Worker served from
+a single origin, with a D1 database behind the path (posting text, the answer cache, and the daily
+budget). Search needs no server; only the custom-question path touches D1, and only it spends. The
+shape and the limits that drove it are in
+[ADR-0028](docs/adr/0028-the-secret-in-memory-and-one-origin.md) and
+[ADR-0029](docs/adr/0029-deploying-on-cloudflare-workers-with-d1.md); the steps are in
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ## Repository
 
 | Path | Contents |
 | --- | --- |
-| [`apps/pipeline`](apps/pipeline) | The pipeline command line: crawls job boards, enriches postings, builds the search index, and reports on each run |
+| [`apps/pipeline`](apps/pipeline) | The pipeline command line: crawls job boards, enriches postings, builds the search index, exports the deployment's posting data, and reports on each run |
 | [`packages/ats`](packages/ats) | Adapters for the Greenhouse, Lever, and Ashby job board APIs, with contract tests against recorded responses |
 | [`apps/site`](apps/site) | The search site: filters the static index in the browser, with no server and no account |
+| [`apps/worker`](apps/worker) | The Cloudflare Worker: serves the static site and runs the custom-question path over D1, from one origin |
 | [`packages/crawl`](packages/crawl) | A polite HTTP client: robots.txt, per-host pacing, retries, circuit breaking, and conditional requests |
 | [`packages/criteria`](packages/criteria) | Asking your own questions: a criterion and its cache key, the budget it runs under, and the request handler |
 | [`packages/domain`](packages/domain) | Pure logic shared by every runtime: deterministic JSON and hashing, board and posting identity, and posting text |
