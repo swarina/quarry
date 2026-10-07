@@ -77,7 +77,15 @@ question, not a shape question.
   generalizes, but the handler's own `MAX_POSTINGS` would be the thing to raise first.
 - Search stays free to serve and needs no D1 at all: it is static files, and only the criterion
   path touches the database. A D1 outage degrades asking, not searching.
-- Nothing here is exercised until it runs against a real D1. The handler, the ports' Node
-  implementations, and the static server are all tested; the D1 adapter and the `wrangler` config
-  are the parts that can only be proven against the platform, so they ship with that caveat and
-  are verified on first deploy. `docs/DEPLOYMENT.md` carries the steps.
+- The Worker lives in `apps/worker`: the entry, the D1 adapter for the three ports, the
+  `wrangler.toml`, and the table schema. The adapter is tested in the repo against `node:sqlite`
+  through a shim of the D1 API, and the whole Worker is verified under `wrangler dev` against a
+  local D1 (the page serves with its policy, the estimate route resolves postings from D1 and
+  prices them). Loading the Worker under `workerd` also showed the `@quarry/jev` import graph,
+  the TypeSafe SDK included, resolves at the edge. The one thing a deploy proves for the first
+  time is the ask route's real model call, which needs a funded key. `docs/DEPLOYMENT.md` carries
+  the steps, and `pipeline export-criterion-data` writes the posting text into D1-loadable SQL.
+- `wrangler dev` caught a real bug in the first `_headers`: a Cloudflare `_headers` rule allows
+  only one `*`, so the two-wildcard cache rules (`/index/*/shards/*`) were silently skipped. The
+  build now writes them with the build segment as a named placeholder (`/index/:build/shards/*`),
+  which is the one-wildcard form, so the immutable caching actually applies.

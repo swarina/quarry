@@ -5,6 +5,45 @@ What each session taught, what was surprising, and what is still open. Newest fi
 The entries are deliberately about the things that were not obvious beforehand. Anything that
 went as expected belongs in a commit message, not here.
 
+## 2026-10-07
+
+### Building the Worker, and what running it caught
+
+The Worker went from specified to built and run under `wrangler dev` against a local D1. Three
+things were worth the effort of verifying rather than reasoning about:
+
+**The full product deploys for $0.** The earlier worry that the corpus needs a paid D1 was
+over-cautious: Workers Free (100,000 requests/day, no card) and D1 Free (500 MB, which ~35,000
+postings of description text fit at ~100 to 150 MB) are enough. The only cost is the capped Jev
+API. Verified against the pricing docs, not assumed.
+
+**`wrangler dev` found a bug a unit test would not have.** The `_headers` file I shipped used
+`/index/*/shards/*`, and Cloudflare allows only one `*` per rule, so wrangler parsed one rule and
+silently skipped two. The immutable caching simply would not have applied in production, and
+nothing local would have said so until a real `_headers` parser saw it. The fix is a named
+placeholder for the build segment (`/index/:build/shards/*`), and the test now asserts no rule
+has more than one wildcard.
+
+**Loading under `workerd` is the real SDK-compatibility test.** "The client imports no node
+built-ins" was necessary but not sufficient; the proof is that the module graph, the TypeSafe SDK
+included, loads on the edge runtime. It did: the estimate route (which builds no client) answered,
+which means the whole import graph resolved. The ask route's actual model call still waits on a
+funded key, but the import risk is cleared.
+
+### Surprises
+
+**The D1 batch is the transaction, and that is what makes the budget reserve atomic.** D1 has no
+`BEGIN IMMEDIATE` to call, but `db.batch([...])` runs its statements as one serialized
+transaction. So the reserve reads the committed total, applies the capped increment, and reads it
+back in a single batch, and the grant is the difference. A test drives twenty concurrent
+reservations against a shim that serializes batches the way D1 does, and their grants sum to
+exactly the cap, never more.
+
+**The repo's `minimumReleaseAge` blocked pinning wrangler.** `pnpm` refused `wrangler@4.148.0`
+because it was 20 hours old against a 3-day minimum. Rather than pin an older version, the Worker
+carries no `wrangler` dependency at all: it is run with `npx wrangler`, which is what a deployer
+uses anyway, and keeps the package to its two workspace dependencies.
+
 ## 2026-10-06 (later still)
 
 ### Reading the deployment constraints rather than assuming them

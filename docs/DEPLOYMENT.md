@@ -2,98 +2,97 @@
 
 Search is static files and runs anywhere. The criterion path (asking your own questions) is a
 Cloudflare Worker with a D1 database behind its three ports, served from the same origin as the
-site so there is no CORS on an endpoint that spends money (ADR-0028). The design and the current
-Cloudflare limits that shape it are in [ADR-0029](adr/0029-deploying-on-cloudflare-workers-with-d1.md).
+site so there is no CORS on an endpoint that spends money (ADR-0028). The design and the Cloudflare
+limits that shape it are in [ADR-0029](adr/0029-deploying-on-cloudflare-workers-with-d1.md).
 
-This file is the runnable steps. It assumes a Cloudflare account and the `wrangler` CLI
-(`pnpm dlx wrangler` works without installing it). Everything here needs your account and, for
-the full corpus, a paid plan, so it is not something CI or a cloud session can do for you.
+It runs on Cloudflare's **free** plan, which needs no credit card: Workers Free (100,000
+requests/day) and D1 Free (a 500 MB database, which the corpus of posting text fits). The only
+cost is the Jev API when someone asks a genuinely new question, capped per request and per day.
+
+The steps below need your Cloudflare account, your Jev key, and your store-encryption key, so they
+are not something CI or a cloud session can do for you. They use `npx wrangler`, which needs only
+Node (no global install). The repo's build and data commands need pnpm (`corepack enable`, then
+`pnpm install` once in your clone).
 
 ## What is already in place
 
-- The request handler is a plain `(Request) => Response` (`@quarry/criteria`), with everything
-  environment-shaped behind three ports: `PostingSource`, `AnswerCache`, `BudgetStore`.
-- Those ports have Node implementations (`@quarry/criteria/node`) used by `pipeline serve-criteria`,
-  which runs the exact production request shape locally against a real store.
-- The built site emits a `_headers` file carrying the security policy (ADR-0028), which a Workers
-  static-assets deployment applies to every page and asset.
+- The Worker lives in [`apps/worker`](../apps/worker): `src/index.ts` (the entry), `src/d1.ts`
+  (the D1 adapter for all three ports), `wrangler.toml`, and `schema.sql`. It is verified under
+  `wrangler dev` against a local D1; the only part a deploy proves for the first time is the ask
+  route's real model call, which needs your key.
+- The request handler and the three ports (`PostingSource`, `AnswerCache`, `BudgetStore`) are the
+  same ones `pipeline serve-criteria` runs locally, with Node implementations tested in the repo.
+- The built site emits a `_headers` file carrying the security policy (ADR-0028), which the
+  deployment applies to every page and asset.
 
-## What is left to do, and who does it
-
-1. **A Worker** that wires the handler to D1 and serves the static site. Specified in ADR-0029;
-   not yet written, because it can only be proven against a real D1. See "The Worker" below.
-2. **A D1 database**, created in your account, loaded with the store's posting text.
-3. **Deploy**, with the two secrets set.
-
-## 1. Decide the plan tier
-
-The whole corpus is about 35,000 postings with descriptions. The Free plan's D1 database limit is
-500 MB (checked 2026-10-06); the full corpus with descriptions may not fit, so the full product
-likely wants **Workers Paid** (10 GB). A **slice** of the corpus fits Free comfortably and is the
-way to try the path end to end before paying. The Worker code is identical either way (ADR-0029);
-only how much data you load differs.
-
-## 2. Create the D1 database
+## 1. Create the D1 database
 
 ```sh
-pnpm dlx wrangler d1 create quarry-criteria
+cd apps/worker
+npx wrangler login                    # authorizes wrangler against your Cloudflare account
+npx wrangler d1 create quarry-criteria
 ```
 
-Copy the `database_id` it prints into the Worker's `wrangler.toml` (see below).
+Paste the `database_id` it prints into `apps/worker/wrangler.toml`, replacing
+`REPLACE_WITH_YOUR_DATABASE_ID`.
 
-## 3. Load the posting text into D1
+## 2. Create the tables and load the posting text
 
-The posting text lives in the private pipeline store (`node:sqlite`). The Worker reads three
-things from D1: posting text (by id prefix), the criterion answer cache, and the daily budget
-counter. Only the posting text needs loading; the other two are written at runtime.
-
-Export the columns the `PostingSource` needs (`id`, `content_hash`, `company`, and the normalized
-JSON carrying title, description, and locations) from a restored store, as SQL, then apply it:
+The posting text lives in the private pipeline store. Restore it if you do not have it locally
+(needs `QUARRY_STORE_KEY` and a token that can read the repo):
 
 ```sh
-# Restore a store first if you do not have one locally (needs QUARRY_STORE_KEY and a read token):
-#   GH_TOKEN=$(gh auth token) GITHUB_REPOSITORY=swarina/quarry QUARRY_STORE_KEY=... \
-#     pnpm pipeline store pull --store data/pipeline.sqlite
-
-# Then dump the posting-text rows to SQL and load them into D1. The exact dump command ships
-# with the Worker (step 4); conceptually it writes a criterion_postings table and INSERTs.
-pnpm dlx wrangler d1 execute quarry-criteria --remote --file=data/criterion-postings.sql
+GH_TOKEN=$(gh auth token) GITHUB_REPOSITORY=swarina/quarry QUARRY_STORE_KEY=... \
+  pnpm pipeline store pull --store data/pipeline.sqlite
 ```
 
-Re-run this whenever you want the deployed path to see newer postings; it is independent of the
-daily pipeline, which keeps the authoritative store.
-
-## 4. The Worker
-
-Not yet written. ADR-0029 specifies it exactly:
-
-- `wrangler.toml` with `main`, a `compatibility_date`, a `[[d1_databases]]` binding named `DB`
-  with your `database_id`, an `[assets]` block (`directory = "./dist"`, `binding = "ASSETS"`),
-  and `run_worker_first = ["/criteria/ask", "/criteria/estimate"]` so only those routes run the
-  Worker and everything else is served as a static file.
-- `src/index.ts`: a `fetch(request, env)` that calls `createCriteriaHandler` with a D1 adapter for
-  the three ports (`env.DB`), the Jev client built on the global `fetch` with a per-request spend
-  limit set to the allowance, `QUARRY_CRITERIA_SECRET` from `env`, and `JEV_MODEL`.
-- A D1 adapter implementing the ports against `env.DB`, resolving id prefixes with chunked
-  `substr(id, 1, n) IN (?, ...)` queries of at most 100 parameters each (ADR-0029 explains why
-  per-prefix queries would exceed the Free plan's 50-subrequest limit).
-
-This is a good piece to build against a local D1 with `wrangler dev` (its local mode simulates D1
-with no network), seeding a few postings and driving `/criteria/estimate`, which spends nothing.
-
-## 5. Set the secrets and deploy
+Dump the columns the Worker reads (id, content hash, title, company, locations, and the
+description as plain text) to SQL, create the tables, then load the dump:
 
 ```sh
-pnpm dlx wrangler secret put QUARRY_CRITERIA_SECRET   # at least 24 characters
-pnpm dlx wrangler secret put TYPESAFE_API_KEY          # from console.typesafe.ai/keys
+pnpm pipeline export-criterion-data --store data/pipeline.sqlite --out data/criterion-postings.sql
 
-pnpm --filter @quarry/site build --index <index dir>   # emits dist/ and dist/_headers
-pnpm dlx wrangler deploy
+cd apps/worker
+npx wrangler d1 execute quarry-criteria --remote --file=schema.sql
+npx wrangler d1 execute quarry-criteria --remote --file=../../data/criterion-postings.sql
 ```
 
-The per-request and per-day spend caps are set in the Worker (the local defaults are $0.10 and
-$2.00); choose them deliberately before the first deploy, because they are the backstop against a
-bug spending your money.
+Re-run the export and the second load whenever you want the deployed path to see newer postings;
+it is independent of the daily pipeline, which keeps the authoritative store. The answer cache and
+the daily budget are written at runtime and need no loading.
+
+## 3. Build the site, set the secrets, and deploy
+
+```sh
+# From the repo root: build the site the Worker serves (emits dist/ and dist/_headers).
+pnpm --filter @quarry/site build --index <index dir>
+
+cd apps/worker
+npx wrangler secret put QUARRY_CRITERIA_SECRET   # any string of at least 24 characters, you pick it
+npx wrangler secret put TYPESAFE_API_KEY          # from console.typesafe.ai/keys
+npx wrangler deploy
+```
+
+Open the `https://quarry-criteria.<you>.workers.dev` URL it prints. The per-request and per-day
+spend caps live in `wrangler.toml` under `[vars]` (defaults $0.10 and $2.00); set them deliberately
+before the first deploy, because they are the backstop against a bug spending your money.
+
+## Trying it locally first
+
+`wrangler dev` runs the whole thing against a local D1, with no account and no spend, which is the
+way to see it work before deploying:
+
+```sh
+cd apps/worker
+printf 'QUARRY_CRITERIA_SECRET=a-local-dev-secret-of-32-characters\nTYPESAFE_API_KEY=unused-for-estimate\n' > .dev.vars
+npx wrangler d1 execute quarry-criteria --local --file=schema.sql
+npx wrangler d1 execute quarry-criteria --local --file=../../data/criterion-postings.sql
+npx wrangler dev
+```
+
+`POST /criteria/estimate` with the bearer secret spends nothing and proves the path end to end;
+`POST /criteria/ask` makes the real model call and needs a funded `TYPESAFE_API_KEY`. (`.dev.vars`
+is gitignored.)
 
 ## Checking it
 
