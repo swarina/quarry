@@ -179,7 +179,7 @@
       }
     },
     {
-      "includes": ["scripts/**", "packages/*/scripts/**"],
+      "includes": ["scripts/**", "packages/*/scripts/**", "apps/*/scripts/**"],
       "linter": {
         "rules": {
           "style": {
