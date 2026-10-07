@@ -2,6 +2,10 @@ import { SnapshotError } from "@quarry/storage/node";
 import { isArgumentError, UsageError, writeError, writeOut } from "./cli.ts";
 import { CRAWL_HELP, crawlCommand } from "./commands/crawl.ts";
 import { ENRICH_HELP, enrichCommand } from "./commands/enrich.ts";
+import {
+  EXPORT_CRITERION_DATA_HELP,
+  exportCriterionDataCommand,
+} from "./commands/export-criterion-data.ts";
 import { SAMPLE_ANSWERS_HELP, sampleAnswersCommand } from "./commands/sample-answers.ts";
 import { INDEX_HELP, indexCommand } from "./commands/search-index.ts";
 import { SERVE_CRITERIA_HELP, serveCriteriaCommand } from "./commands/serve-criteria.ts";
@@ -12,7 +16,7 @@ import { SeedsError } from "./seeds.ts";
 const HELP = `Usage: pipeline <command> [options]
 
 Commands:
-${CRAWL_HELP}${ENRICH_HELP}${INDEX_HELP}${SAMPLE_ANSWERS_HELP}${SERVE_CRITERIA_HELP}${STORE_HELP}  help                     Show this help.
+${CRAWL_HELP}${ENRICH_HELP}${EXPORT_CRITERION_DATA_HELP}${INDEX_HELP}${SAMPLE_ANSWERS_HELP}${SERVE_CRITERIA_HELP}${STORE_HELP}  help                     Show this help.
 `;
 
 /** Runs one command and returns the process exit code: 0 success, 1 failure, 2 bad usage. */
@@ -24,6 +28,8 @@ export async function main(argv: readonly string[]): Promise<number> {
         return await crawlCommand(args);
       case "enrich":
         return await enrichCommand(args);
+      case "export-criterion-data":
+        return await exportCriterionDataCommand(args);
       case "index":
         return await indexCommand(args);
       case "sample-answers":
