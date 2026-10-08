@@ -68,38 +68,54 @@ and only it touches D1. The static site and that path are served from one origin
 on an endpoint that spends money. A criterion's answers are cached in D1, so a popular question over a
 popular filter is paid for once for everyone.
 
+### A question's lifecycle
+
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant W as Worker<br/>(/criteria/ask)
+  participant D as D1<br/>(cache · budget)
+  participant J as Jev<br/>(pinned model)
+  B->>W: your question + the postings a search left
+  W->>D: reserve an upper-bound cost (per request, per day)
+  W->>D: look up answers by (question, posting, model)
+  D-->>W: cache hits (already paid for)
+  W->>J: only the postings not yet answered
+  J-->>W: typed, calibrated answers
+  W->>D: store new answers · settle to the real cost
+  W-->>B: answers + what this question cost
+  Note over B,D: a repeat of the same question over the same page pays nothing
+```
+
 ## Working with Jev, a calibrated model
 
-[Jev](https://docs.typesafe.ai/) is a System One model: it returns a **typed value with a calibrated
-probability**, not a sentence. A request is `{ state, questions, model }`, and an answer is one of
-three shapes: a yes/no probability, a choice with a probability over named options, or a score over
-graded levels. There is no free text, which means there is nothing to parse, nothing to jailbreak,
-and no place for a quotation to hide (the project does not claim evidence spans it cannot get).
+[Jev](https://docs.typesafe.ai/) is a System One model: a request is `{ state, questions, model }` and
+every answer is a **typed value with a calibrated probability**, never a sentence. There is no free
+text, so there is nothing to parse, nothing to jailbreak, and no place for a quotation to hide (Quarry
+does not claim evidence spans it cannot get). An answer comes in one of three shapes:
 
-That turns the whole product from a prompting problem into a **calibration problem**, and the design
-follows from it:
+| Answer shape | What Jev returns | Example question | An answer |
+| --- | --- | --- | --- |
+| **Yes / no** | one probability, P(yes) | *On call outside working hours?* | unlikely, **18%** |
+| **Pick one** | a probability over named options | *Remote, hybrid, or onsite?* | hybrid **40%** · remote **35%** · onsite **25%** |
+| **Graded scale** | a probability over ordered levels | *How much travel?* | some **50%** · little **30%** · a lot **20%** |
 
-- **Store the distribution, not the pick.** A posting the model calls hybrid at 40% with remote at
-  35% is kept by "remote or hybrid, at least 70%" and dropped by filtering on the single best guess.
-  Keeping the full distribution is what makes a probability threshold mean something, and it makes
-  every filter one shape regardless of answer kind.
-- **Probabilities are exact, not lossy.** Jev publishes two decimals, so storing centi-probabilities
-  (normalized to sum to 100 by largest remainder) is lossless, and "P(not these) = 100 minus theirs"
-  never shows a total of 99.
-- **One guarded door to the model.** Every call goes through a single package that pins the model
-  version, validates each answer against a schema before anything trusts it, meters spend and rate,
-  and records a cost ledger. Nothing else in the codebase may import the SDK (the linter enforces it),
-  so the model layer is one auditable surface.
-- **Deterministic tests without the network.** API exchanges are recorded once and replayed from
-  cassettes, so the whole path is tested offline and deterministically rather than mocked.
-- **Calibrated answers belong to a model version.** The cache key includes the model, so a model
-  upgrade re-asks rather than serving old probabilities as if a new model produced them.
+That turns the product from a *prompting* problem into a **calibration** problem, and the whole model
+layer follows from it:
 
-The honest open question, stated in the code where the bands are defined, is whether the model is
-*actually* calibrated on this corpus: a probability of 80% is only useful if answers called 80% likely
-are right about 80% of the time. An accuracy and calibration harness (Brier score, reliability
-tables, expected calibration error) exists to measure exactly that against a hand-labelled set, and
-until it runs the confidence bands are marked provisional and no accuracy number is claimed.
+| The discipline | Why it exists |
+| --- | --- |
+| **Store the distribution, not the pick** | A posting that is hybrid 40% / remote 35% is kept by "remote or hybrid ≥ 70%" and dropped by filtering on the single best guess. The threshold only means something with the whole distribution, and every filter is then one shape regardless of answer kind. |
+| **Centi-probabilities, not floats** | Jev publishes two decimals, so integers 0–100 (normalized by largest remainder) are lossless and "P(not these) = 100 − theirs" never totals 99. |
+| **One guarded door to the model** | A single package pins the version, validates every answer against its schema before anything trusts it, and meters spend and rate. Nothing else may import the SDK (the linter enforces it), so the model is one auditable surface. |
+| **Cassettes, not mocks** | Real API exchanges are recorded once and replayed offline, so the whole path is tested deterministically instead of mocked. |
+| **The model version is in the cache key** | `key = hash(question · posting · model)`, so editing a word re-asks, a repost is free, and a model upgrade re-asks rather than serving old probabilities as a new model's. |
+
+The honest open question, marked in the code where the bands are defined, is whether the model is
+*actually* calibrated on this corpus: 80% is only useful if answers called 80% likely are right about
+80% of the time. A harness (Brier score, reliability tables, expected calibration error) exists to
+measure exactly that against a hand-labelled set; until it runs, the bands are provisional and no
+accuracy figure is claimed.
 
 ## Design principles
 
