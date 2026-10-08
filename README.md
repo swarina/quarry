@@ -68,6 +68,39 @@ and only it touches D1. The static site and that path are served from one origin
 on an endpoint that spends money. A criterion's answers are cached in D1, so a popular question over a
 popular filter is paid for once for everyone.
 
+## Working with Jev, a calibrated model
+
+[Jev](https://docs.typesafe.ai/) is a System One model: it returns a **typed value with a calibrated
+probability**, not a sentence. A request is `{ state, questions, model }`, and an answer is one of
+three shapes: a yes/no probability, a choice with a probability over named options, or a score over
+graded levels. There is no free text, which means there is nothing to parse, nothing to jailbreak,
+and no place for a quotation to hide (the project does not claim evidence spans it cannot get).
+
+That turns the whole product from a prompting problem into a **calibration problem**, and the design
+follows from it:
+
+- **Store the distribution, not the pick.** A posting the model calls hybrid at 40% with remote at
+  35% is kept by "remote or hybrid, at least 70%" and dropped by filtering on the single best guess.
+  Keeping the full distribution is what makes a probability threshold mean something, and it makes
+  every filter one shape regardless of answer kind.
+- **Probabilities are exact, not lossy.** Jev publishes two decimals, so storing centi-probabilities
+  (normalized to sum to 100 by largest remainder) is lossless, and "P(not these) = 100 minus theirs"
+  never shows a total of 99.
+- **One guarded door to the model.** Every call goes through a single package that pins the model
+  version, validates each answer against a schema before anything trusts it, meters spend and rate,
+  and records a cost ledger. Nothing else in the codebase may import the SDK (the linter enforces it),
+  so the model layer is one auditable surface.
+- **Deterministic tests without the network.** API exchanges are recorded once and replayed from
+  cassettes, so the whole path is tested offline and deterministically rather than mocked.
+- **Calibrated answers belong to a model version.** The cache key includes the model, so a model
+  upgrade re-asks rather than serving old probabilities as if a new model produced them.
+
+The honest open question, stated in the code where the bands are defined, is whether the model is
+*actually* calibrated on this corpus: a probability of 80% is only useful if answers called 80% likely
+are right about 80% of the time. An accuracy and calibration harness (Brier score, reliability
+tables, expected calibration error) exists to measure exactly that against a hand-labelled set, and
+until it runs the confidence bands are marked provisional and no accuracy number is claimed.
+
 ## Design principles
 
 *(Hard rules. Violating one is a bug, not a style choice.)*
