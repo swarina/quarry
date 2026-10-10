@@ -117,6 +117,48 @@ The honest open question, marked in the code where the bands are defined, is whe
 measure exactly that against a hand-labelled set; until it runs, the bands are provisional and no
 accuracy figure is claimed.
 
+## What a question costs
+
+Running a model over every posting for every visitor's question is exactly what Quarry refuses to do.
+The standard questions are answered once, in the daily pipeline; a *novel* question is answered on
+demand, and only over the slice of postings a search actually left. That is what makes an open-ended
+"ask anything" feature affordable at all.
+
+Jev charges **$0.042 per million input tokens, and nothing for output**. The only text sent is each
+posting's `{title, company, locations, description}` plus your question, so one posting's cost is
+essentially its length:
+
+```
+tokens ≈ bytes(posting + question) / 4
+cost   = tokens × $0.042 / 1,000,000
+```
+
+A page of 500 postings, asked once:
+
+| Posting length | ≈ tokens each | Cost per posting | A page of 500 |
+| --- | --- | --- | --- |
+| short (~1,500 chars) | ~440 | $0.000018 | **~$0.009** |
+| typical (~2,500 chars) | ~690 | $0.000029 | **~$0.014** |
+| long (~4,000 chars) | ~1,060 | $0.000045 | **~$0.022** |
+
+So a brand-new question over a full page is **a cent or two**, and a narrower search costs
+proportionally less. Two design choices then bound it on both sides:
+
+- **The cache makes every repeat free.** Answers are keyed on `hash(question · posting · model)`, so
+  once anyone has asked a question over a posting, everyone after them pays nothing for it. Only
+  genuinely new (question, posting) pairs ever cost anything, which is why a popular question over a
+  popular filter is paid for once for the whole internet.
+- **Reserve-then-settle makes the caps exact.** An upper bound is reserved before the call and
+  reconciled to the true cost after, so under concurrency the per-request cap (**$0.10**) and the
+  per-day cap (**$2.00**, across everyone) hold exactly rather than being overshot by the requests
+  already in flight.
+
+The interview-sized version: the expensive step, a model read of a posting, is done once and cached;
+the cost is reserved before it is spent, not discovered after; and a visitor only ever pays for the
+handful of postings their own filter could not already answer. The worst case a single question can
+reach is ten cents, the common case is a cent, and the whole day is capped at two dollars no matter
+how many people ask.
+
 ## Design principles
 
 *(Hard rules. Violating one is a bug, not a style choice.)*
