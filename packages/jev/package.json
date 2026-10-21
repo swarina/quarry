@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@quarry/domain": "workspace:*",
-    "@typesafe-ai/sdk": "0.6.0",
+    "@typesafe-ai/sdk": "0.7.0",
     "zod": "4.6.7"
   }
 }
