@@ -63,5 +63,9 @@ export function answerShape(question: Question): Pick<AnswerShape, "kind" | "opt
         options: question.criteria.map((_, level) => String(level)),
         labels: question.criteria.map((criterion) => describe(criterion)),
       };
+    default:
+      // The SDK also defines `box` (image) questions; Quarry only ever builds the three
+      // kinds above, so any other type is a programming error rather than input.
+      throw new Error(`Unsupported question type: ${question.type}`);
   }
 }

@@ -157,7 +157,7 @@ export interface PostingFields {
  * tokens and changed one answer in forty, because arrangement and sponsorship are often stated
  * exactly in the parts that look like boilerplate (ADR-0025).
  */
-export function postingState(posting: PostingFields): EntryType {
+export function postingState(posting: PostingFields): NonNullable<EntryType> {
   return {
     posting: {
       title: posting.title,
