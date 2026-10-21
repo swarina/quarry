@@ -40,6 +40,9 @@ export function assertValidQuestions(questions: Questions): void {
           `Score "${id}" has ${levels} levels; it needs ${JEV_LIMITS.minScoreLevels} to ${JEV_LIMITS.maxScoreLevels}`,
         );
       }
+    } else if (question.type === "box") {
+      // Box (image) questions arrived in SDK 0.7.0; Quarry answers only yes/no, choice, and score.
+      invalid(`Question "${id}" is a box question, which Quarry does not support`);
     }
   }
 }

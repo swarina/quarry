@@ -1,5 +1,6 @@
 import type { Question, Questions } from "@typesafe-ai/sdk";
 import { z } from "zod";
+import { JevError } from "./errors.ts";
 
 const probability = z.number().min(0).max(1);
 
@@ -49,6 +50,10 @@ function answerSchema(question: Question): z.ZodType {
         probabilities: z.record(level, probability).refine(sumsToOne, distributionMessage),
       });
     }
+    default:
+      // The SDK also defines `box` (image) questions, which Quarry never builds and
+      // `assertValidQuestions` rejects before a request is made.
+      throw new JevError("INVALID_QUESTIONS", `Unsupported question type: ${question.type}`);
   }
 }
 

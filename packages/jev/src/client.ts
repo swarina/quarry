@@ -34,7 +34,7 @@ export interface JevClientOptions {
 export interface AskRequest<Q extends Questions> {
   /** Short label recorded in the ledger, for example "enrichment" or "criterion". */
   readonly purpose: string;
-  readonly state: EntryType;
+  readonly state: NonNullable<EntryType>;
   readonly questions: Q;
   readonly signal?: AbortSignal;
 }
@@ -75,6 +75,10 @@ export function createJevClient(options: JevClientOptions): JevClient {
     timeout: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
     retry: { maxRetries: options.maxRetries ?? DEFAULT_MAX_RETRIES },
     logLevel: "off",
+    // Send request bodies uncompressed. The SDK defaults to zstd on Node 22.15+, but the
+    // deployed criterion path runs on the Workers runtime (nodejs_compat), where that codec is
+    // not guaranteed; keeping bodies uncompressed matches what the recorded cassettes capture.
+    compression: false,
     ...(options.fetch ? { fetch: options.fetch } : {}),
   });
 
