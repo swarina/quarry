@@ -15,6 +15,6 @@
     "@quarry/domain": "workspace:*",
     "@quarry/facets": "workspace:*",
     "@quarry/places": "workspace:*",
-    "zod": "4.6.5"
+    "zod": "4.6.7"
   }
 }
