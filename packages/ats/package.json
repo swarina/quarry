@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@quarry/domain": "workspace:*",
-    "entities": "8.1.0",
+    "entities": "9.0.0",
     "zod": "4.6.7"
   }
 }
