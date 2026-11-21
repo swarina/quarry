@@ -243,6 +243,26 @@ function agreedQuestions(shards: readonly Shard[]): readonly ShardQuestion[] {
 }
 
 /** The workplace a coded value stands for. */
+/**
+ * How many rows the table holds each question's answer for, by question id.
+ *
+ * This counts over the whole loaded table, not over a result. A facet's `answered` says how many
+ * of the postings a search matched were asked, which is the right number next to its counts and
+ * the wrong one for deciding whether a question has anything to offer at all: coverage is
+ * partial, so plenty of searches match nothing answered while the index holds thousands.
+ */
+export function answeredRows(table: IndexTable): ReadonlyMap<string, number> {
+  const counts = new Map<string, number>();
+  for (const [at, question] of table.questions.entries()) {
+    let total = 0;
+    for (let row = 0; row < table.size; row += 1) {
+      if ((((table.answered[row] ?? 0) >> at) & 1) === 1) total += 1;
+    }
+    counts.set(question.id, total);
+  }
+  return counts;
+}
+
 export function workplaceOf(code: number): Workplace | null {
   return WORKPLACE_CODES[code] ?? null;
 }

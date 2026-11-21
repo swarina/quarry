@@ -170,6 +170,18 @@ main {
   margin: 0 0 0.5rem;
 }
 
+/*
+ * Where the groups below it come from. Arrangement is also a facet above, from what the employer
+ * stated, so the sidebar says which of the two a model answered rather than asking twice.
+ */
+.facet-source {
+  margin: 0 0 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
 .facet-group ul,
 .results,
 .chips {

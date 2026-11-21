@@ -1,5 +1,5 @@
 import type { Manifest, QueryResult } from "@quarry/search-index";
-import { queryIndex } from "@quarry/search-index";
+import { answeredRows, queryIndex } from "@quarry/search-index";
 import {
   type Catalog,
   defaultRegion,
@@ -55,6 +55,11 @@ const STALE_HOURS = 36;
 
 let manifest: Manifest | undefined;
 let catalog: Catalog | undefined;
+/**
+ * How many postings the loaded table holds each question's answer for. Counted once when a
+ * region loads rather than on every draw: it is a fact about the index, not about the search.
+ */
+let answered: ReadonlyMap<string, number> = new Map();
 let links = new Map<string, string>();
 let state: SearchState = EMPTY;
 const locale = typeof navigator === "undefined" ? undefined : navigator.language;
@@ -74,6 +79,7 @@ function view(result: QueryResult): View {
     links,
     // The loaded index is what knows the questions, their options, and what they are called.
     questions: catalog?.table.questions ?? [],
+    answered,
     held,
     now: Date.now(),
     locale,
@@ -391,6 +397,7 @@ async function switchRegion(): Promise<void> {
   byId("status").textContent = "Loading postings";
   const loaded = await loadRegion(manifest, state.region, fetchJson);
   catalog = loaded.catalog;
+  answered = answeredRows(catalog.table);
   links = new Map();
   byId("status").textContent = "";
   draw();
@@ -447,6 +454,7 @@ async function start(): Promise<void> {
   showDraft();
   const loaded = await loadRegion(manifest, state.region, fetchJson);
   catalog = loaded.catalog;
+  answered = answeredRows(catalog.table);
   byId("status").textContent = "";
   draw();
   const built = new Date(manifest.builtAt).getTime();

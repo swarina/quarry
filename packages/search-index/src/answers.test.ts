@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildIndex, type IndexBuild, type IndexRow } from "./build.ts";
 import { DEFAULT_ANSWER_THRESHOLD, MAX_SHARD_QUESTIONS, type ShardQuestion } from "./format.ts";
 import { type IndexQuery, queryIndex } from "./query.ts";
-import { type IndexTable, openIndex } from "./table.ts";
+import { answeredRows, type IndexTable, openIndex } from "./table.ts";
 
 /**
  * The answer columns: what a shard carries, what a threshold means, and what a facet count
@@ -17,17 +17,21 @@ const ARRANGEMENT: ShardQuestion = {
   id: "arrangement",
   version: 1,
   about: "Whether the work is remote, hybrid, or on site",
+  name: "Arrangement",
   kind: "choice",
   options: ["remote", "hybrid", "onsite", "not_stated"],
   labels: ["Remote", "Hybrid", "On site", "Not stated"],
+  names: ["Remote", "Hybrid", "On site", "Not stated"],
 };
 const ON_CALL: ShardQuestion = {
   id: "onCall",
   version: 1,
   about: "Whether the role includes an on-call rota",
+  name: "On call",
   kind: "noul",
   options: ["no", "yes"],
   labels: ["No", "Yes"],
+  names: ["No", "Yes"],
 };
 const QUESTIONS = [ARRANGEMENT, ON_CALL];
 
@@ -351,6 +355,21 @@ describe("shards from two builds", () => {
         JSON.parse(shardsOf(theirs)[0]?.content ?? ""),
       ]),
     ).toThrow(/different questions/);
+  });
+});
+
+describe("how much of the index holds an answer", () => {
+  it("counts over the whole table, which is what says a question has anything to offer", async () => {
+    const counted = answeredRows(await table());
+    // Three of the four rows were asked; the fourth never was.
+    expect(counted.get("arrangement")).toBe(3);
+    expect(counted.get("onCall")).toBe(3);
+  });
+
+  it("counts nothing for a question the index was never asked", async () => {
+    const counted = answeredRows(await table([row("none"), row("nada")]));
+    expect(counted.get("arrangement")).toBe(0);
+    expect(counted.get("onCall")).toBe(0);
   });
 });
 

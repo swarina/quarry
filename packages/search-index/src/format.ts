@@ -9,7 +9,7 @@ import type { EmploymentType } from "@quarry/facets";
  */
 
 /** Version of the file formats below; readers refuse others. */
-export const INDEX_FORMAT = 4;
+export const INDEX_FORMAT = 5;
 
 /**
  * Size budgets (ADR-0007): a shard downloads quickly on a phone, the manifest (fetched on every
@@ -129,13 +129,17 @@ export interface ListColumnFile {
 export interface ShardQuestion {
   readonly id: string;
   readonly version: number;
-  /** What this question answers, for the site to label a filter with. */
+  /** What this question answers, in full, for the site to explain a filter with. */
   readonly about: string;
+  /** A short noun phrase naming the question, for the site to head a filter group with. */
+  readonly name: string;
   readonly kind: "choice" | "score" | "noul";
   /** Option ids, in the order probabilities are stored in. */
   readonly options: readonly string[];
   /** What each option means, in the same order. */
   readonly labels: readonly string[];
+  /** A short label per option, in the same order, for a filter row or a chip. */
+  readonly names: readonly string[];
 }
 
 /** Probabilities are stored in hundredths, which is the precision Jev publishes. */

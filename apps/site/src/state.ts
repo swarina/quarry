@@ -339,10 +339,10 @@ function describeAnswer(filter: AnswerFilter, questions: readonly ShardQuestion[
   const question = questions.find((entry) => entry.id === filter.question);
   const name = (option: string) => {
     const at = question?.options.indexOf(option) ?? -1;
-    return at < 0 ? option : (question?.labels[at] ?? option);
+    return at < 0 ? option : (question?.names[at] ?? option);
   };
   const shown = filter.options.map(name).join(" or ");
-  const subject = question?.about ?? filter.question;
+  const subject = question?.name ?? filter.question;
   return `${subject}: ${shown} (${filter.atLeast}%+)`;
 }
 

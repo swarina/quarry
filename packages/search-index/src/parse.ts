@@ -110,13 +110,18 @@ function questions(value: unknown, what: string): ShardQuestion[] {
     const labels = strings(found["labels"], `${where}.labels`);
     if (labels.length !== options.length)
       fail(`${where}.labels has ${labels.length} labels for ${options.length} options`);
+    const names = strings(found["names"], `${where}.names`);
+    if (names.length !== options.length)
+      fail(`${where}.names has ${names.length} names for ${options.length} options`);
     return {
       id: text(found["id"], `${where}.id`),
       version: whole(found["version"], `${where}.version`, 1),
       about: text(found["about"], `${where}.about`),
+      name: text(found["name"], `${where}.name`),
       kind,
       options,
       labels,
+      names,
     };
   });
 }

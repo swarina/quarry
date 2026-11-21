@@ -30,6 +30,8 @@ export interface View {
   readonly links: ReadonlyMap<string, string>;
   /** The standard questions the loaded index carries, which is what names them. */
   readonly questions: readonly ShardQuestion[];
+  /** How many postings the loaded index holds each question's answer for, by question id. */
+  readonly answered: ReadonlyMap<string, number>;
   /** What the criterion has answered in this session, if it has been asked. */
   readonly held: Held | undefined;
   readonly now: number;
@@ -104,12 +106,13 @@ function answerTags(row: ResultRow, questions: readonly ShardQuestion[]): HTMLEl
     const band = confidenceBand(answer.probability);
     if (band.id === "unlikely") continue;
     const at = question.options.indexOf(answer.option);
-    const label = at < 0 ? answer.option : (question.labels[at] ?? answer.option);
+    const name = at < 0 ? answer.option : (question.names[at] ?? answer.option);
+    const means = at < 0 ? answer.option : (question.labels[at] ?? answer.option);
     tags.push(
       el("span", {
         class: `answer answer-${band.id}`,
-        title: `${question.about}: ${label}, ${answer.probability}% likely. Answered by a model, not stated by the employer.`,
-        text: `${label} (${band.name})`,
+        title: `${question.about}: ${means}, ${answer.probability}% likely. Answered by a model, not stated by the employer.`,
+        text: `${name} (${band.name})`,
       }),
     );
   }
@@ -272,7 +275,11 @@ function answerGroup(question: ShardQuestion, view: View, go: Go): HTMLElement {
     return el("li", {}, [
       el("label", { class: "facet" }, [
         input,
-        el("span", { class: "facet-name", text: question.labels[at] ?? option }),
+        el("span", {
+          class: "facet-name",
+          title: question.labels[at],
+          text: question.names[at] ?? option,
+        }),
         el("span", { class: "facet-count", text: number(counts.get(option) ?? 0, view.locale) }),
       ]),
     ]);
@@ -292,7 +299,7 @@ function answerGroup(question: ShardQuestion, view: View, go: Go): HTMLElement {
   });
 
   const nodes: (Node | string)[] = [
-    el("h2", { text: question.about }),
+    el("h2", { title: question.about, text: question.name }),
     el("ul", {}, items),
     el("p", { class: "threshold-row" }, [
       el("label", { for: selectId, text: "At least " }),
@@ -309,6 +316,36 @@ function answerGroup(question: ShardQuestion, view: View, go: Go): HTMLElement {
     );
   }
   return el("section", { class: "facet-group answers" }, nodes);
+}
+
+/**
+ * The model-answered groups, under one line saying where their answers come from.
+ *
+ * That line is not decoration. `Arrangement` is a facet above this one as well, derived from what
+ * the employer stated, and the two are counted from different things and can disagree. Without a
+ * line marking which of them a model answered, the sidebar asks one question twice and explains
+ * neither.
+ *
+ * A question the loaded index holds no answer for is left out, since a group of zeroes above a
+ * threshold select invites a click that can only empty the page. That is judged over the whole
+ * index rather than over the result: coverage is partial, so a search can easily match nothing
+ * answered, and a group that disappeared as the search narrowed would take its own filter with
+ * it and leave no way back.
+ */
+function answerGroups(view: View, go: Go): (Node | string)[] {
+  const shown = view.questions.filter(
+    (question) =>
+      (view.answered.get(question.id) ?? 0) > 0 ||
+      answerFilter(view.state, question.id) !== undefined,
+  );
+  if (shown.length === 0) return [];
+  return [
+    el("p", {
+      class: "facet-source",
+      text: "Answered by a model, not stated by the employer",
+    }),
+    ...shown.map((question) => answerGroup(question, view, go)),
+  ];
 }
 
 /**
@@ -431,7 +468,7 @@ export function renderFacets(view: View, go: Go): (Node | string)[] {
       view,
       go,
     ),
-    ...view.questions.map((question) => answerGroup(question, view, go)),
+    ...answerGroups(view, go),
   ];
 }
 

@@ -15,6 +15,8 @@ export interface AnswerShape {
   /** The wording version that produced an answer of this shape. */
   readonly version: number;
   readonly about: string;
+  /** A short noun phrase naming the question, for a heading. */
+  readonly name: string;
   readonly kind: AnswerKind;
   /**
    * Stable option ids, in the order probabilities are stored in. Choice options keep their
@@ -23,8 +25,10 @@ export interface AnswerShape {
    * of a chosen set.
    */
   readonly options: readonly string[];
-  /** What each option means, in the same order, for the site to show. */
+  /** What each option means, in the same order; what the model was told it means. */
   readonly labels: readonly string[];
+  /** A short label per option, in the same order, for the site to show in its place. */
+  readonly names: readonly string[];
 }
 
 /** The yes/no options, in the order a `noul` probability is expanded into. */
