@@ -16,6 +16,10 @@ coverage/
 # Cloudflare local state
 .wrangler/
 
+# Generated pipeline output: SQL exports and built search indexes. Anchored to the repository
+# root so that package data checked into the tree, such as packages/places/data, stays tracked.
+/data/
+
 # Local databases
 *.sqlite
 *.sqlite-journal
