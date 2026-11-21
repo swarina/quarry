@@ -93,6 +93,14 @@ export interface ResultRow {
 
 export interface QueryResult {
   readonly total: number;
+  /**
+   * How many of the matching postings hold an answer to any standard question.
+   *
+   * Separate from the per-question counts below, which are each over every filter but that
+   * question's own. This one is over exactly the postings the search matched, which is what the
+   * page needs to say how much of what it is showing a model has been asked about.
+   */
+  readonly answered: number;
   readonly rows: readonly ResultRow[];
   /**
    * For each facet, how many postings match every filter but that facet's own, per value,
@@ -345,6 +353,7 @@ export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
       .sort((left, right) => right[1] - left[1] || String(left[0]).localeCompare(String(right[0])));
   return {
     total: matched.length,
+    answered: matched.filter((row) => (table.answered[row] ?? 0) !== 0).length,
     rows: matched.slice(offset, offset + limit).map((row) => resultRow(table, row)),
     facets: {
       countries: ranked(withAnywhere(counts.countries), (code) => dictionaries.country[code]),

@@ -224,6 +224,17 @@ describe("answer facet counts", () => {
     expect(facet?.answered).toBe(3);
   });
 
+  it("says how many of the matching postings were asked, over the result itself", () => {
+    const all = run({});
+    expect(all.total).toBe(4);
+    expect(all.answered).toBe(3);
+    // Unlike a facet's own count, this one is over exactly what matched: the page uses it to
+    // say how much of what it is showing has been asked about.
+    const narrowed = run({ text: "unasked" });
+    expect(narrowed.total).toBe(1);
+    expect(narrowed.answered).toBe(0);
+  });
+
   it("promises what choosing an option would give, at the threshold in force", () => {
     const result = run({
       answers: [{ question: "arrangement", options: ["remote"], atLeast: 50 }],

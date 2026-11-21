@@ -146,8 +146,9 @@ main {
 
 .results-heading {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.75rem;
+  gap: 0.25rem 0.75rem;
   margin: 0 0 0.75rem;
   font-size: 1.125rem;
 }
@@ -155,6 +156,26 @@ main {
 .timing {
   font-size: 0.75rem;
   font-weight: normal;
+  color: var(--muted);
+}
+
+/*
+ * How much of what is being shown a model has been asked about. Next to the count rather than
+ * further down, because the count is the number a reader takes on trust, and the first screens
+ * of the default sort are answered far more densely than the corpus is.
+ */
+.coverage {
+  font-size: 0.8125rem;
+  font-weight: normal;
+  color: var(--muted);
+}
+
+/*
+ * A posting a model has not been asked about. Quieter than an answer, and without its dotted
+ * edge, since it is the absence of a claim rather than one.
+ */
+.not-asked {
+  font-size: 0.75rem;
   color: var(--muted);
 }
 

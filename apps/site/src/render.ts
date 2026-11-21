@@ -67,6 +67,17 @@ function resultItem(row: ResultRow, view: View): HTMLElement {
   const money = pay(row, view.locale);
   if (money !== null) facts.push(el("span", { class: "pay", text: money }));
   for (const node of answerTags(row, view.questions)) facts.push(node);
+  // A posting nobody asked about renders no answers, which is indistinguishable from one whose
+  // answer was "not stated" unless it says so. Only worth saying where answers exist at all.
+  if (row.answers.length === 0 && holdsAnswers(view)) {
+    facts.push(
+      el("span", {
+        class: "not-asked",
+        title: "A model has not been asked the standard questions about this posting.",
+        text: "not asked",
+      }),
+    );
+  }
   const mine = criterionTag(row, view);
   if (mine !== undefined) facts.push(mine);
 
@@ -112,7 +123,7 @@ function answerTags(row: ResultRow, questions: readonly ShardQuestion[]): HTMLEl
       el("span", {
         class: `answer answer-${band.id}`,
         title: `${question.about}: ${means}, ${answer.probability}% likely. Answered by a model, not stated by the employer.`,
-        text: `${name} (${band.name})`,
+        text: `${name} ${answer.probability}%`,
       }),
     );
   }
@@ -141,7 +152,9 @@ function criterionTag(row: ResultRow, view: View): HTMLElement | undefined {
       `${held.description.options.length > 2 ? "Your question" : "You asked"}: ` +
       `${reading.label}, ${reading.probability}% likely. Answered by a model just now, not ` +
       "stated by the employer.",
-    text: unsure ? `${reading.label}? (unsure)` : `${reading.label} (${band.name})`,
+    text: unsure
+      ? `${reading.label}? ${reading.probability}%`
+      : `${reading.label} ${reading.probability}%`,
   });
 }
 
@@ -307,7 +320,10 @@ function answerGroup(question: ShardQuestion, view: View, go: Go): HTMLElement {
       el("span", { text: " likely" }),
     ]),
   ];
-  if (facet !== undefined) {
+  // The figure is stated once above the groups. A group repeats it only where its own count
+  // differs, which happens while a filter on this question is in force (its counts are over
+  // every filter but its own) and would happen for a question added after the others.
+  if (facet !== undefined && facet.answered !== view.result.answered) {
     nodes.push(
       el("p", {
         class: "answered",
@@ -319,7 +335,26 @@ function answerGroup(question: ShardQuestion, view: View, go: Go): HTMLElement {
 }
 
 /**
- * The model-answered groups, under one line saying where their answers come from.
+ * How much of the result has been asked about, in words rather than a ratio of one number to
+ * itself: filtering on an answer selects answered postings, so "109 of these 109" is where the
+ * plain figure lands most often.
+ */
+function coverageLine(view: View): string {
+  const { answered, total } = view.result;
+  if (total === 0) return "";
+  if (answered === total) return "All of these postings have been asked.";
+  return `${number(answered, view.locale)} of these ${number(total, view.locale)} postings have been asked.`;
+}
+
+/** Whether the loaded index holds any standard answer at all, anywhere in it. */
+function holdsAnswers(view: View): boolean {
+  for (const count of view.answered.values()) if (count > 0) return true;
+  return false;
+}
+
+/**
+ * The model-answered groups, under one line saying where their answers come from and how much of
+ * the result they cover.
  *
  * That line is not decoration. `Arrangement` is a facet above this one as well, derived from what
  * the employer stated, and the two are counted from different things and can disagree. Without a
@@ -340,10 +375,10 @@ function answerGroups(view: View, go: Go): (Node | string)[] {
   );
   if (shown.length === 0) return [];
   return [
-    el("p", {
-      class: "facet-source",
-      text: "Answered by a model, not stated by the employer",
-    }),
+    el("p", { class: "facet-source" }, [
+      "Answered by a model, not stated by the employer. ",
+      el("span", { class: "coverage", text: coverageLine(view) }),
+    ]),
     ...shown.map((question) => answerGroup(question, view, go)),
   ];
 }
