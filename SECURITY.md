@@ -19,4 +19,3 @@ Security fixes are made on `main`; there are no separately maintained release br
 
 - API keys and tokens live only in local `.env` files, GitHub Actions environments, and
   Cloudflare Worker secrets. They are never committed.
-- Resume content is processed in the user's browser. Nothing personal is stored server-side.
