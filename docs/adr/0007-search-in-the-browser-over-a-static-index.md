@@ -79,8 +79,10 @@ salary layer.
 - Measured on 35,221 postings: shards 1,122 KB gzipped in all, links 567 KB with the largest
   file 132 KB, manifest 6.5 KB of its 20 KB budget. Query p95 was 1 to 5 ms in Node, and
   8.9 ms in a real browser over 34,831 postings against the 100 ms target.
-- Every format change is a version bump and a full rebuild. `INDEX_FORMAT` is at 3: version 2
-  added the `inferred` column (ADR-0021), version 3 added links and the facet-count fix.
+- Every format change is a version bump and a full rebuild. `INDEX_FORMAT` is at 5: version 2
+  added the `inferred` column (ADR-0021), version 3 added links and the facet-count fix,
+  version 4 added the answer columns, and version 5 added the short names the site labels an
+  answer filter with.
 - The budgets are the thing that keeps this honest. If a shard cannot be kept under 600 KB
   gzipped, the premise (download it all, filter locally) has expired and search has to move
   server-side.

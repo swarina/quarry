@@ -69,6 +69,26 @@ describe("the readers' own checks", () => {
       () => parseShard({ ...shard, dictionaries: { ...shard.dictionaries, country: ["Germany"] } }),
       /country\[0\] is not in the expected form/,
     ],
+    [
+      "shard",
+      () =>
+        parseShard({
+          ...shard,
+          questions: [
+            {
+              id: "arrangement",
+              version: 1,
+              about: "Whether the work is remote, hybrid, or on site",
+              name: "Arrangement",
+              kind: "choice",
+              options: ["remote", "onsite"],
+              labels: ["Fully remote", "At an office"],
+              names: ["Remote"],
+            },
+          ],
+        }),
+      /names has 1 names for 2 options/,
+    ],
     ["links", () => parseLinks({ ...links, urls: [1, 2] }), /urls\[0\] is not a string/],
   ])("refuse a %s that is not in the format", (_kind, read, message) => {
     expect(read).toThrow(IndexFormatError);

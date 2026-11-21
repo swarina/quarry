@@ -257,16 +257,18 @@ describe("an answer criterion as a chip", () => {
       id: "arrangement",
       version: 1,
       about: "Where the work is done",
+      name: "Arrangement",
       kind: "choice",
       options: ["remote", "hybrid"],
       labels: ["Fully remote", "Some office days"],
+      names: ["Remote", "Hybrid"],
     },
   ];
 
   it("reads with the index's own words, and drops only itself", () => {
     const state = setAnswerFilter(EMPTY, "arrangement", ["remote", "hybrid"], 70);
     const [chip] = activeFilters(state, QUESTIONS);
-    expect(chip?.label).toBe("Where the work is done: Fully remote or Some office days (70%+)");
+    expect(chip?.label).toBe("Arrangement: Remote or Hybrid (70%+)");
     expect(chip?.without.answers).toEqual([]);
   });
 

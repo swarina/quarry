@@ -8,17 +8,21 @@ const SHAPES: AnswerShape[] = [
     id: "arrangement",
     version: 1,
     about: "Where the work is done",
+    name: "Arrangement",
     kind: "choice",
     options: ["remote", "hybrid", "onsite"],
     labels: ["Remote", "Hybrid", "On site"],
+    names: ["Remote", "Hybrid", "On site"],
   },
   {
     id: "onCall",
     version: 1,
     about: "Whether the role is on call",
+    name: "On call",
     kind: "noul",
     options: ["no", "yes"],
     labels: ["No", "Yes"],
+    names: ["No", "Yes"],
   },
 ];
 

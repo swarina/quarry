@@ -30,6 +30,8 @@ export interface View {
   readonly links: ReadonlyMap<string, string>;
   /** The standard questions the loaded index carries, which is what names them. */
   readonly questions: readonly ShardQuestion[];
+  /** How many postings the loaded index holds each question's answer for, by question id. */
+  readonly answered: ReadonlyMap<string, number>;
   /** What the criterion has answered in this session, if it has been asked. */
   readonly held: Held | undefined;
   readonly now: number;
@@ -65,6 +67,17 @@ function resultItem(row: ResultRow, view: View): HTMLElement {
   const money = pay(row, view.locale);
   if (money !== null) facts.push(el("span", { class: "pay", text: money }));
   for (const node of answerTags(row, view.questions)) facts.push(node);
+  // A posting nobody asked about renders no answers, which is indistinguishable from one whose
+  // answer was "not stated" unless it says so. Only worth saying where answers exist at all.
+  if (row.answers.length === 0 && holdsAnswers(view)) {
+    facts.push(
+      el("span", {
+        class: "not-asked",
+        title: "A model has not been asked the standard questions about this posting.",
+        text: "not asked",
+      }),
+    );
+  }
   const mine = criterionTag(row, view);
   if (mine !== undefined) facts.push(mine);
 
@@ -104,12 +117,13 @@ function answerTags(row: ResultRow, questions: readonly ShardQuestion[]): HTMLEl
     const band = confidenceBand(answer.probability);
     if (band.id === "unlikely") continue;
     const at = question.options.indexOf(answer.option);
-    const label = at < 0 ? answer.option : (question.labels[at] ?? answer.option);
+    const name = at < 0 ? answer.option : (question.names[at] ?? answer.option);
+    const means = at < 0 ? answer.option : (question.labels[at] ?? answer.option);
     tags.push(
       el("span", {
         class: `answer answer-${band.id}`,
-        title: `${question.about}: ${label}, ${answer.probability}% likely. Answered by a model, not stated by the employer.`,
-        text: `${label} (${band.name})`,
+        title: `${question.about}: ${means}, ${answer.probability}% likely. Answered by a model, not stated by the employer.`,
+        text: `${name} ${answer.probability}%`,
       }),
     );
   }
@@ -138,7 +152,9 @@ function criterionTag(row: ResultRow, view: View): HTMLElement | undefined {
       `${held.description.options.length > 2 ? "Your question" : "You asked"}: ` +
       `${reading.label}, ${reading.probability}% likely. Answered by a model just now, not ` +
       "stated by the employer.",
-    text: unsure ? `${reading.label}? (unsure)` : `${reading.label} (${band.name})`,
+    text: unsure
+      ? `${reading.label}? ${reading.probability}%`
+      : `${reading.label} ${reading.probability}%`,
   });
 }
 
@@ -272,7 +288,11 @@ function answerGroup(question: ShardQuestion, view: View, go: Go): HTMLElement {
     return el("li", {}, [
       el("label", { class: "facet" }, [
         input,
-        el("span", { class: "facet-name", text: question.labels[at] ?? option }),
+        el("span", {
+          class: "facet-name",
+          title: question.labels[at],
+          text: question.names[at] ?? option,
+        }),
         el("span", { class: "facet-count", text: number(counts.get(option) ?? 0, view.locale) }),
       ]),
     ]);
@@ -292,7 +312,7 @@ function answerGroup(question: ShardQuestion, view: View, go: Go): HTMLElement {
   });
 
   const nodes: (Node | string)[] = [
-    el("h2", { text: question.about }),
+    el("h2", { title: question.about, text: question.name }),
     el("ul", {}, items),
     el("p", { class: "threshold-row" }, [
       el("label", { for: selectId, text: "At least " }),
@@ -300,7 +320,10 @@ function answerGroup(question: ShardQuestion, view: View, go: Go): HTMLElement {
       el("span", { text: " likely" }),
     ]),
   ];
-  if (facet !== undefined) {
+  // The figure is stated once above the groups. A group repeats it only where its own count
+  // differs, which happens while a filter on this question is in force (its counts are over
+  // every filter but its own) and would happen for a question added after the others.
+  if (facet !== undefined && facet.answered !== view.result.answered) {
     nodes.push(
       el("p", {
         class: "answered",
@@ -309,6 +332,55 @@ function answerGroup(question: ShardQuestion, view: View, go: Go): HTMLElement {
     );
   }
   return el("section", { class: "facet-group answers" }, nodes);
+}
+
+/**
+ * How much of the result has been asked about, in words rather than a ratio of one number to
+ * itself: filtering on an answer selects answered postings, so "109 of these 109" is where the
+ * plain figure lands most often.
+ */
+function coverageLine(view: View): string {
+  const { answered, total } = view.result;
+  if (total === 0) return "";
+  if (answered === total) return "All of these postings have been asked.";
+  return `${number(answered, view.locale)} of these ${number(total, view.locale)} postings have been asked.`;
+}
+
+/** Whether the loaded index holds any standard answer at all, anywhere in it. */
+function holdsAnswers(view: View): boolean {
+  for (const count of view.answered.values()) if (count > 0) return true;
+  return false;
+}
+
+/**
+ * The model-answered groups, under one line saying where their answers come from and how much of
+ * the result they cover.
+ *
+ * That line is not decoration. `Arrangement` is a facet above this one as well, derived from what
+ * the employer stated, and the two are counted from different things and can disagree. Without a
+ * line marking which of them a model answered, the sidebar asks one question twice and explains
+ * neither.
+ *
+ * A question the loaded index holds no answer for is left out, since a group of zeroes above a
+ * threshold select invites a click that can only empty the page. That is judged over the whole
+ * index rather than over the result: coverage is partial, so a search can easily match nothing
+ * answered, and a group that disappeared as the search narrowed would take its own filter with
+ * it and leave no way back.
+ */
+function answerGroups(view: View, go: Go): (Node | string)[] {
+  const shown = view.questions.filter(
+    (question) =>
+      (view.answered.get(question.id) ?? 0) > 0 ||
+      answerFilter(view.state, question.id) !== undefined,
+  );
+  if (shown.length === 0) return [];
+  return [
+    el("p", { class: "facet-source" }, [
+      "Answered by a model, not stated by the employer. ",
+      el("span", { class: "coverage", text: coverageLine(view) }),
+    ]),
+    ...shown.map((question) => answerGroup(question, view, go)),
+  ];
 }
 
 /**
@@ -431,7 +503,7 @@ export function renderFacets(view: View, go: Go): (Node | string)[] {
       view,
       go,
     ),
-    ...view.questions.map((question) => answerGroup(question, view, go)),
+    ...answerGroups(view, go),
   ];
 }
 

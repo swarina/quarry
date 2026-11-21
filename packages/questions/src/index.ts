@@ -31,6 +31,14 @@ export interface StandardQuestion {
   readonly version: number;
   /** What this answers, for the site and for a reader of the registry. */
   readonly about: string;
+  /** A short noun phrase to head a filter group with, where `about` is too long to read. */
+  readonly name: string;
+  /**
+   * A short label per option id, for a filter row or a chip. An option's `what` description is
+   * what the model was told the option means, so it is written for the model and stays the long
+   * form; these are written for the page and are shown in its place.
+   */
+  readonly names: Readonly<Record<string, string>>;
   /**
    * Whether a structured field from the board usually answers this already, in which case the
    * answer is a cross-check rather than the only source (product 9).
@@ -45,6 +53,8 @@ export const STANDARD_QUESTIONS: readonly StandardQuestion[] = [
     id: "arrangement",
     version: 1,
     about: "Whether the work is remote, hybrid, or on site",
+    name: "Arrangement",
+    names: { remote: "Remote", hybrid: "Hybrid", onsite: "On site", not_stated: "Not stated" },
     alsoStructured: true,
     question: choice(
       {
@@ -68,6 +78,15 @@ export const STANDARD_QUESTIONS: readonly StandardQuestion[] = [
     id: "seniority",
     version: 1,
     about: "How senior the role is, from intern to leadership",
+    name: "Seniority",
+    // Score levels are their indices, so the keys here are the levels in the order below.
+    names: {
+      "0": "Intern",
+      "1": "Entry level",
+      "2": "Mid level",
+      "3": "Senior",
+      "4": "Staff or above",
+    },
     alsoStructured: false,
     question: score(
       {
@@ -90,6 +109,8 @@ export const STANDARD_QUESTIONS: readonly StandardQuestion[] = [
     id: "sponsorship",
     version: 1,
     about: "Whether visa sponsorship is offered, refused, or unmentioned",
+    name: "Visa sponsorship",
+    names: { offers: "Offered", does_not_offer: "Not offered", not_mentioned: "Not mentioned" },
     alsoStructured: false,
     question: choice(
       { question: "What does `posting` say about visa sponsorship for this role?" },
@@ -106,6 +127,8 @@ export const STANDARD_QUESTIONS: readonly StandardQuestion[] = [
     id: "onCall",
     version: 1,
     about: "Whether the role includes an on-call rota",
+    name: "On call",
+    names: { no: "No", yes: "Yes" },
     alsoStructured: false,
     question: noul(
       "Does `posting` say the role includes on-call duty, a pager rota, or out-of-hours support?",
@@ -128,12 +151,23 @@ export function standardQuestions(): Questions {
  * columns appear in a search index shard.
  */
 export function answerShapes(): readonly AnswerShape[] {
-  return STANDARD_QUESTIONS.map((entry) => ({
-    id: entry.id,
-    version: entry.version,
-    about: entry.about,
-    ...answerShape(entry.question),
-  }));
+  return STANDARD_QUESTIONS.map((entry) => {
+    const shape = answerShape(entry.question);
+    return {
+      id: entry.id,
+      version: entry.version,
+      about: entry.about,
+      name: entry.name,
+      ...shape,
+      names: shape.options.map((option) => {
+        const name = entry.names[option];
+        // An option with no short name is a registry mistake rather than input, and the site
+        // would otherwise show a bare option id where a label belongs.
+        if (name === undefined) throw new Error(`Question ${entry.id} names no option ${option}`);
+        return name;
+      }),
+    };
+  });
 }
 
 /**

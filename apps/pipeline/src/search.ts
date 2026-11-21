@@ -69,9 +69,11 @@ export async function buildSearchIndex(
     id: shape.id,
     version: shape.version,
     about: shape.about,
+    name: shape.name,
     kind: shape.kind,
     options: shape.options,
     labels: shape.labels,
+    names: shape.names,
   }));
   const answered: Record<string, number> = Object.fromEntries(shapes.map((shape) => [shape.id, 0]));
   let unreadableAnswers = 0;

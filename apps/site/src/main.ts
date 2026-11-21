@@ -1,5 +1,5 @@
 import type { Manifest, QueryResult } from "@quarry/search-index";
-import { queryIndex } from "@quarry/search-index";
+import { answeredRows, queryIndex } from "@quarry/search-index";
 import {
   type Catalog,
   defaultRegion,
@@ -55,6 +55,11 @@ const STALE_HOURS = 36;
 
 let manifest: Manifest | undefined;
 let catalog: Catalog | undefined;
+/**
+ * How many postings the loaded table holds each question's answer for. Counted once when a
+ * region loads rather than on every draw: it is a fact about the index, not about the search.
+ */
+let answered: ReadonlyMap<string, number> = new Map();
 let links = new Map<string, string>();
 let state: SearchState = EMPTY;
 const locale = typeof navigator === "undefined" ? undefined : navigator.language;
@@ -67,6 +72,23 @@ let busy = false;
 /** The pick-one options or scale levels being edited, owned here rather than re-read from state. */
 let choices: string[] = [];
 
+/**
+ * How much of what is being shown a model has been asked about, beside the count rather than
+ * further down: the count is the number a reader takes on trust. Empty while the index holds no
+ * answers at all, where it would only state a zero about a feature that has not run.
+ */
+function coverageLine(result: QueryResult): string {
+  if (!holdsAnswers() || result.total === 0) return "";
+  if (result.answered === result.total) return "all answered by a model";
+  return `${number(result.answered, locale)} answered by a model`;
+}
+
+/** Whether the loaded index holds any standard answer at all. */
+function holdsAnswers(): boolean {
+  for (const count of answered.values()) if (count > 0) return true;
+  return false;
+}
+
 function view(result: QueryResult): View {
   return {
     state,
@@ -74,6 +96,7 @@ function view(result: QueryResult): View {
     links,
     // The loaded index is what knows the questions, their options, and what they are called.
     questions: catalog?.table.questions ?? [],
+    answered,
     held,
     now: Date.now(),
     locale,
@@ -97,7 +120,12 @@ function narrow(result: QueryResult, answers: Held): QueryResult {
   const filter = state.criterionFilter;
   if (filter === null) return result;
   const kept = result.rows.filter((row) => passes(answers, row.id, filter));
-  return { ...result, total: kept.length, rows: kept.slice(0, state.shown) };
+  return {
+    ...result,
+    total: kept.length,
+    answered: kept.filter((row) => row.answers.length > 0).length,
+    rows: kept.slice(0, state.shown),
+  };
 }
 
 function draw(): void {
@@ -115,6 +143,10 @@ function draw(): void {
   fill(byId("facets"), renderFacets(current, go));
   fill(byId("active"), renderActive(current, go));
   byId("count").textContent = result.total === 1 ? "1 job" : `${number(result.total, locale)} jobs`;
+  // What the count does not say on its own. Enrichment ran newest first and so does the default
+  // sort, so the first screens carry answers far more often than the corpus does: without this
+  // the page reads as near-complete coverage of one answered for about a posting in six.
+  byId("coverage").textContent = coverageLine(result);
   byId("timing").textContent = `filtered in ${took.toFixed(1)} ms`;
   const search = byId<HTMLInputElement>("text");
   if (search.value !== state.text) search.value = state.text;
@@ -391,6 +423,7 @@ async function switchRegion(): Promise<void> {
   byId("status").textContent = "Loading postings";
   const loaded = await loadRegion(manifest, state.region, fetchJson);
   catalog = loaded.catalog;
+  answered = answeredRows(catalog.table);
   links = new Map();
   byId("status").textContent = "";
   draw();
@@ -447,6 +480,7 @@ async function start(): Promise<void> {
   showDraft();
   const loaded = await loadRegion(manifest, state.region, fetchJson);
   catalog = loaded.catalog;
+  answered = answeredRows(catalog.table);
   byId("status").textContent = "";
   draw();
   const built = new Date(manifest.builtAt).getTime();

@@ -29,4 +29,11 @@ export type {
 } from "./query.ts";
 export { queryIndex } from "./query.ts";
 export type { IndexTable, ListColumn } from "./table.ts";
-export { employmentOf, openIndex, readLinks, searchFold, workplaceOf } from "./table.ts";
+export {
+  answeredRows,
+  employmentOf,
+  openIndex,
+  readLinks,
+  searchFold,
+  workplaceOf,
+} from "./table.ts";

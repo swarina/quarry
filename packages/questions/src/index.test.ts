@@ -57,6 +57,7 @@ describe("answer shapes", () => {
       // Two options at least, or there is nothing to tell apart.
       expect(shape.options.length).toBeGreaterThanOrEqual(2);
       expect(shape.labels).toHaveLength(shape.options.length);
+      expect(shape.names).toHaveLength(shape.options.length);
       expect(new Set(shape.options).size).toBe(shape.options.length);
     }
   });
@@ -81,6 +82,19 @@ describe("answer shapes", () => {
     expect(onCall?.kind).toBe("noul");
     expect(onCall?.options).toEqual(["no", "yes"]);
     expect(onCall?.labels).toEqual(["No", "Yes"]);
+  });
+
+  it("carry a short name for every question and option, since a description is not a label", () => {
+    for (const shape of answerShapes()) {
+      // The long forms are written for the model and read as sentences, which is the point of
+      // them and the reason they cannot double as labels. These are what the page shows.
+      expect(shape.name).not.toBe("");
+      expect(shape.name.length).toBeLessThanOrEqual(20);
+      for (const name of shape.names) {
+        expect(name).not.toBe("");
+        expect(name.length).toBeLessThanOrEqual(20);
+      }
+    }
   });
 
   it("carry the wording version, so a shard says which wording its answers came from", () => {

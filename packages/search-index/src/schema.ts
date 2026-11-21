@@ -73,9 +73,11 @@ const shardQuestion = z.strictObject({
   id: z.string().min(1),
   version: z.int().positive(),
   about: z.string(),
+  name: z.string().min(1),
   kind: z.enum(["choice", "score", "noul"]),
   options: z.array(z.string().min(1)).min(2),
   labels: z.array(z.string()),
+  names: z.array(z.string().min(1)),
 });
 
 /** A probability in hundredths. */
