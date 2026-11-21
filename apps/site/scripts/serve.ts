@@ -24,9 +24,19 @@ const server = createServer((request, response) => {
     if (await serveStatic(values.dir, request.url ?? "/", response)) return;
     response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
     response.end("Not found\n");
-  })();
+  })().catch((error: unknown) => {
+    // Without this, anything that throws here is an unhandled rejection and the process exits,
+    // so one bad request ends the server for everyone. Answer and stay up instead.
+    process.stderr.write(`Request failed: ${error instanceof Error ? error.message : error}\n`);
+    if (!response.headersSent) {
+      response.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
+    }
+    response.end();
+  });
 });
 
 server.listen(port, "127.0.0.1", () => {
-  process.stdout.write(`Serving ${values.dir} on http://127.0.0.1:${port}\n`);
+  const address = server.address();
+  const bound = typeof address === "object" && address !== null ? address.port : port;
+  process.stdout.write(`Serving ${values.dir} on http://127.0.0.1:${bound}\n`);
 });
