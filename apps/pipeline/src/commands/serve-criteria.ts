@@ -147,7 +147,18 @@ export async function serveCriteriaCommand(args: readonly string[]): Promise<num
           outgoing.writeHead(500, { "content-type": "application/json; charset=utf-8" });
           outgoing.end(`${JSON.stringify({ error: { code: "INTERNAL", message: "failed" } })}\n`);
         }
-      })();
+      })().catch((error: unknown) => {
+        // The criterion handler answers its own faults above. This catches the rest of the
+        // boundary, the site branch included: without it a throw here is an unhandled rejection
+        // and the process exits, taking the criterion path down along with the site.
+        log.error("request failed", {
+          error_message: error instanceof Error ? error.message : String(error),
+        });
+        if (!outgoing.headersSent) {
+          outgoing.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
+        }
+        outgoing.end();
+      });
     });
   });
 

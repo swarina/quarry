@@ -72,13 +72,29 @@ export function renderHeadersFile(): string {
 /**
  * Answers one request from a directory of built files, or returns false if there is no such
  * file, leaving the caller to decide what that means.
+ *
+ * A path that is not a valid URI is answered here, with 400, rather than reported as a miss.
+ * Whether a path names a file is the caller's question, since it may have routes of its own;
+ * whether the path can be decoded at all is settled where it is decoded.
  */
 export async function serveStatic(
   directory: string,
   path: string,
   response: ServerResponse,
 ): Promise<boolean> {
-  const decoded = decodeURIComponent(path.split("?")[0] ?? "/");
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(path.split("?")[0] ?? "/");
+  } catch {
+    // decodeURIComponent throws URIError on a truncated or invalid escape, for example `/%E0%A4%A`.
+    // Unguarded, that throw reaches the request handler and ends the process.
+    response.writeHead(400, {
+      "content-type": "text/plain; charset=utf-8",
+      ...SECURITY_HEADERS,
+    });
+    response.end("Bad request\n");
+    return true;
+  }
   const relative = normalize(decoded).replace(/^(\.\.[/\\])+/, "");
   const file = join(directory, relative.endsWith("/") ? `${relative}index.html` : relative);
   try {
