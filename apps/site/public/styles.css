@@ -128,19 +128,53 @@ main {
   align-items: start;
 }
 
+/*
+ * On a wide screen the filters are a column of their own and are always open, so the disclosure
+ * they sit in has nothing to do and its summary is taken out of the way.
+ */
+#filters > summary {
+  display: none;
+}
+
 @media (max-width: 48rem) {
   main {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
 
-  /* Results first on a narrow screen, so the filters do not bury them. */
-  main > section {
-    order: 0;
+  /*
+   * The filters collapse rather than stack. Stacked, their 1,700 px of checkboxes sat between
+   * the search and the first job; ordering the results above them instead left the same wall
+   * below fifty cards, where nobody would find it. Closed, the whole column is one line, and
+   * the summary carries the count so a shared link still says how much is narrowing the list.
+   */
+  #filters {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--raised);
   }
 
-  main > aside {
-    order: 1;
+  /* `list-item` rather than `block`: any other display takes the disclosure marker away. */
+  #filters > summary {
+    display: list-item;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    list-style-position: inside;
+  }
+
+  #filters > summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    border-radius: var(--radius);
+  }
+
+  #filters[open] > summary {
+    border-bottom: 1px solid var(--line);
+  }
+
+  #filters > div {
+    padding: 1rem 1rem 0;
   }
 }
 

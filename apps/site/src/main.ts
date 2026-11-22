@@ -53,6 +53,9 @@ async function fetchJson(path: string): Promise<unknown> {
 /** A posting is stale when the crawl that found it is old; the banner says so. */
 const STALE_HOURS = 36;
 
+/** Where the page stops being two columns, matching the breakpoint in the stylesheet. */
+const NARROW = "(max-width: 48rem)";
+
 let manifest: Manifest | undefined;
 let catalog: Catalog | undefined;
 /**
@@ -81,6 +84,23 @@ function coverageLine(result: QueryResult): string {
   if (!holdsAnswers() || result.total === 0) return "";
   if (result.answered === result.total) return "all answered by a model";
   return `${number(result.answered, locale)} answered by a model`;
+}
+
+/**
+ * How many filters the sidebar holds.
+ *
+ * The box of text and the order are on the page whatever the disclosure is doing, so they are
+ * not counted here: this number stands in for what is out of sight when the filters are closed.
+ */
+function sidebarFilters(): number {
+  return (
+    state.countries.length +
+    state.workplaces.length +
+    state.employment.length +
+    state.companies.length +
+    state.answers.length +
+    (state.criterionFilter === null ? 0 : 1)
+  );
 }
 
 /** Whether the loaded index holds any standard answer at all. */
@@ -148,6 +168,9 @@ function draw(): void {
   // the page reads as near-complete coverage of one answered for about a posting in six.
   byId("coverage").textContent = coverageLine(result);
   byId("timing").textContent = `filtered in ${took.toFixed(1)} ms`;
+  const inForce = sidebarFilters();
+  byId("filters-summary").textContent =
+    inForce === 0 ? "Filters" : `Filters (${number(inForce, locale)})`;
   const search = byId<HTMLInputElement>("text");
   if (search.value !== state.text) search.value = state.text;
   byId<HTMLSelectElement>("sort").value = state.sort;
@@ -433,6 +456,24 @@ async function switchRegion(): Promise<void> {
   });
 }
 
+/**
+ * Opens the filters on a wide screen and closes them on a narrow one.
+ *
+ * This cannot be a media query: `open` is an attribute rather than a style, and nothing in CSS
+ * can set or clear it. The markup carries `open`, so a page whose script never runs keeps the
+ * column it always had. The disclosure itself is in the markup too, outside `#facets`, because
+ * `draw()` replaces everything inside that and would throw away whatever the reader had opened.
+ */
+function wireFilters(): void {
+  const filters = byId<HTMLDetailsElement>("filters");
+  const narrow = globalThis.matchMedia(NARROW);
+  const settle = () => {
+    filters.open = !narrow.matches;
+  };
+  settle();
+  narrow.addEventListener("change", settle);
+}
+
 function wire(loaded: Manifest): void {
   const search = byId<HTMLInputElement>("text");
   let typing: ReturnType<typeof setTimeout> | undefined;
@@ -465,6 +506,7 @@ function wire(loaded: Manifest): void {
     void switchRegion();
   });
   wireAsk();
+  wireFilters();
 }
 
 async function start(): Promise<void> {
