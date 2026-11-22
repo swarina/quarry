@@ -19,6 +19,10 @@ on:
         description: Crawl into a throwaway store; restore, save, and alert on nothing (no key needed)
         type: boolean
         default: false
+      enrich-budget-usd:
+        description: Most to spend answering questions about postings (leave empty for the daily cap)
+        type: string
+        default: ""
 
 permissions: {}
 
@@ -77,6 +81,73 @@ jobs:
           pnpm pipeline crawl --store "$STORE"
           --summary "$GITHUB_STEP_SUMMARY" --stats "$OUT/stats.json"
           ${MAX_BOARDS:+--max-boards "$MAX_BOARDS"}
+
+      # Asked between the crawl and the pack, so the snapshot carries the answers and the index
+      # below is built against them. After the pack, the answers would live only in a store file
+      # the runner then throws away, and tomorrow's run would pay to ask the same questions again.
+      #
+      # Asked even when the crawl failed partway, for the reason the pack runs anyway: the postings
+      # that were crawled are kept, and answering them now costs what answering them tomorrow
+      # would.
+      - name: Check whether answers can be refreshed
+        id: answers
+        if: ${{ !cancelled() && (inputs.dry-run || steps.restore.outcome == 'success') }}
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+        run: |
+          if [ -n "${TYPESAFE_API_KEY:-}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::TYPESAFE_API_KEY is not set, so today's postings go unanswered. The site states its own answer coverage, so this shows up as a falling figure rather than as silence."
+          fi
+
+      # A dry run needs no key, because the command reports its estimate and returns before it
+      # builds a client, so the whole step can be rehearsed before the secret exists.
+      - name: Answer the standard questions about new postings
+        id: enrich
+        if: ${{ !cancelled() && (inputs.dry-run || steps.answers.outputs.ready == 'true') }}
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          # Between 189 and 881 postings arrived per day over the first week of scheduled runs, and
+          # answering one costs about $0.0000866, so a dollar is more than ten times the daily
+          # need. It is a guard against a runaway rather than a working figure: a day that needs
+          # more than this has something wrong with it, and the step below says so out loud.
+          BUDGET: ${{ inputs.enrich-budget-usd || '1.00' }}
+          DRY: ${{ inputs.dry-run && '--dry-run' || '' }}
+        run: |
+          set -o pipefail
+          pnpm pipeline enrich --store "$STORE" --budget-usd "$BUDGET" --minutes 15 \
+            --ledger "$RUNNER_TEMP/ledger.jsonl" --summary "$GITHUB_STEP_SUMMARY" $DRY \
+            | tee "$RUNNER_TEMP/enrich.log"
+
+      # `pipeline enrich` exits 0 when it stops early: it treats a cap as a boundary rather than an
+      # error, and fails only when it answered nothing at all. On a daily delta, stopping early
+      # means the money or the clock ran out before the new postings were answered, and the only
+      # trace would be an index slightly thinner than the corpus. So the reason is read back from
+      # the command's own outcome line and anything short of a finished run fails the job. A line
+      # that cannot be read fails too, rather than reporting a reason nobody actually checked.
+      - name: Fail if the answer run stopped short
+        if: ${{ !cancelled() && !inputs.dry-run && steps.enrich.outcome == 'success' }}
+        env:
+          BUDGET: ${{ inputs.enrich-budget-usd || '1.00' }}
+        run: |
+          line=$(grep '^Answered ' "$RUNNER_TEMP/enrich.log" | tail -n 1 || true)
+          reason=${line##*(}
+          reason=${reason%)}
+          case "$reason" in
+            "nothing outstanding")
+              echo "Every posting outstanding at the start of this run was answered." ;;
+            budget)
+              echo "::error::Answering hit its \$$BUDGET cap before covering every new posting, so this run's index is thinner than the corpus. Find out why today cost many times the usual few cents, then catch up with a manual run that sets enrich-budget-usd."
+              exit 1 ;;
+            deadline | limit | errors)
+              echo "::error::Answering stopped early ($reason) before covering every new posting, so this run's index is thinner than the corpus."
+              exit 1 ;;
+            *)
+              echo "::error::Could not read the outcome of the answer run, so whether it finished is unknown. Read the step above."
+              exit 1 ;;
+          esac
 
       # Packed even when the crawl failed: every board's result is committed as it completes,
       # so a partial run's progress is worth keeping.
