@@ -12,6 +12,8 @@
   "scripts": {
     "check": "node scripts/check-text.ts && biome check && tsc -p tsconfig.json && tsc -p apps/site/tsconfig.json && tsc -p apps/site/tsconfig.scripts.json && vitest run --coverage",
     "check:text": "node scripts/check-text.ts",
+    "audit:prod": "pnpm audit --prod --audit-level moderate",
+    "audit:dev": "pnpm audit --dev",
     "lint": "biome check",
     "format": "biome check --write",
     "typecheck": "tsc -p tsconfig.json && tsc -p apps/site/tsconfig.json && tsc -p apps/site/tsconfig.scripts.json",

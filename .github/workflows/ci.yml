@@ -47,3 +47,35 @@ jobs:
 
       - name: Test with coverage
         run: pnpm test:coverage
+
+      # Last, so an advisory does not hide the lint, typecheck and test results for the same run.
+      - name: Audit production dependencies
+        run: pnpm audit:prod
+
+      # Development advisories do not ship, so they report instead of failing. They are written to
+      # the run summary and raise a warning annotation so a new one cannot pass unnoticed.
+      - name: Report development advisories
+        run: |
+          report="$(pnpm --silent audit:dev 2>&1)" || found=1
+          {
+            echo '### Development dependency advisories'
+            echo
+            if [ -n "${found:-}" ]; then
+              echo 'Reported, not gated: these packages are not shipped. Production exposure is gated'
+              echo 'by the `Audit production dependencies` step.'
+              echo
+              echo 'Expected response: upgrade the development dependency that pulls the advisory in.'
+              echo 'If no patched version is installable yet, add the GHSA to `pnpm.auditConfig.ignoreGhsas`'
+              echo 'in `package.json` with a reason and the condition for taking it back out.'
+              echo
+              echo '```text'
+              printf '%s\n' "$report"
+              echo '```'
+            else
+              echo 'No known vulnerabilities.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${found:-}" ]; then
+            counts="$(printf '%s\n' "$report" | grep -E '^([0-9]+ vulnerabilit|Severity:)' | tr '\n' ' ')"
+            echo "::warning title=Development dependency advisories::${counts}Not a merge blocker. See the run summary for the advisories and the expected response."
+          fi
