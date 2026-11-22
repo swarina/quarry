@@ -1,10 +1,13 @@
 version: 2
 updates:
   - package-ecosystem: npm
+    # The root only. This is one pnpm workspace with a single lockfile, so a scan of `/` already
+    # reaches every workspace member's manifest and updates the lockfile with it. Scanning
+    # `/apps/*` and `/packages/*` as well produced a second and third pull request for the same
+    # upgrade, each touching one manifest and not the shared lockfile, which cannot satisfy
+    # `pnpm install --frozen-lockfile` and so can never pass CI.
     directories:
       - /
-      - /apps/*
-      - /packages/*
     schedule:
       interval: weekly
       day: monday
