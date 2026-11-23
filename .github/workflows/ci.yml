@@ -45,6 +45,20 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # Before the tests, because it reports what the fixture files hold rather than how the run
+      # went, so the state is in the summary even when an unrelated test fails. The accuracy
+      # check skips an unlabelled golden set so that an ordinary run passes, which leaves nothing
+      # to tell "the accuracy check passed" from "the accuracy check did not happen". This says
+      # which it was. It reports instead of failing until the sheet is labelled; from then on,
+      # add `QUARRY_REQUIRE_GOLDEN: 1` to the test step below and a set going missing fails.
+      - name: Report standard question accuracy
+        run: |
+          report="$(pnpm --silent --filter @quarry/questions report-golden-set)" || missing=1
+          printf '%s\n' "$report" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${missing:-}" ]; then
+            echo "::warning title=Standard question accuracy not measured::The hand-labelled golden set is not complete, so the accuracy check did not run. See the run summary."
+          fi
+
       - name: Test with coverage
         run: pnpm test:coverage
 

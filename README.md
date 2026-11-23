@@ -113,9 +113,11 @@ layer follows from it:
 
 The honest open question, marked in the code where the bands are defined, is whether the model is
 *actually* calibrated on this corpus: 80% is only useful if answers called 80% likely are right about
-80% of the time. A harness (Brier score, reliability tables, expected calibration error) exists to
-measure exactly that against a hand-labelled set; until it runs, the bands are provisional and no
-accuracy figure is claimed.
+80% of the time. A harness (Brier score, reliability tables, expected calibration error) measures
+exactly that against a hand-labelled set. The set is sampled and committed, waiting on the labels
+themselves, which only a person can write; until it is labelled the harness reports each question
+as unmeasured rather than passing, CI says so in its run summary, the bands stay provisional, and
+no accuracy figure is claimed.
 
 ## What a question costs
 
@@ -264,7 +266,9 @@ the scope is deliberately bounded.
   which is a product to design once the cost model has been seen in real use.
 - **Per-question accuracy is not measured yet.** The site groups answers into likely / maybe /
   unlikely bands, but the cuts are chosen by eye pending a hand-labelled golden set, and no accuracy
-  figure is claimed until that exists.
+  figure is claimed until that exists. The sheet to label sits in `packages/questions/fixtures`, and
+  the README beside it says how; every question the suite could not score is reported as such, so
+  the gap cannot pass as green.
 - **500 postings and 5 criteria per request are judgements, not measurements.** The first real use
   should check whether a page of results is the unit people actually want to ask about.
 - **One model, pinned.** Jev is new; the integration is pinned to a single model version, and a

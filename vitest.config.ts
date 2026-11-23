@@ -12,6 +12,18 @@ export default defineConfig({
     ],
     environment: "node",
     restoreMocks: true,
+    /**
+     * Values the suite reads with `inject`, so that reading the environment stays in one place
+     * the linter allows rather than spreading through test files.
+     *
+     * `QUARRY_REQUIRE_GOLDEN=1` turns a missing or unlabelled accuracy golden set from a skip
+     * into a failure. It is off by default because the labels are not written yet and an
+     * ordinary run must pass; CI reports the state instead, and gains the flag once every
+     * question is labelled. See `packages/questions/src/golden.test.ts`.
+     */
+    provide: {
+      requireGoldenSet: process.env["QUARRY_REQUIRE_GOLDEN"] === "1",
+    },
     coverage: {
       provider: "v8",
       include: ["packages/*/src/**/*.ts"],
@@ -20,3 +32,9 @@ export default defineConfig({
     },
   },
 });
+
+declare module "vitest" {
+  interface ProvidedContext {
+    readonly requireGoldenSet: boolean;
+  }
+}
