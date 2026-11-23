@@ -188,6 +188,50 @@ describe("calibration", () => {
   });
 });
 
+describe("the base rate", () => {
+  it("says what always answering the commonest label would score", () => {
+    // Four labels, three of them onsite: a model that only ever said onsite would get 75%.
+    const score = scoreQuestion(
+      ARRANGEMENT,
+      [label("1", "onsite"), label("2", "onsite"), label("3", "onsite"), label("4", "remote")],
+      [
+        predict("1", [0, 0, 100]),
+        predict("2", [0, 0, 100]),
+        predict("3", [0, 0, 100]),
+        predict("4", [0, 0, 100]),
+      ],
+    );
+    expect(score.majorityShare).toBe(0.75);
+    // Which is exactly what this model scored, so the accuracy is the base rate and no more.
+    expect(score.accuracy).toBe(0.75);
+  });
+
+  it("counts the labels, not the answers, so a one-sided model does not move it", () => {
+    const score = scoreQuestion(
+      ARRANGEMENT,
+      [label("1", "remote"), label("2", "remote"), label("3", "onsite")],
+      [predict("1", [0, 0, 100]), predict("2", [0, 0, 100]), predict("3", [0, 0, 100])],
+    );
+    expect(score.majorityShare).toBeCloseTo(2 / 3, 10);
+    expect(score.accuracy).toBeCloseTo(1 / 3, 10);
+  });
+
+  it("excludes what could not be compared, as every other number here does", () => {
+    const score = scoreQuestion(
+      ARRANGEMENT,
+      [label("1", "remote"), label("2", "remote"), label("3", "")],
+      [predict("1", [100, 0, 0])],
+    );
+    // Only posting 1 is compared: one label, one option, so the base rate is everything.
+    expect(score.compared).toBe(1);
+    expect(score.majorityShare).toBe(1);
+  });
+
+  it("reports nothing rather than zero when there is nothing to compare", () => {
+    expect(scoreQuestion(ARRANGEMENT, [], []).majorityShare).toBeNaN();
+  });
+});
+
 describe("what a threshold would cost", () => {
   it("says what share is kept and how accurate it is at each cut", () => {
     const score = scoreQuestion(
@@ -258,6 +302,7 @@ describe("the report", () => {
     expect(text).toContain("### arrangement");
     expect(text).toContain("2 compared");
     expect(text).toContain("accuracy 50.0%");
+    expect(text).toContain("50.0% for always answering the commonest label");
     expect(text).toContain("a reader could not answer");
     expect(text).toContain("| Shown above | Kept | Accuracy |");
     expect(text).toContain("| Confidence | Count | Claimed | Observed |");

@@ -85,6 +85,16 @@ export interface QuestionScore {
   /** Share where the likeliest option is the labelled one, 0 to 1. */
   readonly accuracy: number;
   /**
+   * What always answering the most common label would score, 0 to 1: the share of the compared
+   * labels held by their commonest option.
+   *
+   * Accuracy alone cannot be read without this. Where one option dominates, as "not mentioned"
+   * does for sponsorship, a model that learned nothing still scores the base rate, so a number
+   * above it is the only part that is the model's doing. Reported, never asserted on: whether
+   * beating it is the bar belongs to whoever sets the floors.
+   */
+  readonly majorityShare: number;
+  /**
    * Mean probability the model put on the right option. Unlike accuracy it reads the whole
    * distribution, so being wrong but unsure scores better than being wrong and certain.
    */
@@ -213,6 +223,10 @@ export function scoreQuestion(
   }
 
   const right = compared.filter((entry) => entry.picked === entry.expected).length;
+  const perLabel = new Map<number, number>();
+  for (const entry of compared)
+    perLabel.set(entry.expected, (perLabel.get(entry.expected) ?? 0) + 1);
+  const commonest = Math.max(0, ...perLabel.values());
   const mean = (values: readonly number[]) =>
     values.length === 0
       ? Number.NaN
@@ -241,6 +255,7 @@ export function scoreQuestion(
     invalid,
     unanswered,
     accuracy: compared.length === 0 ? Number.NaN : right / compared.length,
+    majorityShare: compared.length === 0 ? Number.NaN : commonest / compared.length,
     meanTruthProbability: mean(compared.map((entry) => entry.truth / 100)),
     brier: mean(compared.map(brierOf)),
     buckets: spread,
@@ -278,7 +293,8 @@ export function renderScore(score: QuestionScore): string {
   const lines = [
     `### ${score.question}`,
     "",
-    `- ${score.compared} compared: accuracy ${percent(score.accuracy)}, mean probability on the right answer ${percent(score.meanTruthProbability)}.`,
+    `- ${score.compared} compared: accuracy ${percent(score.accuracy)}, against ${percent(score.majorityShare)} for always answering the commonest label.`,
+    `- Mean probability on the right answer ${percent(score.meanTruthProbability)}.`,
     `- Brier ${Number.isNaN(score.brier) ? "n/a" : score.brier.toFixed(3)}, calibration error ${percent(score.calibrationError)}.`,
   ];
   const skipped: string[] = [];

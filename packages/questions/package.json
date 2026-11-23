@@ -9,6 +9,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "report-golden-set": "node scripts/report-golden-set.ts"
+  },
   "dependencies": {
     "@quarry/jev": "workspace:*"
   }

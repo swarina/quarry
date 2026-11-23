@@ -1,0 +1,5800 @@
+{
+  "questions": [
+    {
+      "id": "arrangement",
+      "version": 1,
+      "about": "Whether the work is remote, hybrid, or on site",
+      "name": "Arrangement",
+      "kind": "choice",
+      "options": [
+        "remote",
+        "hybrid",
+        "onsite",
+        "not_stated"
+      ],
+      "labels": [
+        "The role can be done fully remotely, possibly limited to stated countries or time zones",
+        "Regular office days are required, and some remote work is allowed",
+        "The work happens at an office or other site, with no remote option stated",
+        "The posting does not say where the work is done"
+      ],
+      "names": [
+        "Remote",
+        "Hybrid",
+        "On site",
+        "Not stated"
+      ]
+    },
+    {
+      "id": "seniority",
+      "version": 1,
+      "about": "How senior the role is, from intern to leadership",
+      "name": "Seniority",
+      "kind": "score",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "labels": [
+        "Internship, apprenticeship, or working student",
+        "Entry level: new graduates or early career, little experience expected",
+        "Mid level: works independently on well-defined problems",
+        "Senior: leads projects, mentors others, owns ambiguous problems",
+        "Staff, principal, or leadership: sets direction across teams or manages managers"
+      ],
+      "names": [
+        "Intern",
+        "Entry level",
+        "Mid level",
+        "Senior",
+        "Staff or above"
+      ]
+    },
+    {
+      "id": "sponsorship",
+      "version": 1,
+      "about": "Whether visa sponsorship is offered, refused, or unmentioned",
+      "name": "Visa sponsorship",
+      "kind": "choice",
+      "options": [
+        "offers",
+        "does_not_offer",
+        "not_mentioned"
+      ],
+      "labels": [
+        "States that visa sponsorship is available for this role",
+        "States that sponsorship is not available, or that candidates must already be authorized to work",
+        "Says nothing about visa sponsorship or work authorization"
+      ],
+      "names": [
+        "Offered",
+        "Not offered",
+        "Not mentioned"
+      ]
+    },
+    {
+      "id": "onCall",
+      "version": 1,
+      "about": "Whether the role includes an on-call rota",
+      "name": "On call",
+      "kind": "noul",
+      "options": [
+        "no",
+        "yes"
+      ],
+      "labels": [
+        "No",
+        "Yes"
+      ],
+      "names": [
+        "No",
+        "Yes"
+      ]
+    }
+  ],
+  "predictions": [
+    {
+      "posting": "szanbltrcurcb2cd",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "szanbltrcurcb2cd",
+      "question": "seniority",
+      "distribution": [
+        100,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "szanbltrcurcb2cd",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "szanbltrcurcb2cd",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "ct3qwhacg3gfprmu",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "ct3qwhacg3gfprmu",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "ct3qwhacg3gfprmu",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ct3qwhacg3gfprmu",
+      "question": "onCall",
+      "distribution": [
+        96,
+        4
+      ]
+    },
+    {
+      "posting": "keef7rc3tac5eenc",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        89,
+        11
+      ]
+    },
+    {
+      "posting": "keef7rc3tac5eenc",
+      "question": "seniority",
+      "distribution": [
+        0,
+        1,
+        28,
+        70,
+        1
+      ]
+    },
+    {
+      "posting": "keef7rc3tac5eenc",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "keef7rc3tac5eenc",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "ibgmlvtto74skmc4",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "ibgmlvtto74skmc4",
+      "question": "seniority",
+      "distribution": [
+        100,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "ibgmlvtto74skmc4",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        92,
+        8
+      ]
+    },
+    {
+      "posting": "ibgmlvtto74skmc4",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "svtoc6yvwoojcjtg",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        89,
+        11
+      ]
+    },
+    {
+      "posting": "svtoc6yvwoojcjtg",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        5,
+        95
+      ]
+    },
+    {
+      "posting": "svtoc6yvwoojcjtg",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "svtoc6yvwoojcjtg",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "3frnzo5qh3sgv4xk",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        34,
+        66
+      ]
+    },
+    {
+      "posting": "3frnzo5qh3sgv4xk",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        63,
+        37
+      ]
+    },
+    {
+      "posting": "3frnzo5qh3sgv4xk",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "3frnzo5qh3sgv4xk",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "5lqxcndf7c6tja3e",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "5lqxcndf7c6tja3e",
+      "question": "seniority",
+      "distribution": [
+        0,
+        47,
+        48,
+        5,
+        0
+      ]
+    },
+    {
+      "posting": "5lqxcndf7c6tja3e",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "5lqxcndf7c6tja3e",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "b5urdgthsmwi634f",
+      "question": "arrangement",
+      "distribution": [
+        95,
+        0,
+        0,
+        5
+      ]
+    },
+    {
+      "posting": "b5urdgthsmwi634f",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        2,
+        98
+      ]
+    },
+    {
+      "posting": "b5urdgthsmwi634f",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "b5urdgthsmwi634f",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "7v63mbkzy6mcqbrb",
+      "question": "arrangement",
+      "distribution": [
+        72,
+        7,
+        13,
+        8
+      ]
+    },
+    {
+      "posting": "7v63mbkzy6mcqbrb",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        86,
+        14
+      ]
+    },
+    {
+      "posting": "7v63mbkzy6mcqbrb",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        1,
+        99
+      ]
+    },
+    {
+      "posting": "7v63mbkzy6mcqbrb",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "5nleux2cyuiyxisw",
+      "question": "arrangement",
+      "distribution": [
+        54,
+        7,
+        16,
+        23
+      ]
+    },
+    {
+      "posting": "5nleux2cyuiyxisw",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        2,
+        98,
+        0
+      ]
+    },
+    {
+      "posting": "5nleux2cyuiyxisw",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "5nleux2cyuiyxisw",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "itbiw45pdypulk4n",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        51,
+        49
+      ]
+    },
+    {
+      "posting": "itbiw45pdypulk4n",
+      "question": "seniority",
+      "distribution": [
+        0,
+        69,
+        31,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "itbiw45pdypulk4n",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "itbiw45pdypulk4n",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "sycqaxdvbvvfcjlz",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        40,
+        58,
+        2
+      ]
+    },
+    {
+      "posting": "sycqaxdvbvvfcjlz",
+      "question": "seniority",
+      "distribution": [
+        0,
+        3,
+        82,
+        15,
+        0
+      ]
+    },
+    {
+      "posting": "sycqaxdvbvvfcjlz",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "sycqaxdvbvvfcjlz",
+      "question": "onCall",
+      "distribution": [
+        95,
+        5
+      ]
+    },
+    {
+      "posting": "m5zqbybt6dtbtqdv",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "m5zqbybt6dtbtqdv",
+      "question": "seniority",
+      "distribution": [
+        0,
+        35,
+        62,
+        3,
+        0
+      ]
+    },
+    {
+      "posting": "m5zqbybt6dtbtqdv",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        2,
+        98
+      ]
+    },
+    {
+      "posting": "m5zqbybt6dtbtqdv",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "vdkvuoycxzim36fa",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        53,
+        47
+      ]
+    },
+    {
+      "posting": "vdkvuoycxzim36fa",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        2,
+        98,
+        0
+      ]
+    },
+    {
+      "posting": "vdkvuoycxzim36fa",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "vdkvuoycxzim36fa",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "zzxgur3asq4pmvn2",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "zzxgur3asq4pmvn2",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "zzxgur3asq4pmvn2",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "zzxgur3asq4pmvn2",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "nrsqjuyigtnpcc5z",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "nrsqjuyigtnpcc5z",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        73,
+        27
+      ]
+    },
+    {
+      "posting": "nrsqjuyigtnpcc5z",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "nrsqjuyigtnpcc5z",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "rnvhknpuay7hcc5p",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "rnvhknpuay7hcc5p",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        94,
+        6
+      ]
+    },
+    {
+      "posting": "rnvhknpuay7hcc5p",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        90,
+        10
+      ]
+    },
+    {
+      "posting": "rnvhknpuay7hcc5p",
+      "question": "onCall",
+      "distribution": [
+        96,
+        4
+      ]
+    },
+    {
+      "posting": "sr6zufz622laq34e",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        29,
+        71,
+        0
+      ]
+    },
+    {
+      "posting": "sr6zufz622laq34e",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "sr6zufz622laq34e",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "sr6zufz622laq34e",
+      "question": "onCall",
+      "distribution": [
+        78,
+        22
+      ]
+    },
+    {
+      "posting": "zgtzzajsxbqghtfb",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        10,
+        52,
+        38
+      ]
+    },
+    {
+      "posting": "zgtzzajsxbqghtfb",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        3,
+        97,
+        0
+      ]
+    },
+    {
+      "posting": "zgtzzajsxbqghtfb",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "zgtzzajsxbqghtfb",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "4al5pn6i7vywtbhu",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "4al5pn6i7vywtbhu",
+      "question": "seniority",
+      "distribution": [
+        0,
+        1,
+        99,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "4al5pn6i7vywtbhu",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "4al5pn6i7vywtbhu",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "tlp4mjvldhzikgcv",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "tlp4mjvldhzikgcv",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        68,
+        32,
+        0
+      ]
+    },
+    {
+      "posting": "tlp4mjvldhzikgcv",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "tlp4mjvldhzikgcv",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "tl7jkmqb3cimcbmi",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "tl7jkmqb3cimcbmi",
+      "question": "seniority",
+      "distribution": [
+        0,
+        5,
+        94,
+        1,
+        0
+      ]
+    },
+    {
+      "posting": "tl7jkmqb3cimcbmi",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "tl7jkmqb3cimcbmi",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "eavjlqdprfqlew4c",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "eavjlqdprfqlew4c",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        43,
+        57
+      ]
+    },
+    {
+      "posting": "eavjlqdprfqlew4c",
+      "question": "sponsorship",
+      "distribution": [
+        1,
+        82,
+        17
+      ]
+    },
+    {
+      "posting": "eavjlqdprfqlew4c",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "nyt3fblbp6d56q4x",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "nyt3fblbp6d56q4x",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        4,
+        96
+      ]
+    },
+    {
+      "posting": "nyt3fblbp6d56q4x",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        83,
+        17
+      ]
+    },
+    {
+      "posting": "nyt3fblbp6d56q4x",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "duty3e2jhfxpiv6q",
+      "question": "arrangement",
+      "distribution": [
+        98,
+        1,
+        0,
+        1
+      ]
+    },
+    {
+      "posting": "duty3e2jhfxpiv6q",
+      "question": "seniority",
+      "distribution": [
+        0,
+        94,
+        6,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "duty3e2jhfxpiv6q",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "duty3e2jhfxpiv6q",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "diekpjhgvjzt53xe",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "diekpjhgvjzt53xe",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "diekpjhgvjzt53xe",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        12,
+        88
+      ]
+    },
+    {
+      "posting": "diekpjhgvjzt53xe",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "ymss4dehxnfrsrwa",
+      "question": "arrangement",
+      "distribution": [
+        17,
+        0,
+        78,
+        5
+      ]
+    },
+    {
+      "posting": "ymss4dehxnfrsrwa",
+      "question": "seniority",
+      "distribution": [
+        0,
+        1,
+        84,
+        15,
+        0
+      ]
+    },
+    {
+      "posting": "ymss4dehxnfrsrwa",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ymss4dehxnfrsrwa",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "nxelpm6ocxyf3yxx",
+      "question": "arrangement",
+      "distribution": [
+        74,
+        20,
+        1,
+        5
+      ]
+    },
+    {
+      "posting": "nxelpm6ocxyf3yxx",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "nxelpm6ocxyf3yxx",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "nxelpm6ocxyf3yxx",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "hdiy35ndf6lanjwc",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "hdiy35ndf6lanjwc",
+      "question": "seniority",
+      "distribution": [
+        0,
+        93,
+        7,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "hdiy35ndf6lanjwc",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "hdiy35ndf6lanjwc",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "ljedxklylrwlf32k",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "ljedxklylrwlf32k",
+      "question": "seniority",
+      "distribution": [
+        0,
+        40,
+        60,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "ljedxklylrwlf32k",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ljedxklylrwlf32k",
+      "question": "onCall",
+      "distribution": [
+        96,
+        4
+      ]
+    },
+    {
+      "posting": "6sdscvku77xv36hg",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        41,
+        59
+      ]
+    },
+    {
+      "posting": "6sdscvku77xv36hg",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "6sdscvku77xv36hg",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "6sdscvku77xv36hg",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "6jw4ivo4yyo2xnco",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        71,
+        29
+      ]
+    },
+    {
+      "posting": "6jw4ivo4yyo2xnco",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "6jw4ivo4yyo2xnco",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "6jw4ivo4yyo2xnco",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "pya4xvruxjqlefv4",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "pya4xvruxjqlefv4",
+      "question": "seniority",
+      "distribution": [
+        0,
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "pya4xvruxjqlefv4",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "pya4xvruxjqlefv4",
+      "question": "onCall",
+      "distribution": [
+        95,
+        5
+      ]
+    },
+    {
+      "posting": "dms3pkxoyol4ayne",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "dms3pkxoyol4ayne",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        23,
+        77,
+        0
+      ]
+    },
+    {
+      "posting": "dms3pkxoyol4ayne",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "dms3pkxoyol4ayne",
+      "question": "onCall",
+      "distribution": [
+        5,
+        95
+      ]
+    },
+    {
+      "posting": "n3kwwh676aafunwh",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "n3kwwh676aafunwh",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        96,
+        4
+      ]
+    },
+    {
+      "posting": "n3kwwh676aafunwh",
+      "question": "sponsorship",
+      "distribution": [
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "n3kwwh676aafunwh",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "gjkvalovnojn7lqt",
+      "question": "arrangement",
+      "distribution": [
+        1,
+        0,
+        21,
+        78
+      ]
+    },
+    {
+      "posting": "gjkvalovnojn7lqt",
+      "question": "seniority",
+      "distribution": [
+        0,
+        1,
+        97,
+        2,
+        0
+      ]
+    },
+    {
+      "posting": "gjkvalovnojn7lqt",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "gjkvalovnojn7lqt",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "4fdhzjlnjuir7p7u",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "4fdhzjlnjuir7p7u",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        2,
+        94,
+        4
+      ]
+    },
+    {
+      "posting": "4fdhzjlnjuir7p7u",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "4fdhzjlnjuir7p7u",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "vnan3mgjjmdulvsz",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "vnan3mgjjmdulvsz",
+      "question": "seniority",
+      "distribution": [
+        0,
+        1,
+        98,
+        1,
+        0
+      ]
+    },
+    {
+      "posting": "vnan3mgjjmdulvsz",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        47,
+        53
+      ]
+    },
+    {
+      "posting": "vnan3mgjjmdulvsz",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "d32bnygh7lapzjsq",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "d32bnygh7lapzjsq",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        85,
+        15,
+        0
+      ]
+    },
+    {
+      "posting": "d32bnygh7lapzjsq",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "d32bnygh7lapzjsq",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "5z7le2vhxlmenr34",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        3,
+        97
+      ]
+    },
+    {
+      "posting": "5z7le2vhxlmenr34",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "5z7le2vhxlmenr34",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "5z7le2vhxlmenr34",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "hzy6fvrlqmafs4k6",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        86,
+        14
+      ]
+    },
+    {
+      "posting": "hzy6fvrlqmafs4k6",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "hzy6fvrlqmafs4k6",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "hzy6fvrlqmafs4k6",
+      "question": "onCall",
+      "distribution": [
+        3,
+        97
+      ]
+    },
+    {
+      "posting": "a6ge3nzbxecm3zr5",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        63,
+        37
+      ]
+    },
+    {
+      "posting": "a6ge3nzbxecm3zr5",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        1,
+        99
+      ]
+    },
+    {
+      "posting": "a6ge3nzbxecm3zr5",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "a6ge3nzbxecm3zr5",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "prnrwa3332p7ax2m",
+      "question": "arrangement",
+      "distribution": [
+        93,
+        7,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "prnrwa3332p7ax2m",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "prnrwa3332p7ax2m",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        17,
+        83
+      ]
+    },
+    {
+      "posting": "prnrwa3332p7ax2m",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "gd4pcfdvsrupyhmp",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "gd4pcfdvsrupyhmp",
+      "question": "seniority",
+      "distribution": [
+        0,
+        98,
+        2,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "gd4pcfdvsrupyhmp",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "gd4pcfdvsrupyhmp",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "xivqw7bvvrkdvm3n",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "xivqw7bvvrkdvm3n",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        25,
+        75
+      ]
+    },
+    {
+      "posting": "xivqw7bvvrkdvm3n",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "xivqw7bvvrkdvm3n",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "ujqghugyvk2t6au4",
+      "question": "arrangement",
+      "distribution": [
+        24,
+        76,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "ujqghugyvk2t6au4",
+      "question": "seniority",
+      "distribution": [
+        0,
+        97,
+        3,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "ujqghugyvk2t6au4",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ujqghugyvk2t6au4",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "5xqxfq3auvqtjxwo",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        75,
+        25
+      ]
+    },
+    {
+      "posting": "5xqxfq3auvqtjxwo",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        51,
+        49,
+        0
+      ]
+    },
+    {
+      "posting": "5xqxfq3auvqtjxwo",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "5xqxfq3auvqtjxwo",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "7mrd4yq2ownelxl2",
+      "question": "arrangement",
+      "distribution": [
+        97,
+        0,
+        0,
+        3
+      ]
+    },
+    {
+      "posting": "7mrd4yq2ownelxl2",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "7mrd4yq2ownelxl2",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "7mrd4yq2ownelxl2",
+      "question": "onCall",
+      "distribution": [
+        1,
+        99
+      ]
+    },
+    {
+      "posting": "xerqff33nxslygfj",
+      "question": "arrangement",
+      "distribution": [
+        65,
+        0,
+        21,
+        14
+      ]
+    },
+    {
+      "posting": "xerqff33nxslygfj",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        3,
+        97,
+        0
+      ]
+    },
+    {
+      "posting": "xerqff33nxslygfj",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "xerqff33nxslygfj",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "pwpe6whjaswnlt4x",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "pwpe6whjaswnlt4x",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        90,
+        10
+      ]
+    },
+    {
+      "posting": "pwpe6whjaswnlt4x",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "pwpe6whjaswnlt4x",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "4neorbwhw6lx23hb",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        62,
+        38
+      ]
+    },
+    {
+      "posting": "4neorbwhw6lx23hb",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        96,
+        4
+      ]
+    },
+    {
+      "posting": "4neorbwhw6lx23hb",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "4neorbwhw6lx23hb",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "5lb3poxtzzvvtsiw",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        50,
+        50
+      ]
+    },
+    {
+      "posting": "5lb3poxtzzvvtsiw",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        5,
+        95
+      ]
+    },
+    {
+      "posting": "5lb3poxtzzvvtsiw",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "5lb3poxtzzvvtsiw",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "xlcdahe5nksfy2nn",
+      "question": "arrangement",
+      "distribution": [
+        33,
+        67,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "xlcdahe5nksfy2nn",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "xlcdahe5nksfy2nn",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        1,
+        99
+      ]
+    },
+    {
+      "posting": "xlcdahe5nksfy2nn",
+      "question": "onCall",
+      "distribution": [
+        88,
+        12
+      ]
+    },
+    {
+      "posting": "4edm3dti7wpix6wa",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        68,
+        32
+      ]
+    },
+    {
+      "posting": "4edm3dti7wpix6wa",
+      "question": "seniority",
+      "distribution": [
+        0,
+        5,
+        94,
+        1,
+        0
+      ]
+    },
+    {
+      "posting": "4edm3dti7wpix6wa",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "4edm3dti7wpix6wa",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "27elk6dgv2rnuj36",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "27elk6dgv2rnuj36",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "27elk6dgv2rnuj36",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "27elk6dgv2rnuj36",
+      "question": "onCall",
+      "distribution": [
+        95,
+        5
+      ]
+    },
+    {
+      "posting": "ydojvz2i7gwu5g4f",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "ydojvz2i7gwu5g4f",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        28,
+        72,
+        0
+      ]
+    },
+    {
+      "posting": "ydojvz2i7gwu5g4f",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ydojvz2i7gwu5g4f",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "lwxfkuteykal4asr",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "lwxfkuteykal4asr",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        76,
+        24
+      ]
+    },
+    {
+      "posting": "lwxfkuteykal4asr",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "lwxfkuteykal4asr",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "7imkg3ecl5uceny4",
+      "question": "arrangement",
+      "distribution": [
+        86,
+        14,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "7imkg3ecl5uceny4",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        7,
+        93,
+        0
+      ]
+    },
+    {
+      "posting": "7imkg3ecl5uceny4",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "7imkg3ecl5uceny4",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "rkyytexmzrclaj3k",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "rkyytexmzrclaj3k",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "rkyytexmzrclaj3k",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "rkyytexmzrclaj3k",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "jbpeckb6jb2kz6a7",
+      "question": "arrangement",
+      "distribution": [
+        13,
+        2,
+        21,
+        64
+      ]
+    },
+    {
+      "posting": "jbpeckb6jb2kz6a7",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        9,
+        91,
+        0
+      ]
+    },
+    {
+      "posting": "jbpeckb6jb2kz6a7",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "jbpeckb6jb2kz6a7",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "cnykypy6xh6v7cwa",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "cnykypy6xh6v7cwa",
+      "question": "seniority",
+      "distribution": [
+        0,
+        95,
+        5,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "cnykypy6xh6v7cwa",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "cnykypy6xh6v7cwa",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "7i4wjyznw4sk7dfe",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        91,
+        9
+      ]
+    },
+    {
+      "posting": "7i4wjyznw4sk7dfe",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        6,
+        94,
+        0
+      ]
+    },
+    {
+      "posting": "7i4wjyznw4sk7dfe",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "7i4wjyznw4sk7dfe",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "6uclysugqbzd22hn",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "6uclysugqbzd22hn",
+      "question": "seniority",
+      "distribution": [
+        0,
+        2,
+        97,
+        1,
+        0
+      ]
+    },
+    {
+      "posting": "6uclysugqbzd22hn",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "6uclysugqbzd22hn",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "pyp3nkf64poa53bd",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        98,
+        2,
+        0
+      ]
+    },
+    {
+      "posting": "pyp3nkf64poa53bd",
+      "question": "seniority",
+      "distribution": [
+        0,
+        99,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "pyp3nkf64poa53bd",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "pyp3nkf64poa53bd",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "qu66xaeq6t4ukkgb",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "qu66xaeq6t4ukkgb",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        77,
+        23
+      ]
+    },
+    {
+      "posting": "qu66xaeq6t4ukkgb",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "qu66xaeq6t4ukkgb",
+      "question": "onCall",
+      "distribution": [
+        77,
+        23
+      ]
+    },
+    {
+      "posting": "dxdziwsmfx3ymx4a",
+      "question": "arrangement",
+      "distribution": [
+        7,
+        6,
+        80,
+        7
+      ]
+    },
+    {
+      "posting": "dxdziwsmfx3ymx4a",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        5,
+        95
+      ]
+    },
+    {
+      "posting": "dxdziwsmfx3ymx4a",
+      "question": "sponsorship",
+      "distribution": [
+        2,
+        98,
+        0
+      ]
+    },
+    {
+      "posting": "dxdziwsmfx3ymx4a",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "sriiz5whzdgsxmvr",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        2,
+        25,
+        73
+      ]
+    },
+    {
+      "posting": "sriiz5whzdgsxmvr",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "sriiz5whzdgsxmvr",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "sriiz5whzdgsxmvr",
+      "question": "onCall",
+      "distribution": [
+        90,
+        10
+      ]
+    },
+    {
+      "posting": "flj4jkk26nhwp7u2",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "flj4jkk26nhwp7u2",
+      "question": "seniority",
+      "distribution": [
+        0,
+        95,
+        5,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "flj4jkk26nhwp7u2",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "flj4jkk26nhwp7u2",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "dzqb6fuuublqp3fq",
+      "question": "arrangement",
+      "distribution": [
+        12,
+        0,
+        61,
+        27
+      ]
+    },
+    {
+      "posting": "dzqb6fuuublqp3fq",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "dzqb6fuuublqp3fq",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "dzqb6fuuublqp3fq",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "ntwekqvqwldko3ij",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        45,
+        55
+      ]
+    },
+    {
+      "posting": "ntwekqvqwldko3ij",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "ntwekqvqwldko3ij",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ntwekqvqwldko3ij",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "ftx3ur5fldkjlzpf",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        94,
+        6
+      ]
+    },
+    {
+      "posting": "ftx3ur5fldkjlzpf",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "ftx3ur5fldkjlzpf",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ftx3ur5fldkjlzpf",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "abg7332m5dfzkp4r",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        25,
+        75
+      ]
+    },
+    {
+      "posting": "abg7332m5dfzkp4r",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "abg7332m5dfzkp4r",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "abg7332m5dfzkp4r",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "rcp24ciugljlb3py",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "rcp24ciugljlb3py",
+      "question": "seniority",
+      "distribution": [
+        0,
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "rcp24ciugljlb3py",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "rcp24ciugljlb3py",
+      "question": "onCall",
+      "distribution": [
+        92,
+        8
+      ]
+    },
+    {
+      "posting": "bqc4a32kmr2vwzz6",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "bqc4a32kmr2vwzz6",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        23,
+        77,
+        0
+      ]
+    },
+    {
+      "posting": "bqc4a32kmr2vwzz6",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "bqc4a32kmr2vwzz6",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "7db523fmx2b4puco",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        70,
+        30
+      ]
+    },
+    {
+      "posting": "7db523fmx2b4puco",
+      "question": "seniority",
+      "distribution": [
+        0,
+        1,
+        97,
+        2,
+        0
+      ]
+    },
+    {
+      "posting": "7db523fmx2b4puco",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "7db523fmx2b4puco",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "6m5vdwljs5r5q52y",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        63,
+        37,
+        0
+      ]
+    },
+    {
+      "posting": "6m5vdwljs5r5q52y",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        97,
+        3,
+        0
+      ]
+    },
+    {
+      "posting": "6m5vdwljs5r5q52y",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "6m5vdwljs5r5q52y",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "xadkrjkq7vrf7bk7",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        99,
+        1,
+        0
+      ]
+    },
+    {
+      "posting": "xadkrjkq7vrf7bk7",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "xadkrjkq7vrf7bk7",
+      "question": "sponsorship",
+      "distribution": [
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "xadkrjkq7vrf7bk7",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "podkrsjaaxkxehgv",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "podkrsjaaxkxehgv",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "podkrsjaaxkxehgv",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "podkrsjaaxkxehgv",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "fkoqp7orlgwf5eoo",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        92,
+        8
+      ]
+    },
+    {
+      "posting": "fkoqp7orlgwf5eoo",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        70,
+        30,
+        0
+      ]
+    },
+    {
+      "posting": "fkoqp7orlgwf5eoo",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "fkoqp7orlgwf5eoo",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "hrjako64by3ovg4v",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "hrjako64by3ovg4v",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        55,
+        45
+      ]
+    },
+    {
+      "posting": "hrjako64by3ovg4v",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "hrjako64by3ovg4v",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "fdsbpnfskjkvykch",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "fdsbpnfskjkvykch",
+      "question": "seniority",
+      "distribution": [
+        0,
+        94,
+        6,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "fdsbpnfskjkvykch",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "fdsbpnfskjkvykch",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "fblxpuusbqk4qf3h",
+      "question": "arrangement",
+      "distribution": [
+        99,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "fblxpuusbqk4qf3h",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        1,
+        99
+      ]
+    },
+    {
+      "posting": "fblxpuusbqk4qf3h",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "fblxpuusbqk4qf3h",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "54w6zoamnzpvf6jx",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "54w6zoamnzpvf6jx",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "54w6zoamnzpvf6jx",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "54w6zoamnzpvf6jx",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "ccvip7z4txfabsiq",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "ccvip7z4txfabsiq",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        96,
+        4
+      ]
+    },
+    {
+      "posting": "ccvip7z4txfabsiq",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ccvip7z4txfabsiq",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "vcqzcdh4r6dhixfn",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        98,
+        2,
+        0
+      ]
+    },
+    {
+      "posting": "vcqzcdh4r6dhixfn",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "vcqzcdh4r6dhixfn",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "vcqzcdh4r6dhixfn",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "jojfmyz4vhwykcib",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "jojfmyz4vhwykcib",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "jojfmyz4vhwykcib",
+      "question": "sponsorship",
+      "distribution": [
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "jojfmyz4vhwykcib",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "2w5nigny6hflfoxh",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "2w5nigny6hflfoxh",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        4,
+        96,
+        0
+      ]
+    },
+    {
+      "posting": "2w5nigny6hflfoxh",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "2w5nigny6hflfoxh",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "w66kjwgroksut7ht",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "w66kjwgroksut7ht",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        1,
+        99,
+        0
+      ]
+    },
+    {
+      "posting": "w66kjwgroksut7ht",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "w66kjwgroksut7ht",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "3f22ljysxm7ok3ls",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "3f22ljysxm7ok3ls",
+      "question": "seniority",
+      "distribution": [
+        0,
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "3f22ljysxm7ok3ls",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "3f22ljysxm7ok3ls",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "kvxvua5rt6aokv2i",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "kvxvua5rt6aokv2i",
+      "question": "seniority",
+      "distribution": [
+        0,
+        2,
+        98,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "kvxvua5rt6aokv2i",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "kvxvua5rt6aokv2i",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "nmdbkeqbf7fmh3hf",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "nmdbkeqbf7fmh3hf",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "nmdbkeqbf7fmh3hf",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "nmdbkeqbf7fmh3hf",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "naukeb4xhdzsisoa",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "naukeb4xhdzsisoa",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "naukeb4xhdzsisoa",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "naukeb4xhdzsisoa",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "iqcy42msxleazcqc",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "iqcy42msxleazcqc",
+      "question": "seniority",
+      "distribution": [
+        0,
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "iqcy42msxleazcqc",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "iqcy42msxleazcqc",
+      "question": "onCall",
+      "distribution": [
+        95,
+        5
+      ]
+    },
+    {
+      "posting": "q43frfwcxqt34ax2",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        79,
+        21
+      ]
+    },
+    {
+      "posting": "q43frfwcxqt34ax2",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        26,
+        74
+      ]
+    },
+    {
+      "posting": "q43frfwcxqt34ax2",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "q43frfwcxqt34ax2",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "2i6bipxtsxvx2szt",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        34,
+        3,
+        63
+      ]
+    },
+    {
+      "posting": "2i6bipxtsxvx2szt",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "2i6bipxtsxvx2szt",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "2i6bipxtsxvx2szt",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "rtxlzdt2jaxn6g25",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "rtxlzdt2jaxn6g25",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "rtxlzdt2jaxn6g25",
+      "question": "sponsorship",
+      "distribution": [
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "rtxlzdt2jaxn6g25",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "v6zu274c3m35pamo",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "v6zu274c3m35pamo",
+      "question": "seniority",
+      "distribution": [
+        0,
+        95,
+        5,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "v6zu274c3m35pamo",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "v6zu274c3m35pamo",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "buil47xiicrf2gvi",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        62,
+        38
+      ]
+    },
+    {
+      "posting": "buil47xiicrf2gvi",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "buil47xiicrf2gvi",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "buil47xiicrf2gvi",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "kn2ycyh7hw5jrl2u",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "kn2ycyh7hw5jrl2u",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "kn2ycyh7hw5jrl2u",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "kn2ycyh7hw5jrl2u",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "whgxmlazsqs5tbsf",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        94,
+        6,
+        0
+      ]
+    },
+    {
+      "posting": "whgxmlazsqs5tbsf",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "whgxmlazsqs5tbsf",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "whgxmlazsqs5tbsf",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "adxeddx7lslbzurf",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "adxeddx7lslbzurf",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        29,
+        71
+      ]
+    },
+    {
+      "posting": "adxeddx7lslbzurf",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        5,
+        95
+      ]
+    },
+    {
+      "posting": "adxeddx7lslbzurf",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "74xqg2so3na5qeck",
+      "question": "arrangement",
+      "distribution": [
+        95,
+        5,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "74xqg2so3na5qeck",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "74xqg2so3na5qeck",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "74xqg2so3na5qeck",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "nylrh2qay2bxwdg6",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        88,
+        12
+      ]
+    },
+    {
+      "posting": "nylrh2qay2bxwdg6",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "nylrh2qay2bxwdg6",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "nylrh2qay2bxwdg6",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "ovzrpgujlo6hlmie",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        69,
+        31
+      ]
+    },
+    {
+      "posting": "ovzrpgujlo6hlmie",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ovzrpgujlo6hlmie",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ovzrpgujlo6hlmie",
+      "question": "onCall",
+      "distribution": [
+        39,
+        61
+      ]
+    },
+    {
+      "posting": "mpz4zpyepxagt6ws",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "mpz4zpyepxagt6ws",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        1,
+        99
+      ]
+    },
+    {
+      "posting": "mpz4zpyepxagt6ws",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "mpz4zpyepxagt6ws",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "mywvhum6klui4ske",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        85,
+        15
+      ]
+    },
+    {
+      "posting": "mywvhum6klui4ske",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        78,
+        22,
+        0
+      ]
+    },
+    {
+      "posting": "mywvhum6klui4ske",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "mywvhum6klui4ske",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "vbi4xf7uglpautay",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        68,
+        32
+      ]
+    },
+    {
+      "posting": "vbi4xf7uglpautay",
+      "question": "seniority",
+      "distribution": [
+        0,
+        94,
+        6,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "vbi4xf7uglpautay",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "vbi4xf7uglpautay",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "y3y2plrzt6q4djso",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "y3y2plrzt6q4djso",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        3,
+        97,
+        0
+      ]
+    },
+    {
+      "posting": "y3y2plrzt6q4djso",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "y3y2plrzt6q4djso",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "dhmhk3ktdv4ujzie",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "dhmhk3ktdv4ujzie",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "dhmhk3ktdv4ujzie",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "dhmhk3ktdv4ujzie",
+      "question": "onCall",
+      "distribution": [
+        43,
+        57
+      ]
+    },
+    {
+      "posting": "xwv2xjcrr2dtoup2",
+      "question": "arrangement",
+      "distribution": [
+        70,
+        9,
+        19,
+        2
+      ]
+    },
+    {
+      "posting": "xwv2xjcrr2dtoup2",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        1,
+        99,
+        0
+      ]
+    },
+    {
+      "posting": "xwv2xjcrr2dtoup2",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "xwv2xjcrr2dtoup2",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "dn6bysxcknbe3bpr",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        92,
+        8
+      ]
+    },
+    {
+      "posting": "dn6bysxcknbe3bpr",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        52,
+        48
+      ]
+    },
+    {
+      "posting": "dn6bysxcknbe3bpr",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "dn6bysxcknbe3bpr",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "ghrntsg3k2tfhpf3",
+      "question": "arrangement",
+      "distribution": [
+        1,
+        0,
+        46,
+        53
+      ]
+    },
+    {
+      "posting": "ghrntsg3k2tfhpf3",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        76,
+        24
+      ]
+    },
+    {
+      "posting": "ghrntsg3k2tfhpf3",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ghrntsg3k2tfhpf3",
+      "question": "onCall",
+      "distribution": [
+        86,
+        14
+      ]
+    },
+    {
+      "posting": "k3yewvg3ztu4qiet",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        57,
+        43
+      ]
+    },
+    {
+      "posting": "k3yewvg3ztu4qiet",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "k3yewvg3ztu4qiet",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "k3yewvg3ztu4qiet",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "ayu6bm2leyrhvsyq",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "ayu6bm2leyrhvsyq",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        1,
+        99
+      ]
+    },
+    {
+      "posting": "ayu6bm2leyrhvsyq",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ayu6bm2leyrhvsyq",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "ijmrvlij5zeii72z",
+      "question": "arrangement",
+      "distribution": [
+        4,
+        2,
+        91,
+        3
+      ]
+    },
+    {
+      "posting": "ijmrvlij5zeii72z",
+      "question": "seniority",
+      "distribution": [
+        0,
+        73,
+        27,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "ijmrvlij5zeii72z",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ijmrvlij5zeii72z",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "z54uhbkbihsgnozl",
+      "question": "arrangement",
+      "distribution": [
+        91,
+        0,
+        0,
+        9
+      ]
+    },
+    {
+      "posting": "z54uhbkbihsgnozl",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "z54uhbkbihsgnozl",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "z54uhbkbihsgnozl",
+      "question": "onCall",
+      "distribution": [
+        90,
+        10
+      ]
+    },
+    {
+      "posting": "r5jglhlqhi5chx6n",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "r5jglhlqhi5chx6n",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        47,
+        53
+      ]
+    },
+    {
+      "posting": "r5jglhlqhi5chx6n",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "r5jglhlqhi5chx6n",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "nsxxayri5h2i4lqv",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "nsxxayri5h2i4lqv",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        55,
+        45,
+        0
+      ]
+    },
+    {
+      "posting": "nsxxayri5h2i4lqv",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "nsxxayri5h2i4lqv",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "o47vmw7oogqssbet",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "o47vmw7oogqssbet",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "o47vmw7oogqssbet",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "o47vmw7oogqssbet",
+      "question": "onCall",
+      "distribution": [
+        82,
+        18
+      ]
+    },
+    {
+      "posting": "ecpq5flznfozy5dt",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        85,
+        15
+      ]
+    },
+    {
+      "posting": "ecpq5flznfozy5dt",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        89,
+        11,
+        0
+      ]
+    },
+    {
+      "posting": "ecpq5flznfozy5dt",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ecpq5flznfozy5dt",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "lsc27io2yfed5nmd",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        68,
+        32
+      ]
+    },
+    {
+      "posting": "lsc27io2yfed5nmd",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "lsc27io2yfed5nmd",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        3,
+        97
+      ]
+    },
+    {
+      "posting": "lsc27io2yfed5nmd",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "yfn45uwaqdbdgxfh",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "yfn45uwaqdbdgxfh",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        91,
+        9
+      ]
+    },
+    {
+      "posting": "yfn45uwaqdbdgxfh",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "yfn45uwaqdbdgxfh",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "4od5pxe75fcuwjjk",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "4od5pxe75fcuwjjk",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "4od5pxe75fcuwjjk",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "4od5pxe75fcuwjjk",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "7qzukxhrk77yeuhl",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "7qzukxhrk77yeuhl",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "7qzukxhrk77yeuhl",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "7qzukxhrk77yeuhl",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "6a426bj5p4p4ha3a",
+      "question": "arrangement",
+      "distribution": [
+        99,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "6a426bj5p4p4ha3a",
+      "question": "seniority",
+      "distribution": [
+        0,
+        7,
+        53,
+        40,
+        0
+      ]
+    },
+    {
+      "posting": "6a426bj5p4p4ha3a",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "6a426bj5p4p4ha3a",
+      "question": "onCall",
+      "distribution": [
+        95,
+        5
+      ]
+    },
+    {
+      "posting": "qdphdeeuxivw762h",
+      "question": "arrangement",
+      "distribution": [
+        2,
+        98,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "qdphdeeuxivw762h",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        27,
+        73
+      ]
+    },
+    {
+      "posting": "qdphdeeuxivw762h",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "qdphdeeuxivw762h",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "lvwtlkbn476f6sej",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "lvwtlkbn476f6sej",
+      "question": "seniority",
+      "distribution": [
+        0,
+        2,
+        98,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "lvwtlkbn476f6sej",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "lvwtlkbn476f6sej",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "lpbmxajjck754kdo",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "lpbmxajjck754kdo",
+      "question": "seniority",
+      "distribution": [
+        0,
+        6,
+        94,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "lpbmxajjck754kdo",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "lpbmxajjck754kdo",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "gkk7t6zbp5mg2dwl",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "gkk7t6zbp5mg2dwl",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        2,
+        98
+      ]
+    },
+    {
+      "posting": "gkk7t6zbp5mg2dwl",
+      "question": "sponsorship",
+      "distribution": [
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "gkk7t6zbp5mg2dwl",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "p4dgdthvq66mut67",
+      "question": "arrangement",
+      "distribution": [
+        95,
+        1,
+        0,
+        4
+      ]
+    },
+    {
+      "posting": "p4dgdthvq66mut67",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        63,
+        37
+      ]
+    },
+    {
+      "posting": "p4dgdthvq66mut67",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "p4dgdthvq66mut67",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "i6xich5kbrhnvbcr",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "i6xich5kbrhnvbcr",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        8,
+        92,
+        0
+      ]
+    },
+    {
+      "posting": "i6xich5kbrhnvbcr",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "i6xich5kbrhnvbcr",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "mhrfspryf4mrtssh",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        32,
+        68
+      ]
+    },
+    {
+      "posting": "mhrfspryf4mrtssh",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "mhrfspryf4mrtssh",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "mhrfspryf4mrtssh",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "54w3x6sbid5l5cnr",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        58,
+        42
+      ]
+    },
+    {
+      "posting": "54w3x6sbid5l5cnr",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        1,
+        99,
+        0
+      ]
+    },
+    {
+      "posting": "54w3x6sbid5l5cnr",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "54w3x6sbid5l5cnr",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "xzu5jo2bmu3bufxj",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "xzu5jo2bmu3bufxj",
+      "question": "seniority",
+      "distribution": [
+        0,
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "xzu5jo2bmu3bufxj",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "xzu5jo2bmu3bufxj",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "p2blglgyptcvoffv",
+      "question": "arrangement",
+      "distribution": [
+        99,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "p2blglgyptcvoffv",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        80,
+        20
+      ]
+    },
+    {
+      "posting": "p2blglgyptcvoffv",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "p2blglgyptcvoffv",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "6np3morqfhdjsjft",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "6np3morqfhdjsjft",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "6np3morqfhdjsjft",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        1,
+        99
+      ]
+    },
+    {
+      "posting": "6np3morqfhdjsjft",
+      "question": "onCall",
+      "distribution": [
+        4,
+        96
+      ]
+    },
+    {
+      "posting": "yjxwip6hqvh2rkhl",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "yjxwip6hqvh2rkhl",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        79,
+        21,
+        0
+      ]
+    },
+    {
+      "posting": "yjxwip6hqvh2rkhl",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "yjxwip6hqvh2rkhl",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "sbmc4elnkduzbhxl",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        56,
+        44
+      ]
+    },
+    {
+      "posting": "sbmc4elnkduzbhxl",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        23,
+        77,
+        0
+      ]
+    },
+    {
+      "posting": "sbmc4elnkduzbhxl",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "sbmc4elnkduzbhxl",
+      "question": "onCall",
+      "distribution": [
+        94,
+        6
+      ]
+    },
+    {
+      "posting": "266rtdzxgpqkywzo",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "266rtdzxgpqkywzo",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "266rtdzxgpqkywzo",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "266rtdzxgpqkywzo",
+      "question": "onCall",
+      "distribution": [
+        95,
+        5
+      ]
+    },
+    {
+      "posting": "upfshoq6miq2av3k",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "upfshoq6miq2av3k",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        44,
+        56
+      ]
+    },
+    {
+      "posting": "upfshoq6miq2av3k",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "upfshoq6miq2av3k",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "en376dwgit7rrod5",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "en376dwgit7rrod5",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "en376dwgit7rrod5",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "en376dwgit7rrod5",
+      "question": "onCall",
+      "distribution": [
+        14,
+        86
+      ]
+    },
+    {
+      "posting": "tmeptjnybwt5ows4",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        22,
+        78
+      ]
+    },
+    {
+      "posting": "tmeptjnybwt5ows4",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        14,
+        86
+      ]
+    },
+    {
+      "posting": "tmeptjnybwt5ows4",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "tmeptjnybwt5ows4",
+      "question": "onCall",
+      "distribution": [
+        4,
+        96
+      ]
+    },
+    {
+      "posting": "yxl2guw6xr2qepdm",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "yxl2guw6xr2qepdm",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        3,
+        97
+      ]
+    },
+    {
+      "posting": "yxl2guw6xr2qepdm",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        5,
+        95
+      ]
+    },
+    {
+      "posting": "yxl2guw6xr2qepdm",
+      "question": "onCall",
+      "distribution": [
+        5,
+        95
+      ]
+    },
+    {
+      "posting": "vj54scmohacoc2rg",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "vj54scmohacoc2rg",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        26,
+        74
+      ]
+    },
+    {
+      "posting": "vj54scmohacoc2rg",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "vj54scmohacoc2rg",
+      "question": "onCall",
+      "distribution": [
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "zt2jloxzxoe4wj3q",
+      "question": "arrangement",
+      "distribution": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "zt2jloxzxoe4wj3q",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        48,
+        52
+      ]
+    },
+    {
+      "posting": "zt2jloxzxoe4wj3q",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "zt2jloxzxoe4wj3q",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "ee2bxldxya2ddnkd",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "ee2bxldxya2ddnkd",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ee2bxldxya2ddnkd",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        3,
+        97
+      ]
+    },
+    {
+      "posting": "ee2bxldxya2ddnkd",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "kycczj476vmnvcrj",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "kycczj476vmnvcrj",
+      "question": "seniority",
+      "distribution": [
+        0,
+        88,
+        12,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "kycczj476vmnvcrj",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "kycczj476vmnvcrj",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "nmlm2ez4mewnrmbp",
+      "question": "arrangement",
+      "distribution": [
+        5,
+        0,
+        92,
+        3
+      ]
+    },
+    {
+      "posting": "nmlm2ez4mewnrmbp",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        11,
+        89
+      ]
+    },
+    {
+      "posting": "nmlm2ez4mewnrmbp",
+      "question": "sponsorship",
+      "distribution": [
+        1,
+        0,
+        99
+      ]
+    },
+    {
+      "posting": "nmlm2ez4mewnrmbp",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    },
+    {
+      "posting": "ztr5s3ym3fsfusry",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        0,
+        21,
+        79
+      ]
+    },
+    {
+      "posting": "ztr5s3ym3fsfusry",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        100,
+        0
+      ]
+    },
+    {
+      "posting": "ztr5s3ym3fsfusry",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "ztr5s3ym3fsfusry",
+      "question": "onCall",
+      "distribution": [
+        98,
+        2
+      ]
+    },
+    {
+      "posting": "w2qjdayi5jfmlraj",
+      "question": "arrangement",
+      "distribution": [
+        0,
+        100,
+        0,
+        0
+      ]
+    },
+    {
+      "posting": "w2qjdayi5jfmlraj",
+      "question": "seniority",
+      "distribution": [
+        0,
+        0,
+        0,
+        99,
+        1
+      ]
+    },
+    {
+      "posting": "w2qjdayi5jfmlraj",
+      "question": "sponsorship",
+      "distribution": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "posting": "w2qjdayi5jfmlraj",
+      "question": "onCall",
+      "distribution": [
+        97,
+        3
+      ]
+    }
+  ]
+}
