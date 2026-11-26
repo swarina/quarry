@@ -1,6 +1,6 @@
 # ADR-0030: Publish no per-posting pages, and enter no job-posting programme
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-26
 - From: #74
 
@@ -76,7 +76,7 @@ would become a Search penalty rather than a stale index.
 
 ## Decision
 
-Option 4, proposed. Quarry publishes no per-posting pages and enters no job-posting programme.
+Option 4. Quarry publishes no per-posting pages and enters no job-posting programme.
 
 The reason is not the build cost, which is modest, nor the crawl surface, which could be
 managed. It is that the programme's required fields make publishing employers' descriptions the
