@@ -24,6 +24,8 @@ import { number } from "./format.ts";
 import { type Held, keep, merge, passes } from "./held.ts";
 import {
   type AskState,
+  payCurrencyChoices,
+  payNote,
   renderActive,
   renderAskStatus,
   renderFacets,
@@ -140,10 +142,25 @@ function narrow(result: QueryResult, answers: Held): QueryResult {
   const filter = state.criterionFilter;
   if (filter === null) return result;
   const kept = result.rows.filter((row) => passes(answers, row.id, filter));
+  // The pay counts are recounted here, unlike the facet counts: they are what the line by the
+  // sort control says about "these postings", and a denominator from before the narrowing would
+  // make that line describe a result nobody is looking at. The currency the rows were ranked
+  // within stands, since it is what the order actually is.
+  const currencies = new Map<string, number>();
+  for (const row of kept) {
+    const code = row.pay?.currency;
+    if (code !== undefined) currencies.set(code, (currencies.get(code) ?? 0) + 1);
+  }
   return {
     ...result,
     total: kept.length,
     answered: kept.filter((row) => row.answers.length > 0).length,
+    pay: {
+      ...result.pay,
+      currencies: [...currencies].sort(
+        (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
+      ),
+    },
     rows: kept.slice(0, state.shown),
   };
 }
@@ -168,6 +185,7 @@ function draw(): void {
   // the page reads as near-complete coverage of one answered for about a posting in six.
   byId("coverage").textContent = coverageLine(result);
   byId("timing").textContent = `filtered in ${took.toFixed(1)} ms`;
+  drawPaySort(current);
   const inForce = sidebarFilters();
   byId("filters-summary").textContent =
     inForce === 0 ? "Filters" : `Filters (${number(inForce, locale)})`;
@@ -184,6 +202,30 @@ function askIds(): readonly string[] {
   if (catalog === undefined) return [];
   const query = { ...toQuery(state, Date.now()), limit: MAX_POSTINGS };
   return queryIndex(catalog.table, query).rows.map((row) => row.id);
+}
+
+/**
+ * The pay sort's own parts: which currency it ranks within, and what that leaves unranked.
+ *
+ * The select's options come from the result, so they change as the search does, but the element
+ * itself is in the markup and its options are rewritten only when they differ. Replacing a select
+ * that was just used takes the focus off it, and picking a currency changes the order of a result
+ * without changing which postings it holds, so the list is almost always the same list.
+ */
+function drawPaySort(current: View): void {
+  byId("pay-note").textContent = payNote(current);
+  byId("pay-currency-field").hidden = state.sort !== "pay";
+  const select = byId<HTMLSelectElement>("pay-currency");
+  const choices = payCurrencyChoices(current);
+  const signature = choices.map((choice) => `${choice.value}:${choice.label}`).join("|");
+  if (select.dataset["choices"] !== signature) {
+    fill(
+      select,
+      choices.map((choice) => el("option", { value: choice.value, text: choice.label })),
+    );
+    select.dataset["choices"] = signature;
+  }
+  select.value = state.payCurrency ?? "";
 }
 
 /** The panel's own parts: what can be pressed, and what it says. */
@@ -484,6 +526,10 @@ function wire(loaded: Manifest): void {
   byId<HTMLSelectElement>("sort").addEventListener("change", (event) => {
     const value = (event.target as HTMLSelectElement).value;
     go({ ...state, sort: value === "pay" ? "pay" : "newest", shown: PAGE });
+  });
+  byId<HTMLSelectElement>("pay-currency").addEventListener("change", (event) => {
+    const value = (event.target as HTMLSelectElement).value;
+    go({ ...state, payCurrency: value === "" ? null : value, shown: PAGE });
   });
   const regions = byId<HTMLSelectElement>("region");
   fill(

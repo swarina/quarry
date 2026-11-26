@@ -59,8 +59,15 @@ export interface IndexQuery {
    * A posting with no answer to the question never matches.
    */
   readonly answers?: readonly AnswerCriterion[];
-  /** Newest first (the default), or highest pay in a currency first. */
-  readonly sort?: "newest" | { readonly pay: string };
+  /**
+   * Newest first (the default), or highest pay first within one currency.
+   *
+   * One currency, because the index carries pay as the posting stated it and no exchange rates
+   * to compare currencies with (ADR-0007). A pay sort with `null` for the currency ranks within
+   * the one most of the matching priced postings state, which is the only choice that does not
+   * assume a currency on the caller's behalf; the result reports which one that turned out to be.
+   */
+  readonly sort?: "newest" | { readonly pay: string | null };
   readonly offset?: number;
   readonly limit?: number;
   /** For postedWithinDays, in epoch milliseconds; defaults to now. */
@@ -101,6 +108,20 @@ export interface QueryResult {
    * page needs to say how much of what it is showing a model has been asked about.
    */
   readonly answered: number;
+  /**
+   * What a pay sort could rank, and what it did rank.
+   *
+   * Counted over exactly the postings the search matched, like `answered` above and unlike the
+   * facet counts below: a pay sort ranks within one currency and leaves every other priced
+   * posting in date order with the ones that state no pay, and the page can only say so if it
+   * knows how many of what it is showing fall on each side.
+   */
+  readonly pay: {
+    /** How many of the matching postings state pay, per currency, largest first. */
+    readonly currencies: readonly (readonly [string, number])[];
+    /** The currency the rows are ranked within, or null when they are in date order. */
+    readonly within: string | null;
+  };
   readonly rows: readonly ResultRow[];
   /**
    * For each facet, how many postings match every filter but that facet's own, per value,
@@ -316,9 +337,22 @@ export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
     }
   }
 
+  // The matched postings by the currency they state pay in. Cheap here rather than in the row
+  // loop above, which runs over the whole table: this one runs over what the filters left.
+  const priced = new Int32Array(dictionaries.currency.length);
+  for (const row of matched) {
+    const code = table.currency[row] ?? -1;
+    if (code >= 0) priced[code] = (priced[code] ?? 0) + 1;
+  }
+  const currencies = rankedDense(priced, dictionaries.currency);
+
   const sort = query.sort ?? "newest";
-  if (sort !== "newest") {
-    const code = dictionaries.currency.indexOf(sort.pay);
+  // Which currency the ranking is in. A pay sort that named none ranks within the most common one
+  // among the matched priced postings, so a search of mostly euro postings is not ordered on the
+  // handful priced in dollars; with nothing priced at all there is nothing to rank by.
+  const within = sort === "newest" ? null : (sort.pay ?? currencies[0]?.[0] ?? null);
+  if (within !== null) {
+    const code = dictionaries.currency.indexOf(within);
     const amount = (row: number) =>
       table.currency[row] === code ? payReach(table, row) : Number.NaN;
     // Rows with pay in the currency first, highest first; the rest stay newest first.
@@ -354,6 +388,7 @@ export function queryIndex(table: IndexTable, query: IndexQuery): QueryResult {
   return {
     total: matched.length,
     answered: matched.filter((row) => (table.answered[row] ?? 0) !== 0).length,
+    pay: { currencies, within },
     rows: matched.slice(offset, offset + limit).map((row) => resultRow(table, row)),
     facets: {
       countries: ranked(withAnywhere(counts.countries), (code) => dictionaries.country[code]),
