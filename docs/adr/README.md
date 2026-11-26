@@ -61,6 +61,7 @@ resolves.
 | [0027](0027-ask-only-what-the-filters-leave.md) | Ask your own questions of the postings a search left | 2026-10-06 | this branch |
 | [0028](0028-the-secret-in-memory-and-one-origin.md) | Keep the secret in memory, and serve asking from one origin | 2026-10-06 | this branch |
 | [0029](0029-deploying-on-cloudflare-workers-with-d1.md) | Deploy on Cloudflare Workers, with D1 behind the criterion ports | 2026-10-06 | this branch |
+| [0030](0030-no-per-posting-pages-and-no-jobposting-markup.md) | Proposed: publish no per-posting pages, and enter no job-posting programme | 2026-11-26 | #74 |
 
 ## Template
 
