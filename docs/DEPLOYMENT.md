@@ -79,7 +79,11 @@ the daily budget are written at runtime and need no loading.
 ```sh
 # From the repo root: build the site the Worker serves (emits dist/ and dist/_headers). The
 # --index path is resolved from where you run this, so data/index (built in step 2) is correct.
-pnpm --filter @quarry/site build --index data/index
+# --base-url is where the site will answer, and is what the canonical link, og:url and
+# sitemap.xml need; without it the build writes none of them and robots.txt loses its Sitemap
+# line. Use the URL `wrangler deploy` prints, below.
+pnpm --filter @quarry/site build --index data/index \
+  --base-url https://quarry-criteria.<you>.workers.dev
 
 cd apps/worker
 npx wrangler secret put QUARRY_CRITERIA_SECRET   # any string of at least 24 characters, you pick it
@@ -90,6 +94,11 @@ npx wrangler deploy
 Open the `https://quarry-criteria.<you>.workers.dev` URL it prints. The per-request and per-day
 spend caps live in `wrangler.toml` under `[vars]` (defaults $0.10 and $2.00); set them deliberately
 before the first deploy, because they are the backstop against a bug spending your money.
+
+On a first deploy you do not know that URL yet. Either read your `workers.dev` subdomain off the
+Cloudflare dashboard and build with it, or deploy once, note the URL it prints, then rebuild the
+site with `--base-url` and deploy again. A value that is not an `http` or `https` origin fails the
+build rather than shipping a canonical link that points nowhere.
 
 ## Trying it locally first
 
