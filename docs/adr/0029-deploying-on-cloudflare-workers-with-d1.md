@@ -89,3 +89,55 @@ question, not a shape question.
   only one `*`, so the two-wildcard cache rules (`/index/*/shards/*`) were silently skipped. The
   build now writes them with the build segment as a named placeholder (`/index/:build/shards/*`),
   which is the one-wildcard form, so the immutable caching actually applies.
+
+## Amendment, 2026-11-26
+
+Two statements above are wrong. The decision they support still stands, but the reasoning as
+written does not describe the code, and in one case it described a query plan the code never had.
+The record above is left as it was written; this section says what was believed, what is true, and
+what changed.
+
+**"The posting text is read by id-prefix range scan" (Options), and "one range-scan statement per
+prefix" (Decision).**
+
+- *Believed:* that matching an id prefix in SQLite is a range scan over the primary key, so the
+  only question was how many statements it took.
+- *True:* the adapter matched prefixes with `substr(id, 1, n) IN (?, ...)`. An index on `id` says
+  nothing about the order of `substr(id, 1, n)`, so that predicate is not sargable: SQLite had to
+  compute the expression for every row before it could test the `IN`, and read the whole table once
+  per statement. `EXPLAIN QUERY PLAN` reported `SCAN criterion_postings`. Over the 37,314 rows
+  exported today, one page of 500 postings cost six statements of 37,314 row reads each, about
+  224,000 against the free plan's 5,000,000 per day, and the figure grew with the corpus.
+- *Changed:* the adapter now matches each prefix as the range it names, `id >= p AND id < p ||
+  U+10FFFF`, which the primary key serves as a seek. Measured over the same 37,314 rows, the same
+  page of 500 reads 500 rows, one per posting returned. The predicate is now what this record
+  always said it was. No index was added: the primary key's implicit index is what serves the
+  range, and a prefix is a prefix of the key itself, so there is nothing for a second index to do.
+  Nothing about the choice of D1 over R2 changes; the reason given for it is now accurate.
+
+**"The per-statement limits, including this one, apply to each statement inside a `db.batch()`, not
+to the batch as a whole" (Context), said of the queries-per-invocation limit.**
+
+- *Believed:* that a batch of N statements spends N of the 50 queries a free-plan invocation
+  allows. This is the reason the record gives for chunking the posting read instead of issuing one
+  statement per prefix.
+- *True:* for that one limit the documented behaviour is the opposite. The D1 limits page, read on
+  2026-11-26, says the queries-per-invocation limit "is an exception: a `db.batch()` call counts as
+  a single query against it, not one query per statement", and gives a batch of 2,000 statements
+  running in a single invocation as the example. The rest of the sentence above holds: the other
+  per-statement limits, including the 100 KB statement length, do apply per statement inside a
+  batch. The page may have read differently on 2026-10-06; what is recorded here is what it says
+  now.
+- *Changed:* the posting read sends its chunks as one `batch()` rather than awaiting them one at a
+  time. That is one query against the per-invocation limit however many chunks there are, and one
+  round trip instead of one per chunk.
+
+**What does not change: the chunking.** It is still necessary, for the limit that is per statement
+rather than per invocation. A range costs two bound parameters, its lower and upper bound, so a
+statement holds 50 prefixes and a page of 500 is ten statements inside one batch. The record above
+reaches the same shape by different arithmetic.
+
+**Still unproven.** Everything measured for this amendment was measured on `node:sqlite`: the query
+plans in `apps/worker/src/d1.test.ts`, and the row counts against a local SQLite database loaded
+from the same SQL the deploy would load into D1. D1 is SQLite and plans the same predicates the
+same way, but no deploy has happened, so none of it has been observed on D1 itself.
