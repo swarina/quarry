@@ -18,6 +18,11 @@ const TYPES: Readonly<Record<string, string>> = {
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".map": "application/json; charset=utf-8",
+  // robots.txt and sitemap.xml. These need the right type, not a fallback: `nosniff` below
+  // means a browser will not guess past a wrong one, and a crawler handed
+  // application/octet-stream for robots.txt has no reason to read it as a policy.
+  ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8",
 };
 
 /**
