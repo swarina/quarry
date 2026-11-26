@@ -5,6 +5,43 @@ What each session taught, what was surprising, and what is still open. Newest fi
 The entries are deliberately about the things that were not obvious beforehand. Anything that
 went as expected belongs in a commit message, not here.
 
+## 2026-11-26
+
+### A limit read once, built on, and wrong in the direction that cost reads
+
+The 2026-10-06 entry below records reading the Cloudflare limits "rather than assuming them", and
+got one of the two it leaned on backwards. It says the per-statement limits apply to each statement
+inside a `db.batch()` rather than to the batch as a whole, said of the queries-per-invocation limit.
+The D1 limits page, read today, says that limit is the exception: a `db.batch()` call counts as a
+single query against it, not one query per statement, with a batch of 2,000 statements in one
+invocation as the example. The rest of that sentence holds, and the 100-bound-parameter limit does
+apply per statement.
+
+Two things follow, and the second is the lesson.
+
+The chunking the entry justifies survives, because the parameter limit is genuinely per statement.
+But its stated reason was the subrequest budget, so the arithmetic was right by accident: the
+chunks now go out as one `batch()`, which is one query against the per-invocation limit however
+many chunks there are, and one round trip instead of one per chunk.
+
+Worse, and invisible from the entry, the shape it settled on was not the shape it described. It
+called the lookup a prefix range scan, which is what ADR-0029 says too. The adapter matched
+`substr(id, 1, n) IN (...)`, and an index on `id` says nothing about the order of
+`substr(id, 1, n)`, so SQLite had to compute the expression for every row: `SCAN
+criterion_postings`, the whole table once per statement, about 224,000 row reads for one page of
+500 against a free-plan budget of 5,000,000 a day. Resolving each prefix as the range it names,
+`id >= p AND id < p || U+10FFFF`, reads 500 rows for the same page. The Node store had been doing
+exactly that all along; the edge adapter traded it away to satisfy a budget that turns out not to
+apply.
+
+So: reading the docs beat guessing, and was still not enough. What would have caught both is
+cheaper than either. `EXPLAIN QUERY PLAN` over the statement the adapter actually issues is one
+line of test, it runs on `node:sqlite` with no account and no deploy, and it would have failed the
+day the predicate was written. A plan is now pinned in a test for the posting lookup and the answer
+cache, because a predicate that stops being sargable is a change SQLite accepts silently and the
+row-read quota does not. The general form: when a limit decides a design, assert the behaviour the
+limit meters, not the reasoning that led to the design.
+
 ## 2026-10-07
 
 ### Building the Worker, and what running it caught
