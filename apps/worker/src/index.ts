@@ -6,6 +6,10 @@
  * site's own `_headers` file (ADR-0028). The handler is the same `(Request) => Response` the dev
  * server runs (ADR-0027), with the three ports backed by D1 (ADR-0029). Anything else that reaches
  * the Worker is handed to the static assets, so the two never fight over a path.
+ *
+ * The criterion routes go through a per-caller rate limit first. Both of them read D1 on every
+ * call and `/criteria/estimate` reserves no spend allowance, so without it the only thing bounding
+ * reads against the free plan's daily quota was knowing the secret.
  */
 import { createCriteriaHandler } from "@quarry/criteria";
 import { createJevClient, createRateLimiter, createSpendLimit, JEV_MODEL } from "@quarry/jev";
@@ -15,6 +19,7 @@ import {
   createD1PostingSource,
   type D1Database,
 } from "./d1.ts";
+import { createRateLimitGate, underRateLimit } from "./rate-limit.ts";
 
 interface Env {
   readonly DB: D1Database;
@@ -27,6 +32,11 @@ interface Env {
 
 // The account's rate is shared across requests handled by this isolate, as it is in the dev server.
 const rateLimiter = createRateLimiter({ requestsPerMinute: 300, maxConcurrent: 6 });
+
+// Per-caller admission for the criterion routes, shared across the requests this isolate handles.
+// Both routes read D1 on every call, so this is what stands between a secret holder and the
+// database underneath the spend cap.
+const gate = createRateLimitGate();
 
 function nanoUsd(value: string | undefined, fallback: number): number {
   const parsed = Number(value);
@@ -42,26 +52,28 @@ export default {
       return env.ASSETS.fetch(request);
     }
 
-    const handler = createCriteriaHandler({
-      secret: env.QUARRY_CRITERIA_SECRET,
-      model: JEV_MODEL,
-      postings: createD1PostingSource(env.DB),
-      cache: createD1AnswerCache(env.DB),
-      budget: createD1BudgetStore(env.DB),
-      limits: {
-        perRequestNanoUsd: nanoUsd(env.QUARRY_CRITERIA_PER_REQUEST_NANO_USD, 100_000_000),
-        perDayNanoUsd: nanoUsd(env.QUARRY_CRITERIA_PER_DAY_NANO_USD, 2_000_000_000),
-      },
-      // A client per request, its spend limit set to the request's allowance, which is what makes
-      // the per-request cap exact (ADR-0005). The client runs on the Worker's global fetch.
-      client: (allowanceNanoUsd) =>
-        createJevClient({
-          apiKey: env.TYPESAFE_API_KEY,
-          rateLimiter,
-          spendLimit: createSpendLimit({ limitNanoUsd: allowanceNanoUsd }),
-        }),
+    // The gate comes first, so a refused caller costs no D1 read: nothing inside here runs.
+    return underRateLimit(request, gate, () => {
+      const handler = createCriteriaHandler({
+        secret: env.QUARRY_CRITERIA_SECRET,
+        model: JEV_MODEL,
+        postings: createD1PostingSource(env.DB),
+        cache: createD1AnswerCache(env.DB),
+        budget: createD1BudgetStore(env.DB),
+        limits: {
+          perRequestNanoUsd: nanoUsd(env.QUARRY_CRITERIA_PER_REQUEST_NANO_USD, 100_000_000),
+          perDayNanoUsd: nanoUsd(env.QUARRY_CRITERIA_PER_DAY_NANO_USD, 2_000_000_000),
+        },
+        // A client per request, its spend limit set to the request's allowance, which is what
+        // makes the per-request cap exact (ADR-0005). It runs on the Worker's global fetch.
+        client: (allowanceNanoUsd) =>
+          createJevClient({
+            apiKey: env.TYPESAFE_API_KEY,
+            rateLimiter,
+            spendLimit: createSpendLimit({ limitNanoUsd: allowanceNanoUsd }),
+          }),
+      });
+      return handler(request);
     });
-
-    return handler(request);
   },
 };
