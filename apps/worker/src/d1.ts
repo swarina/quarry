@@ -6,9 +6,9 @@
  * `@cloudflare/workers-types`, so the package needs no extra types and the same declarations let
  * a Node test drive the adapter against `node:sqlite`.
  *
- * The shapes and limits are from ADR-0029: at most 100 bound parameters per query, and each
- * statement in a `batch()` counts against the Worker's subrequest limit, so the posting lookup
- * resolves prefixes in chunked `IN` queries rather than one query per prefix.
+ * The shapes and limits are from ADR-0029 and its amendment: at most 100 bound parameters per
+ * statement, so a lookup over many ids is chunked, and a `batch()` counts as one query against
+ * the per-invocation limit, so the chunks go out together rather than one await at a time.
  */
 import type {
   AnswerCache,
@@ -33,8 +33,23 @@ export interface D1Database {
   ): Promise<readonly D1Result<T>[]>;
 }
 
-/** Bound parameters per query (ADR-0029). One is spent on the prefix length, the rest on values. */
+/** Bound parameters per statement (ADR-0029). */
 const MAX_PARAMS = 100;
+
+/** Prefixes per posting statement: each spends two parameters, on its lower and upper bound. */
+const PREFIXES_PER_STATEMENT = Math.floor(MAX_PARAMS / 2);
+
+/**
+ * Appended to a prefix to make the exclusive upper bound of the ids it names.
+ *
+ * `id` is `TEXT`, so it compares under SQLite's default BINARY collation, which orders strings by
+ * their UTF-8 bytes. U+10FFFF is the largest code point there is, so for any prefix `p`:
+ * every id beginning with `p` sorts in `[p, p + U+10FFFF)`, and every id that does not begin with
+ * `p` sorts outside it. Appending rather than incrementing the prefix's last character keeps that
+ * true for every prefix a request can send, including one whose last character has no successor
+ * that is a valid string on its own.
+ */
+const RANGE_END = "\u{10FFFF}";
 
 function chunk<T>(values: readonly T[], size: number): T[][] {
   const out: T[][] = [];
@@ -55,57 +70,64 @@ interface PostingRow {
  * Posting text from D1, resolving id prefixes the way the store does: a prefix that matches
  * nothing, or more than one posting, is left out rather than guessed at.
  *
- * Prefixes are grouped by length (a request's prefixes all share the index's length, but grouping
- * keeps it correct if they ever differ) and matched with `substr(id, 1, n) IN (...)`, chunked so
- * no query exceeds the parameter limit. That is a handful of statements for a page of 500, rather
- * than one range scan per prefix, which would exceed the free plan's subrequest limit.
+ * Each prefix is matched as the range of ids it names, `id >= p AND id < p + U+10FFFF`, which the
+ * primary key on `id` serves as an index seek. The ranges are OR'd together, chunked so no
+ * statement exceeds the parameter limit, and sent as one `batch()`: a page of 500 is ten
+ * statements, one query against the per-invocation limit, and one round trip.
+ *
+ * The obvious predicate, `substr(id, 1, n) IN (...)`, is what this used to be. It cannot use the
+ * primary key, because an index on `id` says nothing about the order of `substr(id, 1, n)`, so
+ * every statement read the whole table. Over the 37,314 rows exported today that was about
+ * 224,000 row reads for one page; the ranges read one row per posting returned.
  */
 export function createD1PostingSource(db: D1Database): PostingSource {
   return {
     async read(idPrefixes) {
-      const byLength = new Map<number, Set<string>>();
-      for (const prefix of idPrefixes) {
-        if (prefix === "") continue;
-        const set = byLength.get(prefix.length) ?? new Set<string>();
-        set.add(prefix);
-        byLength.set(prefix.length, set);
+      const prefixes = [...new Set(idPrefixes)].filter((prefix) => prefix !== "");
+      if (prefixes.length === 0) return [];
+
+      const statements = chunk(prefixes, PREFIXES_PER_STATEMENT).map((group) =>
+        db
+          .prepare(
+            `SELECT id, content_hash, title, company, locations_json, description
+               FROM criterion_postings
+              WHERE ${group.map(() => "(id >= ? AND id < ?)").join(" OR ")}`,
+          )
+          .bind(...group.flatMap((prefix) => [prefix, `${prefix}${RANGE_END}`])),
+      );
+      const batched = await db.batch<PostingRow>(statements);
+
+      // Deduplicated by id, because a request that mixes prefix lengths can name one posting
+      // from two chunks. Prefixes of one length, which is what the index produces, cannot.
+      const rows = new Map<string, PostingRow>();
+      for (const { results } of batched) for (const row of results) rows.set(row.id, row);
+
+      // Rows under the prefix each one would be named by, at every length the request used, so
+      // deciding a prefix is a lookup rather than a pass over everything that came back.
+      const byPrefix = new Map<string, PostingRow[]>();
+      for (const length of new Set(prefixes.map((prefix) => prefix.length))) {
+        for (const row of rows.values()) {
+          const key = row.id.slice(0, length);
+          const sharing = byPrefix.get(key) ?? [];
+          sharing.push(row);
+          byPrefix.set(key, sharing);
+        }
       }
 
       const found: PostingText[] = [];
-      for (const [length, set] of byLength) {
-        for (const group of chunk([...set], MAX_PARAMS - 1)) {
-          const placeholders = group.map(() => "?").join(", ");
-          const { results } = await db
-            .prepare(
-              `SELECT id, content_hash, title, company, locations_json, description
-                 FROM criterion_postings
-                WHERE substr(id, 1, ?) IN (${placeholders})`,
-            )
-            .bind(length, ...group)
-            .all<PostingRow>();
-
-          const byPrefix = new Map<string, PostingRow[]>();
-          for (const row of results) {
-            const key = row.id.slice(0, length);
-            const rows = byPrefix.get(key) ?? [];
-            rows.push(row);
-            byPrefix.set(key, rows);
-          }
-          for (const prefix of group) {
-            const rows = byPrefix.get(prefix);
-            // Exactly one, or none: an ambiguous prefix names no posting in particular.
-            if (rows === undefined || rows.length !== 1) continue;
-            const row = rows[0] as PostingRow;
-            found.push({
-              id: row.id,
-              contentHash: row.content_hash,
-              title: row.title,
-              company: row.company,
-              locations: JSON.parse(row.locations_json) as readonly string[],
-              description: row.description,
-            });
-          }
-        }
+      for (const prefix of prefixes) {
+        const sharing = byPrefix.get(prefix);
+        // Exactly one, or none: an ambiguous prefix names no posting in particular.
+        if (sharing === undefined || sharing.length !== 1) continue;
+        const row = sharing[0] as PostingRow;
+        found.push({
+          id: row.id,
+          contentHash: row.content_hash,
+          title: row.title,
+          company: row.company,
+          locations: JSON.parse(row.locations_json) as readonly string[],
+          description: row.description,
+        });
       }
       return found;
     },

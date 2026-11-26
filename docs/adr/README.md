@@ -2,7 +2,9 @@
 
 One short file per significant decision: the context it was made in, the options that were
 on the table, what was decided, and what that costs us. A record is written when a decision
-is made and is not edited afterwards, except to mark it superseded by a later one. If we
+is made and is not edited afterwards, except to mark it superseded by a later one, or to append a
+dated amendment where the record states something that turned out not to be true. An amendment
+leaves the original text alone and says what was believed, what is true, and what changed. If we
 change our mind, the new record says so and links back.
 
 ## Why these were written late
