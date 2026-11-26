@@ -162,18 +162,31 @@ function criterionTag(row: ResultRow, view: View): HTMLElement | undefined {
 export function renderResults(view: View, go: Go): (Node | string)[] {
   const { result, state } = view;
   if (result.total === 0) return [emptyState(view, go)];
-  const list = el(
-    "ul",
-    { class: "results" },
-    result.rows.map((row) => {
-      const item = resultItem(row, view);
-      const company = item.querySelector("button.link");
-      company?.addEventListener("click", () =>
-        go({ ...state, companies: toggle(state.companies, row.company), shown: PAGE }),
+  // A pay sort ranks the postings priced in one currency and leaves the rest where they were, in
+  // date order, so the list is two lists and needs to say where the second one starts. Those rows
+  // come last, so the first row priced in another currency, or in none, is the boundary. At row
+  // zero there is nothing ranked above it to separate, and the line by the control says so.
+  const within = state.sort === "pay" ? result.pay.within : null;
+  const unrankedAt =
+    within === null ? -1 : result.rows.findIndex((row) => row.pay?.currency !== within);
+  const items: HTMLElement[] = [];
+  result.rows.forEach((row, at) => {
+    if (at === unrankedAt && at > 0) {
+      items.push(
+        el("li", {
+          class: "boundary",
+          text: `Below here: no pay stated in ${within}, so these keep date order.`,
+        }),
       );
-      return item;
-    }),
-  );
+    }
+    const item = resultItem(row, view);
+    const company = item.querySelector("button.link");
+    company?.addEventListener("click", () =>
+      go({ ...state, companies: toggle(state.companies, row.company), shown: PAGE }),
+    );
+    items.push(item);
+  });
+  const list = el("ul", { class: "results" }, items);
   const nodes: (Node | string)[] = [list];
   if (result.rows.length < result.total) {
     const more = el("button", {
@@ -344,6 +357,62 @@ function coverageLine(view: View): string {
   if (total === 0) return "";
   if (answered === total) return "All of these postings have been asked.";
   return `${number(answered, view.locale)} of these ${number(total, view.locale)} postings have been asked.`;
+}
+
+/**
+ * What the pay sort did, for the line beside its control.
+ *
+ * Pay is held in the currency the posting stated and the index carries no exchange rates
+ * (ADR-0007), so "highest pay first" can only rank within one currency. Everything else keeps
+ * date order, and how much that is belongs on the page: a fifth of the priced postings in this
+ * index state pay in a currency other than the most common one, and in a search of Europe it is
+ * nearly half.
+ */
+export function payNote(view: View): string {
+  const { result, state, locale } = view;
+  if (state.sort !== "pay" || result.total === 0) return "";
+  const { currencies, within } = result.pay;
+  const count = (code: string) => currencies.find(([name]) => name === code)?.[1] ?? 0;
+  const priced = currencies.reduce((sum, [, each]) => sum + each, 0);
+  if (within === null) return "No posting here states pay, so these are in date order.";
+  const ranked = count(within);
+  if (ranked === 0) {
+    return `No posting here states pay in ${within}, so these are in date order.`;
+  }
+  const rest: string[] = [];
+  if (priced - ranked > 0) {
+    rest.push(`${number(priced - ranked, locale)} state pay in another currency`);
+  }
+  if (result.total - priced > 0) {
+    rest.push(`${number(result.total - priced, locale)} state no pay`);
+  }
+  const tail = rest.length === 0 ? "" : ` The rest keep date order: ${rest.join(", ")}.`;
+  return `Ranked by pay in ${within}: ${number(ranked, locale)} of these ${number(result.total, locale)} postings.${tail}`;
+}
+
+/**
+ * The currencies a pay sort can rank within: each one the result states pay in, with how many
+ * postings that is, under the choice of letting the most common one stand.
+ *
+ * A currency the reader pinned is kept in the list even when the search has moved on and nothing
+ * states pay in it any more. Dropping it would leave the control showing some other currency
+ * while the URL and the ordering still meant this one.
+ */
+export function payCurrencyChoices(view: View): { value: string; label: string }[] {
+  const { currencies } = view.result.pay;
+  const top = currencies[0]?.[0];
+  const choices = [
+    { value: "", label: top === undefined ? "Most common" : `Most common (${top})` },
+    ...currencies.map(([code, count]) => ({
+      value: code,
+      label: `${code} (${number(count, view.locale)})`,
+    })),
+  ];
+  const pinned = view.state.payCurrency;
+  if (pinned !== null && !currencies.some(([code]) => code === pinned)) {
+    choices.push({ value: pinned, label: `${pinned} (0)` });
+  }
+  return choices;
 }
 
 /** Whether the loaded index holds any standard answer at all, anywhere in it. */

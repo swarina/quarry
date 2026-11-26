@@ -26,7 +26,7 @@ describe("a search in the URL", () => {
   it("reads every filter back", () => {
     const state = read(
       "?region=asia&q=platform&country=DE,JP&workplace=remote&type=full-time,contract" +
-        "&company=Acme&within=7&pay=90000&currency=eur&anywhere=0&sort=pay" +
+        "&company=Acme&within=7&pay=90000&currency=eur&anywhere=0&sort=pay:gbp" +
         "&a=arrangement:remote|hybrid@70,onCall:no",
     );
     expect(state).toEqual({
@@ -40,6 +40,7 @@ describe("a search in the URL", () => {
       minimumPay: { amount: 90_000, currency: "EUR" },
       includeAnywhere: false,
       sort: "pay",
+      payCurrency: "GBP",
       answers: [
         { question: "arrangement", options: ["remote", "hybrid"], atLeast: 70 },
         // No threshold in the URL means the default, more likely than not.
@@ -54,7 +55,7 @@ describe("a search in the URL", () => {
   it("survives a round trip", () => {
     const query =
       "?region=asia&q=platform&country=DE%2CJP&workplace=remote&type=full-time&company=Acme" +
-      "&within=7&pay=90000&currency=EUR&anywhere=0&sort=pay";
+      "&within=7&pay=90000&currency=EUR&anywhere=0&sort=pay%3AEUR";
     expect(toQueryString(read(query))).toBe(query);
   });
 
@@ -82,6 +83,11 @@ describe("a search in the URL", () => {
     ["?pay=-5&currency=EUR", "minimumPay"],
     ["?pay=90000&currency=euros", "minimumPay"],
     ["?sort=alphabetical", "sort"],
+    // A pay sort with nothing readable after the colon is a pay sort in no particular currency,
+    // which is the default: the index ranks within whichever one the result is mostly priced in.
+    ["?sort=pay:euros", "payCurrency"],
+    ["?sort=pay:", "payCurrency"],
+    ["?sort=newest:EUR", "payCurrency"],
   ] as const)("ignores what it does not recognize: %s", (query, field) => {
     expect(read(query)[field]).toEqual(EMPTY[field]);
   });
@@ -101,10 +107,25 @@ describe("the query a search becomes", () => {
     });
   });
 
-  it("sorts by pay in the currency the filter names", () => {
-    const state = { ...EMPTY, sort: "pay" as const, minimumPay: { amount: 1, currency: "GBP" } };
-    expect(toQuery(state, 0).sort).toEqual({ pay: "GBP" });
-    expect(toQuery({ ...EMPTY, sort: "pay" }, 0).sort).toEqual({ pay: "USD" });
+  it("names no currency for a pay sort unless the reader pinned one", () => {
+    // The index resolves no currency to the one most of the matching postings state. Naming one
+    // here instead is the bug this replaced: it was the minimum-pay filter's currency or USD, so
+    // a search with no pay filter ranked the dollar postings and left every other priced posting
+    // in the tail with the ones that state no pay at all.
+    expect(toQuery({ ...EMPTY, sort: "pay" }, 0).sort).toEqual({ pay: null });
+    expect(toQuery({ ...EMPTY, sort: "pay", payCurrency: "GBP" }, 0).sort).toEqual({ pay: "GBP" });
+    // A minimum-pay filter matches one currency, so what is left is all in it and the index lands
+    // on it without being told.
+    const filtered = { ...EMPTY, sort: "pay" as const, minimumPay: { amount: 1, currency: "GBP" } };
+    expect(toQuery(filtered, 0).sort).toEqual({ pay: null });
+  });
+
+  it("keeps the pinned currency out of the URL when the order is by date", () => {
+    // The currency rides on the sort parameter, so it cannot outlive the sort it belongs to.
+    expect(toQueryString({ ...EMPTY, payCurrency: "EUR" })).toBe("?region=europe");
+    expect(toQueryString({ ...EMPTY, sort: "pay", payCurrency: "EUR" })).toBe(
+      "?region=europe&sort=pay%3AEUR",
+    );
   });
 
   it("passes places, text, and dates through", () => {

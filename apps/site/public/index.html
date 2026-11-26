@@ -56,6 +56,13 @@
           <option value="pay">Highest pay first</option>
         </select>
       </p>
+      <p class="field" id="pay-currency-field" hidden>
+        <label for="pay-currency">Pay currency</label>
+        <select
+          id="pay-currency"
+          title="Highest pay first ranks the postings priced in one currency. Pay is kept as the posting stated it and is never converted, so postings in other currencies keep date order."
+        ></select>
+      </p>
       </form>
     </search>
 
@@ -128,6 +135,7 @@
         <h2 id="count-heading" class="results-heading">
           <span id="count">Loading</span>
           <span id="coverage" class="coverage"></span>
+          <span id="pay-note" class="coverage"></span>
           <span id="timing" class="timing"></span>
         </h2>
         <p id="status" role="status">Loading postings</p>

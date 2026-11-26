@@ -313,6 +313,18 @@ main {
   color: var(--accent);
 }
 
+/*
+ * Where a pay ranking stops. A pay sort ranks within one currency, so everything below this is
+ * in date order; the line is in the list itself because that is where the order changes, and a
+ * reader scrolling past it would otherwise read date order as a ranking.
+ */
+.boundary {
+  padding: 0.875rem 0 0.5rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
 .company {
   margin: 0.125rem 0;
 }
