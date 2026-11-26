@@ -3,13 +3,26 @@
  * and `main.ts` with its workspace imports into one ES module. A search index goes in under
  * `index/`, where the page fetches it from.
  *
- * Usage: node apps/site/scripts/build.ts [--out <dir>] [--index <dir>] [--no-minify]
+ * Given `--base-url`, it also writes the discoverability files that need to know where the site
+ * lives: a canonical link and `og:url` in the page, and `sitemap.xml`. Without it the build still
+ * writes `robots.txt`, minus the `Sitemap:` line. The site has no domain yet, and a guessed one
+ * in a canonical link is worse than no canonical link.
+ *
+ * Usage: node apps/site/scripts/build.ts [--out <dir>] [--index <dir>] [--base-url <url>]
+ *                                        [--no-minify]
  */
-import { cp, mkdir, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { build } from "esbuild";
+import {
+  readSiteUrl,
+  renderRobotsFile,
+  renderSitemapFile,
+  type SiteUrl,
+  withSiteTags,
+} from "./metadata.ts";
 import { renderHeadersFile } from "./static.ts";
 
 const SITE = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -24,6 +37,7 @@ const { values } = parseArgs({
   options: {
     out: { type: "string" },
     index: { type: "string" },
+    "base-url": { type: "string" },
     minify: { type: "boolean", default: true },
   },
   strict: true,
@@ -31,6 +45,10 @@ const { values } = parseArgs({
 
 const out = values.out === undefined ? join(SITE, "dist") : fromInvocation(values.out);
 const indexDir = values.index === undefined ? undefined : fromInvocation(values.index);
+// Throws on a value a canonical link could not carry, which fails the build rather than
+// shipping a tag that points nowhere.
+const site: SiteUrl | undefined =
+  values["base-url"] === undefined ? undefined : readSiteUrl(values["base-url"]);
 
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
@@ -48,8 +66,23 @@ const result = await build({
   logLevel: "warning",
 });
 
+let builtAt: string | undefined;
 if (indexDir !== undefined) {
   await cp(indexDir, join(out, "index"), { recursive: true });
+  // The manifest names the build that is being shipped, so read it rather than looking at what
+  // else happens to be sitting in the index directory.
+  const manifest: unknown = JSON.parse(await readFile(join(indexDir, "manifest.json"), "utf8"));
+  const when = (manifest as { builtAt?: unknown }).builtAt;
+  if (typeof when === "string") builtAt = when;
+}
+
+// The page is one document and the whole search is in its query string (ADR-0023), so there is
+// one URL to offer a crawler and the sitemap holds exactly that. See `metadata.ts`.
+await writeFile(join(out, "robots.txt"), renderRobotsFile(site));
+if (site !== undefined) {
+  await writeFile(join(out, "sitemap.xml"), renderSitemapFile(site, builtAt));
+  const page = join(out, "index.html");
+  await writeFile(page, withSiteTags(await readFile(page, "utf8"), site));
 }
 
 // The security headers a deployment serves the site with (ADR-0028). A Cloudflare Workers

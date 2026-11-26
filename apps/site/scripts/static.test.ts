@@ -133,3 +133,22 @@ describe("the _headers file for a deployment", () => {
     }
   });
 });
+
+describe("the types robots.txt and sitemap.xml are served with", () => {
+  it("serves a .txt file as plain text", async () => {
+    // `nosniff` means a browser will not guess past a wrong type, and a crawler handed
+    // application/octet-stream for robots.txt has no reason to read it as a policy.
+    await writeFile(join(directory, "robots.txt"), "User-agent: *\nAllow: /\n");
+    const response = await fetch(`${origin}/robots.txt`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("text/plain; charset=utf-8");
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+  });
+
+  it("serves a .xml file as XML", async () => {
+    await writeFile(join(directory, "sitemap.xml"), "<urlset></urlset>\n");
+    const response = await fetch(`${origin}/sitemap.xml`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/xml; charset=utf-8");
+  });
+});
