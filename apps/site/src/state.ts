@@ -40,6 +40,15 @@ export interface SearchState {
   /** Postings open to anywhere match any place filter. */
   readonly includeAnywhere: boolean;
   readonly sort: "newest" | "pay";
+  /**
+   * Which currency a pay sort ranks within, when the reader has pinned one.
+   *
+   * Null means the most common currency among the postings the search matched, which is what the
+   * index resolves it to. Pay is held as the posting stated it and the index carries no exchange
+   * rates (ADR-0007), so a pay sort can only rank within one currency; naming a fixed one here
+   * would put every posting priced in another into the unranked tail without saying so.
+   */
+  readonly payCurrency: string | null;
   /** Criteria on the standard questions, at most one per question. */
   readonly answers: readonly AnswerFilter[];
   /**
@@ -77,6 +86,7 @@ export const EMPTY: SearchState = {
   minimumPay: null,
   includeAnywhere: true,
   sort: "newest",
+  payCurrency: null,
   answers: [],
   criterion: null,
   criterionFilter: null,
@@ -191,6 +201,11 @@ export function fromUrl(url: URL, fallback: SearchState = EMPTY): SearchState {
   const pay = Number(parameters.get("pay"));
   const currency = (parameters.get("currency") ?? "").toUpperCase();
   const criterion = readCriterionDraft(url);
+  // `sort=pay` orders by pay in whichever currency the result is mostly priced in; `sort=pay:EUR`
+  // pins one. The currency rides on the sort rather than taking a parameter of its own because it
+  // is part of that one control, and `currency` already belongs to the minimum-pay filter.
+  const [order = "", pinned = ""] = (parameters.get("sort") ?? "").split(":");
+  const payCurrency = pinned.toUpperCase();
   return {
     region: parameters.get("region") ?? fallback.region,
     text: parameters.get("q") ?? "",
@@ -204,7 +219,8 @@ export function fromUrl(url: URL, fallback: SearchState = EMPTY): SearchState {
         ? { amount: pay, currency }
         : null,
     includeAnywhere: parameters.get("anywhere") !== "0",
-    sort: parameters.get("sort") === "pay" ? "pay" : "newest",
+    sort: order === "pay" ? "pay" : "newest",
+    payCurrency: order === "pay" && /^[A-Z]{3}$/.test(payCurrency) ? payCurrency : null,
     answers: readAnswerFilters(parameters.get("a") ?? ""),
     criterion,
     criterionFilter: readCriterionFilter(url, criterion),
@@ -238,7 +254,10 @@ export function toQueryString(state: SearchState): string {
     set("currency", state.minimumPay.currency);
   }
   if (!state.includeAnywhere) set("anywhere", "0");
-  set("sort", state.sort === "newest" ? "" : state.sort);
+  set(
+    "sort",
+    state.sort === "newest" ? "" : state.payCurrency === null ? "pay" : `pay:${state.payCurrency}`,
+  );
   set("a", writeAnswerFilters(state.answers));
   if (state.criterion !== null) {
     set("ck", state.criterion.kind);
@@ -266,7 +285,10 @@ export function toQuery(state: SearchState, now: number): IndexQuery {
     ...(state.minimumPay === null ? {} : { minimumPay: state.minimumPay }),
     ...(state.text.trim().length > 0 ? { text: state.text.trim() } : {}),
     ...(state.answers.length > 0 ? { answers: state.answers } : {}),
-    sort: state.sort === "pay" ? { pay: state.minimumPay?.currency ?? "USD" } : "newest",
+    // No currency pinned means the index ranks within the most common one among the postings this
+    // search matched. That covers the minimum-pay filter too: it matches one currency, so the
+    // postings left are all in it and it is the one the ranking lands on.
+    sort: state.sort === "pay" ? { pay: state.payCurrency } : "newest",
     limit: state.shown,
     now,
   };

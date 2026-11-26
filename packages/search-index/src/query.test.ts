@@ -293,4 +293,42 @@ describe("queryIndex", () => {
     expect(ids(run({ sort: { pay: "USD" }, offset: 1, limit: 2 }))).toEqual(["both", "london"]);
     expect(run({ limit: 2 }).total).toBe(ROWS.length);
   });
+
+  it("counts the matching postings by the currency they state pay in", () => {
+    // The fixture prices two postings in dollars and one in pounds; the rest state no pay.
+    expect(run({}).pay.currencies).toEqual([
+      ["USD", 2],
+      ["GBP", 1],
+    ]);
+    // Over the postings the filters left, like the answered count and unlike a facet count.
+    expect(run({ places: { countries: ["GB"] }, includeAnywhere: false }).pay.currencies).toEqual([
+      ["GBP", 1],
+    ]);
+    expect(run({ text: "recruiter" }).pay.currencies).toEqual([]);
+  });
+
+  it("ranks within the currency most of the matching postings state, when told none", () => {
+    // Naming a currency the caller did not choose is the defect this replaced: a pay sort that
+    // assumed one left every posting priced in another in the tail with the unpriced ones.
+    const auto = run({ sort: { pay: null } });
+    expect(auto.pay.within).toBe("USD");
+    expect(ids(auto).slice(0, 2)).toEqual(["sf", "both"]);
+    // A search of the pound postings ranks in pounds, with no filter saying so.
+    const british = run({ sort: { pay: null }, places: { countries: ["GB"] } });
+    expect(british.pay.within).toBe("GBP");
+    expect(ids(british)[0]).toBe("london");
+  });
+
+  it("reports the currency it ranked within, and none when it could not rank", () => {
+    expect(run({}).pay.within).toBeNull();
+    expect(run({ sort: { pay: "GBP" } }).pay.within).toBe("GBP");
+    // Nothing states pay, so there is nothing to rank by and the rows are in date order.
+    const unpriced = run({ sort: { pay: null }, text: "recruiter" });
+    expect(unpriced.pay.within).toBeNull();
+    expect(ids(unpriced)).toEqual(["unplaced"]);
+    // A currency nothing is priced in ranks nothing, and says which currency that was.
+    const absent = run({ sort: { pay: "JPY" } });
+    expect(absent.pay.within).toBe("JPY");
+    expect(ids(absent)).toEqual(ids(run({})));
+  });
 });
